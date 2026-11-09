@@ -17,6 +17,12 @@ const send = (res, status, value, headers={}) => {
   res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});
   res.end(body);
 };
+const oauthErrorPage = (res, heading, explanation, status=400) => {
+  const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const body = '<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WHOOP connection issue</title><body style="font:16px/1.6 system-ui;background:#0b1220;color:#f4f7fb;max-width:620px;margin:45px auto;padding:22px"><h1>'+esc(heading)+'</h1><p>'+esc(explanation)+'</p><p>Check that your WHOOP Client ID and Client Secret are from the same app, and that the registered redirect URI is exactly <code>https://reptrack-cwrc.onrender.com/api/whoop/callback</code>.</p><p>Do not share credentials or authorization codes in screenshots.</p><a style="color:#c6fb6d" href="/#whoop">Return to RepTrack</a></body></html>';
+  res.writeHead(status, {'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+  res.end(body);
+};
 const redirect = (res, where, cookies=[]) => {
   res.writeHead(302, {'Location':where,'Set-Cookie':cookies,'Cache-Control':'no-store'});
   res.end();
@@ -73,11 +79,21 @@ const server=http.createServer(async(req,res)=>{
   if(pathname==='/api/whoop/callback' && req.method==='GET'){
     if(!configured)return send(res,503,{error:'WHOOP not configured'});
     const query=new URL(req.url,'http://localhost').searchParams;
+    if(query.get('error')) {
+      console.warn('WHOOP authorization denied:',String(query.get('error')).slice(0,80));
+      return oauthErrorPage(res,'WHOOP authorization was not completed','WHOOP returned: '+String(query.get('error')).slice(0,80)+'. Please review your app permissions and try again.');
+    }
     const received=query.get('state');
     const expected=getCookie(req,'whoop_state');
     if(!received||!expected||received!==expected||!query.get('code'))
-      return send(res,400,{error:'WHOOP permission was cancelled or security check failed.'},{'Set-Cookie':clearCookie('whoop_state')});
-    const data=await tokenRequest({grant_type:'authorization_code',code:query.get('code'),redirect_uri:callback(),client_id:CLIENT_ID,client_secret:CLIENT_SECRET});
+      return oauthErrorPage(res,'WHOOP sign-in could not be verified','The secure sign-in session expired or was blocked. Open RepTrack and choose Connect WHOOP again, in the same browser.');
+    let data;
+    try {
+      data=await tokenRequest({grant_type:'authorization_code',code:query.get('code'),redirect_uri:callback(),client_id:CLIENT_ID,client_secret:CLIENT_SECRET});
+    } catch (err) {
+      console.error('WHOOP authorization code exchange failed:',err.message);
+      return oauthErrorPage(res,'WHOOP rejected the connection','WHOOP could not exchange the authorization code for an access token. Confirm that both credentials belong to your current WHOOP developer app and that the redirect URI is registered.',502);
+    }
     const token=seal(tokenState(data));
     if(token.length>3800)throw Error('Session cookie too large');
     return redirect(res,'/#whoop',[clearCookie('whoop_state'),secureCookie('reptrack_whoop',token,60*60*24*30)]);
