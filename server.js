@@ -60,7 +60,11 @@ const server=http.createServer(async(req,res)=>{
     return send(res,200,{configured,missing:[!CLIENT_ID?'WHOOP_CLIENT_ID':null,!CLIENT_SECRET?'WHOOP_CLIENT_SECRET':null,!PUBLIC_URL?'PUBLIC_URL':null,!(SESSION_SECRET&&SESSION_SECRET.length>=32)?'SESSION_SECRET':null].filter(Boolean),callback:PUBLIC_URL?callback():null});
   }
   if(pathname==='/api/whoop/login' && req.method==='GET'){
-    if(!configured)return redirect(res,'/#whoop-setup-required');
+    if(!configured){
+      const missing=[!CLIENT_ID?'WHOOP_CLIENT_ID':null,!CLIENT_SECRET?'WHOOP_CLIENT_SECRET':null,!PUBLIC_URL?'PUBLIC_URL':null,!(SESSION_SECRET&&SESSION_SECRET.length>=32)?'SESSION_SECRET':null].filter(Boolean);
+      res.writeHead(503,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});
+      return res.end('<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WHOOP setup required</title><body style="font:16px/1.6 system-ui;background:#0b1220;color:#f4f7fb;max-width:620px;margin:50px auto;padding:20px"><h1>WHOOP setup is incomplete</h1><p>Before connecting, add these missing settings in Render → Environment:</p><p><strong>'+missing.join(', ')+'</strong></p><p>Save and deploy, then try again.</p><a href="/#whoop" style="color:#c6fb6d">Return to RepTrack</a></body></html>');
+    }
     const state=crypto.randomBytes(24).toString('base64url');
     const url=new URL(URL_BASE+'/oauth/oauth2/auth');
     url.search=new URLSearchParams({client_id:CLIENT_ID,response_type:'code',redirect_uri:callback(),scope:'read:recovery read:sleep read:cycles offline',state}).toString();
