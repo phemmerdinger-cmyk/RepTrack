@@ -56,8 +56,11 @@ const latest = obj => Array.isArray(obj?.records) ? obj.records[0]||null : null;
 const server=http.createServer(async(req,res)=>{
  try{
   const pathname=new URL(req.url,'http://localhost').pathname;
+  if(pathname==='/api/whoop/status' && req.method==='GET'){
+    return send(res,200,{configured,missing:[!CLIENT_ID?'WHOOP_CLIENT_ID':null,!CLIENT_SECRET?'WHOOP_CLIENT_SECRET':null,!PUBLIC_URL?'PUBLIC_URL':null,!(SESSION_SECRET&&SESSION_SECRET.length>=32)?'SESSION_SECRET':null].filter(Boolean),callback:PUBLIC_URL?callback():null});
+  }
   if(pathname==='/api/whoop/login' && req.method==='GET'){
-    if(!configured)return send(res,503,{error:'WHOOP has not been configured in Render.'});
+    if(!configured)return redirect(res,'/#whoop-setup-required');
     const state=crypto.randomBytes(24).toString('base64url');
     const url=new URL(URL_BASE+'/oauth/oauth2/auth');
     url.search=new URLSearchParams({client_id:CLIENT_ID,response_type:'code',redirect_uri:callback(),scope:'read:recovery read:sleep read:cycles offline',state}).toString();
