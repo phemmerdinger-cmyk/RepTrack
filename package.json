@@ -1,0 +1,12 @@
+{
+  "name": "reptrack-whoop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RepTrack mobile and desktop workout tracker with WHOOP OAuth backend",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
