@@ -66,7 +66,7 @@ if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
 tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',completed?'● LOGGED':p.title==='RECOVERY'?'REST DAY':'PLANNED'));
-tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();});
+tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
 grid.append(tile);
 }
 }
@@ -119,7 +119,54 @@ if(!values.length){wrap.append(el('div','muted','Select a logged exercise to see
 const chart=el('div','chart');for(const item of values){const b=el('div','chartbar');b.style.height=Math.max(2,item.value/high*100)+'%';b.title=item.date+' · '+fmt(item.value)+' estimated 1RM';chart.append(b)}
 wrap.append(chart,el('div','muted','Top estimated 1RM: '+fmt(high)+' lbs · Epley formula, approximate.'));
 }
-function renderAll(){renderCalendar();renderSelected();renderAnalytics()}
+
+// Interactive workout detail panel: every calendar tile opens the specific day's plan.
+let drawerOpen=false;
+function openDayDrawer(date){
+ selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);drawerOpen=true;
+ renderDayDrawer();$('dayDrawerOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
+ $('drawerClose').focus();
+}
+function closeDayDrawer(){
+ drawerOpen=false;$('dayDrawerOverlay').classList.add('hidden');
+ if($('modalOverlay').classList.contains('hidden'))document.body.style.overflow='';
+}
+function renderDayDrawer(){
+ if(!drawerOpen)return;
+ const p=plan[selected.getDay()],date=iso(selected),logged=entries.filter(e=>e.date===date),doneNames=new Set(logged.map(e=>e.exercise));
+ $('drawerDate').textContent=dateLabel(selected).toUpperCase();
+ $('drawerWorkout').textContent=p.title;
+ $('drawerFocus').textContent=p.focus;
+ const plannedDone=p.ex.filter(([ex])=>doneNames.has(ex)).length;
+ $('drawerCount').textContent=plannedDone+' OF '+p.ex.length+' PLANNED EXERCISES LOGGED';
+ $('drawerMeterFill').style.width=(plannedDone/p.ex.length*100)+'%';
+ const r=recovery();
+ $('drawerGuidance').textContent=r===null?'No WHOOP recovery score available yet. Choose effort based on readiness and form.':guidance(r);
+ const list=$('drawerExercises');list.replaceChildren();
+ p.ex.forEach(([exercise,prescription],i)=>{
+  const row=el('div','drawer-exercise');
+  const number=el('span','drawer-exercise-num',String(i+1).padStart(2,'0'));
+  const desc=el('div','');desc.append(el('strong','',exercise),el('small','',prescription));
+  const btn=el('button','smallbtn '+(doneNames.has(exercise)?'':'btn-primary'),doneNames.has(exercise)?'LOG ANOTHER':'LOG SETS');
+  btn.type='button';btn.onclick=()=>openLog(selected,exercise);
+  row.append(number,desc,btn);list.append(row);
+ });
+ const past=$('drawerLogged');past.replaceChildren();
+ if(!logged.length)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
+ else logged.forEach(e=>{
+  const row=el('div','drawer-exercise'),desc=el('div','');
+  desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>x.weight+' lb × '+x.reps).join(' · ')));
+  const del=el('button','smallbtn','REMOVE');del.type='button';del.onclick=()=>{
+   if(confirm('Remove this logged exercise?')){entries=entries.filter(x=>x.id!==e.id);if(save())renderAll();}
+  };
+  row.append(desc,del);past.append(row);
+ });
+}
+$('drawerClose').onclick=closeDayDrawer;$('drawerDone').onclick=closeDayDrawer;
+$('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOverlay'))closeDayDrawer()});
+$('drawerAddCustom').onclick=()=>openLog(selected,'');
+
+function renderAll(){renderCalendar();renderSelected();renderAnalytics();renderDayDrawer()}
 function addSet(weight='',reps=''){
 const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),x=el('button','del','×');
 w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
@@ -130,9 +177,9 @@ function openLog(date,exercise){
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
 let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
 if(prev?.sets?.length){for(const s of prev.sets.slice(0,8))addSet(s.weight,s.reps)}else {addSet();addSet();addSet();}
-$('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');$('logExercise').focus();
+$('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
-function closeLog(){$('modalOverlay').classList.add('hidden')}
+function closeLog(){$('modalOverlay').classList.add('hidden');if(!drawerOpen)document.body.style.overflow=''}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
 const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value)}));
@@ -142,7 +189,7 @@ entries.push(item);if(save()){selected=fromISO(date);month=new Date(selected.get
 });
 $('addSet').onclick=()=>addSet();$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLog()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
@@ -157,7 +204,7 @@ document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterva
 const navButtons=[...document.querySelectorAll('[data-view]')];
 function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-const hash=location.hash.replace('#','');if(['calendar','analytics','settings'].includes(hash))switchView(hash);
+const hash=location.hash.replace('#','');if(['calendar','analytics'].includes(hash))switchView(hash);
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}});
 load();renderAll();paintTimer();syncWHOOP();
 // Refresh WHOOP readings automatically while the dashboard is open; this is polling, not continuous streaming.
