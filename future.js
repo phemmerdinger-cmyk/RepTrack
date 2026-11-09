@@ -136,7 +136,7 @@ window.addEventListener('storage',e=>{if(e.key==='reptrack-workouts-v1'||e.key==
 window.addEventListener('reptrack-plan-changed',refresh);
 document.querySelectorAll('.day').forEach(b=>b.addEventListener('click',refresh));
 el('monthGrid')?.addEventListener('click',e=>{if(e.target.closest('.day'))setTimeout(refresh,20)});
-el('refreshButton')?.addEventListener('click',()=>{lastSynced=new Date();setTimeout(refresh,400)});
+// WHOOP updates automatically; the recovery metric observer refreshes this view.
 const toggled=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(!toggled){document.querySelectorAll('.intel-card').forEach(card=>{card.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const r=card.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;card.style.transform='perspective(900px) rotateY('+((x-.5)*5)+'deg) rotateX('+((.5-y)*5)+'deg) translateY(-3px)'});card.addEventListener('pointerleave',()=>card.style.transform='')})}
 }
