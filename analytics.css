@@ -1,0 +1,42 @@
+
+.analytics-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:24px 0 14px}
+.analytics-toolbar h2{font-size:25px;letter-spacing:-.06em;margin:5px 0 0}
+.analytics-toolbar-controls{display:flex;align-items:center;gap:12px}
+.analytics-toolbar-controls select{min-width:125px;max-width:160px;background:#1b1f28;border:1px solid #424a5a;border-radius:10px;color:#fff}
+.analytics-stats,.overload-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.analytics-stats>div,.overload-overview>div{background:linear-gradient(145deg,#1d222d,#0f1218);border:1px solid #ffffff1c;border-radius:13px;padding:17px;display:grid;gap:10px;min-width:0;box-shadow:inset 0 1px #ffffff10}
+.analytics-stats strong,.overload-overview strong{font:700 clamp(22px,3vw,33px) 'Space Grotesk',sans-serif;letter-spacing:-.07em;overflow-wrap:anywhere}
+.analytics-stats small{font-size:9px;letter-spacing:.09em;color:#818b9a}
+.analytics-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:19px}
+.analytics-chart-card{margin:0;min-width:0;overflow:hidden}
+.analytics-chart-card.wide{grid-column:1/-1}
+.analytics-chart-card .section-title h3{font-size:18px;margin:5px 0}
+.analytics-toggle{display:flex;align-items:center;gap:4px;background:#0c0e13;padding:4px;border-radius:9px;border:1px solid #2e3643}
+.analytics-toggle button{background:transparent;border:0;border-radius:6px;font-size:10px;padding:7px 9px;color:#969dab;white-space:nowrap}
+.analytics-toggle button.active{background:#e4e8ef;color:#0a0d13}
+.chart-host{width:100%;min-height:190px;display:flex;flex-direction:column;justify-content:center;margin-top:13px}
+.analytics-svg{width:100%;height:auto;max-height:260px;overflow:visible}
+.svg-label{font:10px 'DM Sans',sans-serif;fill:#929cac}
+.chart-empty{min-height:195px;border:1px dashed #3c4554;border-radius:12px;display:grid;place-items:center;text-align:center;padding:20px;color:#808c9f;font-size:12px}
+.chart-sub{font-size:11px;color:#8a95a6;line-height:1.6;margin:8px 0 0}
+.donut-layout{display:flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:center;min-height:215px}
+.donut-ring{height:158px;width:158px;border-radius:50%;position:relative;display:grid;place-items:center;flex:none}
+.donut-ring:before{content:'';position:absolute;inset:23px;border-radius:50%;background:#151923}
+.donut-center{z-index:1;position:relative;text-align:center;display:grid;gap:3px}
+.donut-center strong{font:700 32px 'Space Grotesk';letter-spacing:-.06em}.donut-center span{color:#959eae;font-size:10px;letter-spacing:.14em}
+.donut-legend{flex:1;min-width:150px;display:grid;gap:10px}
+.legend-item,.legend-item>div{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:11px}
+.legend-item>div{justify-content:flex-start;min-width:0;color:#c4cbd6;overflow-wrap:anywhere}
+.legend-item strong{font-size:11px;color:#f6f7fa;flex:none}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex:none}
+.overload-head{margin-bottom:16px}
+.overload-head h2{font-size:24px;margin:5px 0}
+.overload-head>.muted{font-size:12px;line-height:1.6}
+.overload-controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+.overload-overview{margin-top:16px}
+.overload-overview strong{font-size:clamp(20px,2.1vw,29px)}
+.overload-session-list{margin-top:17px;border-top:1px solid #2e3440}
+.overload-row{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid #2e3440;align-items:center}
+.overload-row strong{font-size:12px}.overload-row small{display:block;color:#8b95a6;margin-top:4px;font-size:11px}
+@media(max-width:950px){.analytics-chart-grid{grid-template-columns:1fr}.analytics-chart-card.wide{grid-column:auto}.donut-layout{justify-content:space-around}}
+@media(max-width:600px){.analytics-toolbar{align-items:flex-start;flex-direction:column}.analytics-stats,.overload-overview{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.analytics-stats>div,.overload-overview>div{padding:12px}.analytics-stats strong,.overload-overview strong{font-size:24px}.analytics-chart-grid{gap:11px}.analytics-chart-card .section-title{align-items:flex-start;flex-wrap:wrap}.analytics-toggle button{font-size:9px}.overload-controls{grid-template-columns:1fr}.chart-host{min-height:155px}.donut-ring{height:140px;width:140px}}
