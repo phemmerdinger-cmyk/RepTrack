@@ -62,6 +62,12 @@ function planFor(d){
 }
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
 window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
+window.RepTrackWorkoutPreset=key=>{
+ const presets={PUSH:plan[1],PULL:plan[2],LEGS_QUAD:plan[3],LEGS_POSTERIOR:plan[0],CHEST:plan[4],BACK:plan[5],SHOULDERS_ARMS:plan[6]};
+ if(key==='CUSTOM')return{title:'CUSTOM WORKOUT',focus:'Add exercises as you train',ex:[]};
+ if(key==='REST')return{title:'RECOVERY',focus:'Walking and mobility',ex:[['Walking','20–30 minutes',''],['Mobility','10–15 minutes','']]};
+ return presets[key]?clonePlan(presets[key]):null;
+};
 window.RepTrackSelectedDate=()=>iso(selected);
 
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,timer=null,seconds=120,remaining=120;
