@@ -80,6 +80,17 @@
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
 <div class="drawer-top"><div><div class="micro" id="drawerDate">SELECTED DATE</div><h2 id="drawerWorkout">DAY WORKOUT</h2><p id="drawerFocus" class="muted"></p></div><button type="button" id="drawerClose" aria-label="Close workout panel">✕</button></div>
+<div class="schedule-edit-bar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
+<div id="drawerPlanEditor" class="schedule-editor hidden">
+<label class="field">WORKOUT TYPE<select id="editWorkoutType"><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS">LEGS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS + ARMS">SHOULDERS + ARMS</option><option value="REST">REST / RECOVERY</option><option value="CUSTOM">CUSTOM</option></select></label>
+<label class="field" id="customWorkoutWrap" style="margin-top:12px">CUSTOM DAY NAME<input id="editWorkoutName" maxlength="50" placeholder="e.g. Full body"></label>
+<label class="field" style="margin-top:12px">FOCUS / NOTES<input id="editWorkoutFocus" maxlength="120" placeholder="Muscle groups / emphasis"></label>
+<div class="micro" style="margin-top:16px">EXERCISE PLAN · EDIT OR REORDER</div><div id="editExerciseRows"></div>
+<button type="button" class="smallbtn" id="editAddExercise" style="margin-top:8px">+ ADD PLANNED EXERCISE</button>
+<label class="edit-scope"><input id="editRepeatWeekly" type="checkbox"> Make this the default every <span id="editWeekday"></span> (otherwise only this date)</label>
+<div class="action-row"><button class="btn-primary" id="editSavePlan" type="button">SAVE CHANGES</button><button id="editResetPlan" type="button">RESET DAY</button><button id="editCancelPlan" type="button">CANCEL</button></div>
+<div id="editPlanMessage" class="status-msg"></div>
+</div>
 <div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
 <div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
