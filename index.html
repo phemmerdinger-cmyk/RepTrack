@@ -81,6 +81,12 @@
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">04 / CONSISTENCY</div><h3>WEEKLY SETS</h3></div></div><div id="analysisWeeklySets" class="chart-host"></div></section>
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">05 / SESSION QUALITY</div><h3>SESSION VOLUME</h3></div></div><div id="analysisSessionsChart" class="chart-host"></div></section>
 </div>
+<section class="section overload-head" id="overloadSection"><div class="section-title"><div><div class="micro">06 / PROGRESSIVE OVERLOAD ENGINE</div><h2>PROGRESSIVE OVERLOAD</h2></div><span class="future-pill">ACTUAL LIFT DATA</span></div>
+<p class="muted">Track your heaviest sets, estimated 1RM, and weekly volume for each exercise. Target weights are editable in your calendar; actual lifts come from your logged sets.</p>
+<div class="overload-controls"><label class="field">EXERCISE<select id="overloadExercise"></select></label><label class="field">TRACK<select id="overloadMetric"><option value="weight">TOP WEIGHT</option><option value="estimate">EST. 1RM</option><option value="reps">REPS AT TOP WEIGHT</option><option value="volume">WORKOUT VOLUME</option></select></label></div>
+<div class="overload-overview"><div><span class="micro">LATEST BEST SET</span><strong id="overloadLast">—</strong></div><div><span class="micro">ALL-TIME BEST WEIGHT</span><strong id="overloadPR">—</strong></div><div><span class="micro">CHANGE VS PREVIOUS</span><strong id="overloadDelta">—</strong></div><div><span class="micro">NEXT TARGET</span><strong id="overloadNext">—</strong></div></div>
+<div id="overloadChart" class="chart-host"></div><p class="chart-sub" id="overloadNote">Log at least two sessions for an exercise to compare progress.</p>
+<div id="overloadSessionList" class="overload-session-list"></div></section>
 <div class="section" id="dataAndConnection" style="margin-top:20px">
 <details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
 <div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Checking connection.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="btn-primary smallbtn hidden" style="text-decoration:none">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button><button type="button" onclick="location.reload()">RELOAD METRICS</button></div></div>
