@@ -1,0 +1,19 @@
+{
+  "name": "RepTrack — Fitness Intelligence",
+  "short_name": "RepTrack",
+  "description": "Personal training command center with WHOOP insights, live workout logging and progressive overload.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050608",
+  "theme_color": "#070707",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
