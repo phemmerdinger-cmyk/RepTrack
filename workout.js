@@ -19,16 +19,33 @@ const recordVolume=()=>activeRecords().reduce((sum,r)=>sum+(Array.isArray(r.sets
 const priorRecord=name=>readLogs().filter(e=>e.exercise===name&&Array.isArray(e.sets)&&e.sessionId!==session?.id).sort((a,b)=>a.date.localeCompare(b.date)||(a.created||0)-(b.created||0)).at(-1);
 const recordFor=name=>activeRecords().find(e=>e.exercise===name);
 const pickDate=()=>typeof window.RepTrackSelectedDate==='function'?window.RepTrackSelectedDate():iso(new Date());
+let selection='scheduled',previewDate=null;
 function showPage(){document.querySelector('[data-view="workout"]')?.click()}
+function chosenPlan(date){
+ if(selection==='scheduled')return window.RepTrackPlanForDate?.(date);
+ return window.RepTrackWorkoutPreset?.(selection);
+}
 function showPreview(){
- const date=pickDate(),p=window.RepTrackPlanForDate?.(date)||{title:'WORKOUT',focus:'Your session',ex:[]};
+ const date=previewDate||pickDate(),p=chosenPlan(date)||{title:'WORKOUT',focus:'Your session',ex:[]};
+ $('preWorkoutSelect').value=selection;
  $('idleWorkoutDate').textContent=new Date(date+'T12:00:00').toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'}).toUpperCase();
  $('idleWorkoutTitle').textContent=p.title;$('idleWorkoutFocus').textContent=p.focus;
+ const container=$('idleWorkoutExercises');container.replaceChildren();
+ for(const [name,target,weight] of (p.ex||[]).slice(0,12)){
+  const row=el('div','workout-preview-row');
+  row.append(el('strong','',name),el('span','',target+(weight!==''&&weight!=null?' · '+weight+' lb':'')));
+  container.append(row);
+ }
+ if(!p.ex?.length)container.append(el('p','muted',selection==='CUSTOM'?'Start with an empty workout, then add exercises and sets as you train.':'No exercises in this schedule.'));
 }
-function start(date=pickDate()){
+function prepareWorkout(date=pickDate()){
  if(session){showPage();render();return}
- const plan=window.RepTrackPlanForDate?.(date);
- if(!plan||!Array.isArray(plan.ex))return alert('Open your calendar to select a workout.');
+ previewDate=date;selection='scheduled';showPage();render();
+}
+function start(date=previewDate||pickDate()){
+ if(session){showPage();render();return}
+ const plan=chosenPlan(date);
+ if(!plan||!Array.isArray(plan.ex))return alert('Choose a workout to start.');
  const now=new Date();
  session={id:'session-'+Date.now()+'-'+Math.random().toString(36).slice(2),date:iso(now),sourceDate:date,title:plan.title,focus:plan.focus,ex:plan.ex.map(x=>[x[0],x[1],x[2]??'']),started:Date.now(),pausedAt:0,pausedMs:0};
  if(!write()){session=null;return}
@@ -117,9 +134,10 @@ function render(){
  session.ex.forEach((item,i)=>host.append(exerciseCard(item,i)));
  renderMetric();updateClock();
 }
+$('preWorkoutSelect').addEventListener('change',e=>{selection=e.target.value;showPreview()});
 $('workoutBegin').addEventListener('click',()=>start());
-$('startSelectedWorkout').addEventListener('click',()=>start());
-$('drawerStartWorkout').addEventListener('click',()=>{document.getElementById('drawerDone')?.click();start()});
+$('startSelectedWorkout').addEventListener('click',()=>prepareWorkout());
+$('drawerStartWorkout').addEventListener('click',()=>{const date=pickDate();document.getElementById('drawerDone')?.click();prepareWorkout(date)});
 $('workoutFinish').addEventListener('click',finish);
 $('workoutPause').addEventListener('click',setPause);
 $('workoutRestToggle').addEventListener('click',restToggle);
