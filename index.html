@@ -68,4 +68,58 @@ refresh.addEventListener('click',sync);disconnect.addEventListener('click',async
 sync();
 })();
 </script>
+
+<script>
+(function(){
+'use strict';
+const el=id=>document.getElementById(id), key='reptrack-workouts-v1';
+const iso=n=>{const d=new Date();d.setDate(d.getDate()-n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+const read=()=>{try{const d=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(d)?d.filter(e=>e&&typeof e.date==='string'&&typeof e.exercise==='string'&&Array.isArray(e.sets)):[]}catch{return []}};
+const sets=e=>e.sets.filter(s=>Number.isFinite(+s.weight)&&Number.isFinite(+s.reps));
+const vol=e=>sets(e).reduce((n,s)=>n+(+s.weight)*(+s.reps),0);
+const max=s=>(+s.weight)*(1+Math.min(12,+s.reps)/30);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+function bars(target,values){
+ if(!values.length||!values.some(v=>v.v>0)){target.textContent='Log workouts to see performance trends.';return}
+ const mx=Math.max(1,...values.map(v=>v.v));
+ const chart=document.createElement('div');chart.className='perf-bars';
+ values.forEach(v=>{const b=document.createElement('div');b.style.height=Math.max(3,v.v/mx*100)+'%';b.title=v.day+': '+fmt(v.v);chart.append(b)});
+ target.replaceChildren(chart);
+ const info=document.createElement('div');info.className='row-between small';const a=document.createElement('span'),b=document.createElement('span');a.textContent=values[0].day;b.textContent=values[values.length-1].day;info.append(a,b);target.append(info);
+}
+function strength(entries){
+ const metric=el('pMetric').value,ex=el('pExercise').value;
+ const rows=entries.filter(e=>e.exercise===ex).sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
+ const values=rows.map(e=>({day:e.date.slice(5),v:metric==='volume'?vol(e):Math.max(0,...sets(e).map(s=>metric==='weight'?+s.weight:max(s)))}));
+ bars(el('pStrengthChart'),values);
+ el('pStrengthSummary').textContent=values.length?'Best: '+fmt(Math.max(...values.map(v=>v.v)))+' | Latest: '+fmt(values[values.length-1].v):'';
+}
+function render(){
+ const entries=read(),recent=entries.filter(e=>e.date>=iso(6)&&e.date<=iso());
+ el('pVolume').textContent=fmt(recent.reduce((n,e)=>n+vol(e),0));
+ el('pSets').textContent=fmt(recent.reduce((n,e)=>n+sets(e).length,0));
+ const squats=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(sets).filter(s=>+s.weight>0);
+ el('pMax').textContent=squats.length?fmt(Math.max(...squats.map(max))):'—';
+ const dates=new Set(entries.map(e=>e.date));let count=0,i=dates.has(iso(0))?0:1;while(i<366&&dates.has(iso(i))){count++;i++}el('pStreak').textContent=count;
+ bars(el('pVolumeChart'),Array.from({length:14},(_,i)=>{const day=iso(13-i);return{day:day.slice(5),v:entries.filter(e=>e.date===day).reduce((n,e)=>n+vol(e),0)}}));
+ const groups=new Map();entries.filter(e=>e.date>=iso(29)).forEach(e=>groups.set(e.exercise,(groups.get(e.exercise)||0)+sets(e).length));
+ const ordered=[...groups].sort((a,b)=>b[1]-a[1]).slice(0,6);const mx=Math.max(1,...ordered.map(x=>x[1]));const breakdown=el('pBreakdown');breakdown.replaceChildren();
+ if(!ordered.length)breakdown.textContent='No logged exercises this month.';
+ ordered.forEach(([name,n])=>{const row=document.createElement('div');row.className='perf-row';const left=document.createElement('div');left.style.flex='1';const label=document.createElement('strong');label.textContent=name;const track=document.createElement('div');track.className='perf-track';const fill=document.createElement('div');fill.style.width=(n/mx*100)+'%';track.append(fill);left.append(label,track);const right=document.createElement('span');right.textContent=n+' sets';row.append(left,right);breakdown.append(row)});
+ const select=el('pExercise'),previous=select.value,names=[...new Set(entries.map(e=>e.exercise))].sort();select.replaceChildren();
+ (names.length?names:['No workouts yet']).forEach(name=>{const o=document.createElement('option');o.textContent=name;select.append(o)});if(names.includes(previous))select.value=previous;strength(entries);
+}
+el('pExercise').onchange=()=>strength(read());el('pMetric').onchange=()=>strength(read());
+document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',render));
+window.addEventListener('storage',render);
+new MutationObserver(render).observe(el('historyList'),{childList:true});
+let remaining=120,running=false,timer=null;
+function draw(){el('pClock').textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');el('pStart').textContent=running?'Pause':'Start'}
+function stop(){clearInterval(timer);timer=null;running=false;draw()}
+document.querySelectorAll('[data-rest]').forEach(b=>b.onclick=()=>{stop();remaining=+b.dataset.rest;draw()});
+el('pStart').onclick=()=>{if(running){stop();return}running=true;draw();timer=setInterval(()=>{remaining=Math.max(0,remaining-1);if(!remaining){stop();if(navigator.vibrate)navigator.vibrate(150)}draw()},1000)};
+el('pReset').onclick=()=>{stop();remaining=120;draw()};
+render();draw();
+})();
+</script>
 </body></html>
