@@ -23,8 +23,8 @@ const plan=[
 const PLAN_KEY='reptrack-day-plans-v1',WEEK_KEY='reptrack-weekday-plans-v1';
 function readPlanStore(key){try{const data=JSON.parse(localStorage.getItem(key)||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{}}catch{return {}}}
 let datePlans=readPlanStore(PLAN_KEY),weeklyPlans=readPlanStore(WEEK_KEY);
-const clonePlan=p=>({title:p.title,focus:p.focus,ex:p.ex.map(x=>[x[0],x[1]])});
-const validPlan=p=>p&&typeof p.title==='string'&&p.title.length>0&&p.title.length<=50&&typeof p.focus==='string'&&p.focus.length<=120&&Array.isArray(p.ex)&&p.ex.length<=30&&p.ex.every(x=>Array.isArray(x)&&x.length===2&&typeof x[0]==='string'&&x[0].trim().length>0&&x[0].length<=100&&typeof x[1]==='string'&&x[1].length<=60);
+const clonePlan=p=>({title:p.title,focus:p.focus,ex:p.ex.map(x=>[x[0],x[1],x[2]??''])});
+const validPlan=p=>p&&typeof p.title==='string'&&p.title.length>0&&p.title.length<=50&&typeof p.focus==='string'&&p.focus.length<=120&&Array.isArray(p.ex)&&p.ex.length<=30&&p.ex.every(x=>Array.isArray(x)&&(x.length===2||x.length===3)&&typeof x[0]==='string'&&x[0].trim().length>0&&x[0].length<=100&&typeof x[1]==='string'&&x[1].length<=60&&(x.length===2||x[2]===''||(Number.isFinite(Number(x[2]))&&Number(x[2])>=0&&Number(x[2])<=100000)));
 function presetFor(type,day){
  if(type==='REST')return{title:'REST',focus:'Rest and recovery',ex:[['Walking','20–30 minutes'],['Mobility','10–15 minutes']]};
  if(type==='CUSTOM')return{title:'CUSTOM',focus:'Personal session',ex:[['New Exercise','3 × 8–12']]};
@@ -98,9 +98,9 @@ const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key)
 $('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=p.title;$('dayFocus').textContent=p.focus;
 $('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
 $('exerciseList').replaceChildren();
-for(const [exercise,prescription] of p.ex){
+for(const [exercise,prescription,targetWeight] of p.ex){
 const row=el('div','exercise-row'),left=el('div'),btn=el('button','smallbtn btn-ghost','LOG');
-left.append(el('strong','',exercise),el('small','',prescription));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
+left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
 }
 $('dayHistory').replaceChildren();
 if(done.length){
@@ -149,16 +149,17 @@ let editorOpen=false,editorDraft=null,editorOriginalType=null;
 const planType=p=>['PUSH','PULL','LEGS','CHEST','BACK','SHOULDERS + ARMS','REST'].includes(p.title)?p.title:'CUSTOM';
 function buildExerciseEditor(){
  const box=$('editExerciseRows');box.replaceChildren();
- editorDraft.ex.forEach(([name,sets],index)=>{
-  const row=el('div','edit-exercise-row'),n=el('input'),s=el('input'),up=el('button','smallbtn','↑'),down=el('button','smallbtn','↓'),del=el('button','smallbtn','×');
+ editorDraft.ex.forEach(([name,sets,weight],index)=>{
+  const row=el('div','edit-exercise-row'),n=el('input'),s=el('input'),w=el('input'),up=el('button','smallbtn','↑'),down=el('button','smallbtn','↓'),del=el('button','smallbtn','×');
   n.value=name;n.maxLength=100;n.placeholder='Exercise name';n.setAttribute('aria-label','Exercise name');
   s.value=sets;s.maxLength=60;s.placeholder='Sets × reps';s.setAttribute('aria-label','Target sets and reps');
-  n.oninput=()=>editorDraft.ex[index][0]=n.value;s.oninput=()=>editorDraft.ex[index][1]=s.value;
+  w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.value=weight??'';w.placeholder='Weight lb';w.setAttribute('aria-label','Target weight in pounds');
+  n.oninput=()=>editorDraft.ex[index][0]=n.value;s.oninput=()=>editorDraft.ex[index][1]=s.value;w.oninput=()=>editorDraft.ex[index][2]=w.value;
   up.type=down.type=del.type='button';up.title='Move exercise up';down.title='Move exercise down';del.title='Remove exercise';up.disabled=index===0;down.disabled=index===editorDraft.ex.length-1;
   up.onclick=()=>{[editorDraft.ex[index-1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index-1]];buildExerciseEditor()};
   down.onclick=()=>{[editorDraft.ex[index+1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index+1]];buildExerciseEditor()};
   del.onclick=()=>{editorDraft.ex.splice(index,1);buildExerciseEditor()};
-  row.append(n,s,up,down,del);box.append(row);
+  row.append(n,s,w,up,down,del);box.append(row);
  });
 }
 function openPlanEditor(){
@@ -192,7 +193,7 @@ $('editWorkoutType').onchange=()=>{
 };
 $('editAddExercise').onclick=()=>{
  if(!editorOpen||editorDraft.ex.length>=30)return;
- editorDraft.ex.push(['','3 × 8–12']);buildExerciseEditor();
+ editorDraft.ex.push(['','3 × 8–12','']);buildExerciseEditor();
  const last=$('editExerciseRows').lastElementChild;last?.querySelector('input')?.focus();
 };
 $('editCancelPlan').onclick=closePlanEditor;
@@ -200,7 +201,7 @@ $('editSavePlan').onclick=()=>{
  if(!editorOpen)return;
  editorDraft.title=($('editWorkoutType').value==='CUSTOM' ? $('editWorkoutName').value : $('editWorkoutType').value).trim();
  editorDraft.focus=$('editWorkoutFocus').value.trim();
- editorDraft.ex=editorDraft.ex.map(x=>[x[0].trim(),x[1].trim()]);
+ editorDraft.ex=editorDraft.ex.map(x=>[x[0].trim(),x[1].trim(),x[2]==null?'':String(x[2]).trim()]);
  if(!validPlan(editorDraft)){ $('editPlanMessage').textContent='Give the workout a name and complete or remove any blank exercise rows.';return}
  const repeat=$('editRepeatWeekly').checked,stamp=iso(selected),p=clonePlan(editorDraft);
  if(repeat){const next={...weeklyPlans,[selected.getDay()]:p};if(!savePlanStore(WEEK_KEY,next))return;weeklyPlans=next;const dates={...datePlans};delete dates[stamp];if(savePlanStore(PLAN_KEY,dates))datePlans=dates;}
@@ -240,10 +241,10 @@ function renderDayDrawer(){
  const r=recovery();
  $('drawerGuidance').textContent=r===null?'No WHOOP recovery score available yet. Choose effort based on readiness and form.':guidance(r);
  const list=$('drawerExercises');list.replaceChildren();
- p.ex.forEach(([exercise,prescription],i)=>{
+ p.ex.forEach(([exercise,prescription,targetWeight],i)=>{
   const row=el('div','drawer-exercise');
   const number=el('span','drawer-exercise-num',String(i+1).padStart(2,'0'));
-  const desc=el('div','');desc.append(el('strong','',exercise),el('small','',prescription));
+  const desc=el('div','');desc.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));
   const btn=el('button','smallbtn '+(doneNames.has(exercise)?'':'btn-primary'),doneNames.has(exercise)?'LOG ANOTHER':'LOG SETS');
   btn.type='button';btn.onclick=()=>openLog(selected,exercise);
   row.append(number,desc,btn);list.append(row);
@@ -263,7 +264,7 @@ $('drawerClose').onclick=closeDayDrawer;$('drawerDone').onclick=closeDayDrawer;
 $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOverlay'))closeDayDrawer()});
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
-function renderAll(){renderCalendar();renderSelected();renderAnalytics();renderDayDrawer()}
+function renderAll(){renderCalendar();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
 function addSet(weight='',reps=''){
 const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),x=el('button','del','×');
 w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
@@ -273,7 +274,7 @@ row.append(n,w,r,x);$('setsList').append(row);
 function openLog(date,exercise){
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
 let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
-if(prev?.sets?.length){for(const s of prev.sets.slice(0,8))addSet(s.weight,s.reps)}else {addSet();addSet();addSet();}
+if(prev?.sets?.length){for(const s of prev.sets.slice(0,8))addSet(s.weight,s.reps)}else {const target=planFor(date).ex.find(x=>x[0]===exercise)?.[2];const weight=target!==''&&target!==undefined&&Number.isFinite(Number(target))?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function closeLog(){$('modalOverlay').classList.add('hidden');if(!drawerOpen)document.body.style.overflow=''}
