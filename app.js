@@ -23,15 +23,15 @@ function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=
 function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));return true}catch{alert('Unable to save workout data in this browser.');return false}}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
 const dateLabel=d=>d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-const recovery=()=>{let v=whoop?.recovery?.score?.recovery_score;return Number.isFinite(+v)?Math.round(+v):null};
+const recovery=()=>{let v=whoop?.recovery?.score?.recovery_score;return v!==null&&v!==undefined&&Number.isFinite(+v)?Math.round(+v):null};
 const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
 const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
 const guidance=r=>r===null?'No recovery score is available. Follow the plan and adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
 function renderWHOOP(){
 const r=recovery(),s=whoop?.sleep?.score?.sleep_performance_percentage,t=whoop?.cycle?.score?.strain;
 $('recoveryMetric').textContent=r===null?'—':r+'%';
-$('sleepMetric').textContent=Number.isFinite(+s)?Math.round(+s)+'%':'—';
-$('strainMetric').textContent=Number.isFinite(+t)?(+t).toFixed(1):'—';
+$('sleepMetric').textContent=s!==null&&s!==undefined&&Number.isFinite(+s)?Math.round(+s)+'%':'—';
+$('strainMetric').textContent=t!==null&&t!==undefined&&Number.isFinite(+t)?(+t).toFixed(1):'—';
 $('recoveryMetric').className='metric recovery-'+recoveryTone(r);
 $('recoveryCaption').textContent=readiness(r);
 $('whoopBadge').textContent=whoop?.connected?'WHOOP CONNECTED':'WHOOP NOT CONNECTED';
