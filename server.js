@@ -3,6 +3,36 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+
+const zlib = require('node:zlib');
+// Native PNG app icons. No additional image dependencies required.
+const iconCache = new Map();
+function appIcon(size){
+ if(iconCache.has(size))return iconCache.get(size);
+ const w=size,h=size,pixels=Buffer.alloc((w*3+1)*h);
+ const rect=(x,y,a,b)=>x>=a[0]&&x<a[2]&&y>=a[1]&&y<a[3];
+ const ring=(x,y)=>rect(x,y,[26,30,102,98])&&!rect(x,y,[35,39,93,89]);
+ for(let py=0;py<h;py++){
+  const row=py*(w*3+1);pixels[row]=0;
+  for(let px=0;px<w;px++){
+   const x=(px+.5)*128/w,y=(py+.5)*128/h;
+   const strap=rect(x,y,[49,7,79,31])||rect(x,y,[49,97,79,121]);
+   const face=ring(x,y);
+   const shaft=rect(x,y,[38,61,90,68]);
+   const plates=rect(x,y,[40,50,47,79])||rect(x,y,[81,50,88,79])||rect(x,y,[31,55,37,74])||rect(x,y,[91,55,97,74]);
+   const white=strap||face||shaft||plates;
+   const off=row+1+px*3;
+   pixels[off]=pixels[off+1]=pixels[off+2]=white?248:8;
+  }
+ }
+ const crcTable=(()=>{let t=[];for(let n=0;n<256;n++){let c=n;for(let i=0;i<8;i++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+ const crc=buf=>{let c=0xffffffff;for(const b of buf)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0};
+ const chunk=(type,data)=>{const kind=Buffer.from(type),length=Buffer.alloc(4),checksum=Buffer.alloc(4);length.writeUInt32BE(data.length);checksum.writeUInt32BE(crc(Buffer.concat([kind,data])));return Buffer.concat([length,kind,data,checksum])};
+ const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(w,0);ihdr.writeUInt32BE(h,4);ihdr[8]=8;ihdr[9]=2;
+ const out=Buffer.concat([Buffer.from('89504e470d0a1a0a','hex'),chunk('IHDR',ihdr),chunk('IDAT',zlib.deflateSync(pixels,{level:9})),chunk('IEND',Buffer.alloc(0))]);
+ iconCache.set(size,out);return out;
+}
+
 const URL_BASE = 'https://api.prod.whoop.com';
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
@@ -119,6 +149,11 @@ const server=http.createServer(async(req,res)=>{
       return send(res,502,{error:'WHOOP did not return metrics. Check scopes and your account connection.'},newCookie?{'Set-Cookie':newCookie}:{});
     const records=results.map(r=>r.status==='fulfilled'?latest(r.value):null);
     return send(res,200,{configured:true,connected:true,recovery:records[0],sleep:records[1],cycle:records[2]},newCookie?{'Set-Cookie':newCookie}:{});
+  }
+  if(req.method==='GET' && (pathname==='/icon-192.png'||pathname==='/icon-512.png')){
+    const size=pathname==='/icon-192.png'?192:512;
+    res.writeHead(200,{'Content-Type':'image/png','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'});
+    return res.end(appIcon(size));
   }
   if(req.method==='GET' && (pathname==='/manifest.webmanifest'||pathname==='/sw.js')){
     const asset=pathname.slice(1);
