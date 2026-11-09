@@ -62,6 +62,7 @@ function planFor(d){
 }
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
 window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
+window.RepTrackSelectedDate=()=>iso(selected);
 
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,timer=null,seconds=120,remaining=120;
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=Array.isArray(x)?x.filter(valid):[]}catch{entries=[]}}
@@ -287,6 +288,16 @@ $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOve
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
 function renderAll(){renderCalendar();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
+window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId)=>{
+ if(!/^\d{4}-\d\d-\d\d$/.test(date)||!exercise||!Number.isFinite(+weight)||+weight<0||!Number.isInteger(+reps)||+reps<1)return false;
+ const id=String(sessionId||'').slice(0,80),existing=entries.find(e=>e.date===date&&e.exercise===exercise&&e.sessionId===id);
+ if(existing){existing.sets.push({weight:+weight,reps:+reps})}
+ else entries.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:String(exercise).slice(0,100),sets:[{weight:+weight,reps:+reps}],sessionId:id,notes:''});
+ if(!save())return false;
+ renderAll();return true;
+};
+window.RepTrackSessionSetCount=(sessionId)=>entries.filter(e=>e.sessionId===sessionId).reduce((n,e)=>n+sets(e).length,0);
+
 function addSet(weight='',reps=''){
 const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),x=el('button','del','×');
 w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
