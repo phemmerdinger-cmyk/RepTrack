@@ -86,11 +86,58 @@ $('overloadNext').textContent=next;
 $('overloadNote').textContent=lastSet?'Optional example target based on your last heaviest set; adjust for recovery, form and exercise. No increase is required.':'Log sets with weights and reps to generate overload insights.';
 const list=$('overloadSessionList');list.replaceChildren();all.slice(-6).reverse().forEach(e=>{const row=dom('div','overload-row'),summary=dom('div');summary.append(dom('strong','',e.date),dom('small','',sets(e).map(s=>s.weight+'×'+s.reps).join(' · ')));row.append(summary,dom('strong','',fmt(metricFor(e,metric))));list.append(row)});
 }
+
+function renderSquatMonth(){
+ const target=$('squatMonthRows'),chart=$('squatPlanChart');
+ if(!target||!chart)return;
+ const plan=window.RepTrackSquatMonth||[];
+ const entries=get();target.replaceChildren();
+ const widths=[245,250,255,260],heights=[230,235,240,245];
+ const width=770,height=205,ns=NS;
+ const svg=svgEl('svg',{viewBox:'0 0 770 205',class:'analytics-svg',role:'img','aria-label':'Four-week back squat target weight progression'});
+ const x=i=>65+i*210,y=w=>169-(w-200)*2.0;
+ [220,240,260].forEach(v=>{svg.append(svgEl('line',{x1:50,y1:y(v),x2:750,y2:y(v),stroke:'#ffffff25','stroke-dasharray':'4 6'}));svg.append(svgEl('text',{x:42,y:y(v)+4,'text-anchor':'end',class:'svg-label'},v+' lb'))});
+ const addLine=(values,color,dash)=>{const path=values.map((v,i)=>(i?'L':'M')+x(i)+','+y(v)).join(' ');svg.append(svgEl('path',{d:path,stroke:color,'stroke-width':3,fill:'none',...(dash?{'stroke-dasharray':'7 5'}:{})}));values.forEach((v,i)=>{const dot=svgEl('circle',{cx:x(i),cy:y(v),r:4,fill:color});dot.append(svgEl('title',{},'Week '+(i+1)+' · '+v+' lb'));svg.append(dot)})};
+ addLine(widths,'#f7f9fd',false);addLine(heights,'#8995a9',true);
+ for(let i=0;i<4;i++)svg.append(svgEl('text',{x:x(i),y:194,'text-anchor':'middle',class:'svg-label'},'WEEK '+(i+1)));
+ chart.replaceChildren(svg);
+ const legend=dom('div','squat-legend');legend.append(dom('span','', '━ Strength · Wednesday'),dom('span','', '┄ Volume · Sunday'));chart.append(legend);
+ const today=iso(new Date());
+ for(const w of plan){
+  const dates=[w.wednesday,w.sunday];
+  const match=(date,name)=>entries.some(e=>e.date===date&&e.exercise===name&&sets(e).length);
+  const wed=match(w.wednesday,'Back Squat'),sun=match(w.sunday,'Back Squat'),heel=match(w.sunday,'Heel-Elevated Squat');
+  const tr=dom('tr');
+  const add=(txt)=>tr.append(dom('td','',txt));
+  add('WEEK '+w.week);
+  const wedCell=dom('td'),wedBtn=dom('button','plan-link',w.heavy+' lb × 6–8 (3 sets)');wedBtn.onclick=()=>goToSquatDay(w.wednesday);wedCell.append(wedBtn,dom('small','',w.wednesday));tr.append(wedCell);
+  const sunCell=dom('td'),sunBtn=dom('button','plan-link',w.volume+' lb × 8–10 (3 sets)');sunBtn.onclick=()=>goToSquatDay(w.sunday);sunCell.append(sunBtn,dom('small','',w.sunday));tr.append(sunCell);
+  const heelCell=dom('td');heelCell.append(dom('strong','',w.heel+' lb × 10–12'),dom('small','','3 sets'));tr.append(heelCell);
+  const status=(wed?'✓ WED ':'')+(sun?'✓ SUN ':'')+(heel?'✓ ACCESSORY':'');
+  add(status.trim()||(today>w.sunday?'NOT LOGGED':'PLANNED'));
+  target.append(tr);
+ }
+}
+function goToSquatDay(stamp){
+ document.querySelector('[data-view="calendar"]')?.click();
+ // The calendar's month controls work across months; open the exact planned date.
+ const date=new Date(stamp+'T12:00:00');
+ $('todayButton')?.click();
+ for(let i=0;i<2;i++){
+ const month=$('monthLabel')?.textContent||'';
+ if(month.includes(date.toLocaleDateString(undefined,{month:'long',year:'numeric'})))break;
+ const thisMonth=new Date(),diff=(date.getFullYear()-thisMonth.getFullYear())*12+date.getMonth()-thisMonth.getMonth();
+ if(diff>0)$('nextMonth')?.click();else if(diff<0)$('prevMonth')?.click();
+ }
+ const tile=[...document.querySelectorAll('#monthGrid .day')].find(b=>b.dataset.date===stamp);
+ tile?.click();
+}
+
 function fillSelect(elm,names){const current=elm.value;elm.replaceChildren();(names.length?names:['No logged exercises']).forEach(n=>{const option=dom('option','',n);option.value=n;elm.append(option)});if(names.includes(current))elm.value=current}
 function render(){
 const names=[...new Set(get().map(e=>e.exercise))].sort();
 fillSelect($('exerciseSelect'),names);fillSelect($('overloadExercise'),names);
-summary();strength();overload();
+summary();strength();overload();renderSquatMonth();
 }
 $('analyticsRange').addEventListener('change',e=>{range=Number(e.target.value);render()});
 document.querySelectorAll('[data-volume-mode]').forEach(b=>b.addEventListener('click',()=>{volumeMode=b.dataset.volumeMode;document.querySelectorAll('[data-volume-mode]').forEach(x=>x.classList.toggle('active',x===b));summary()}));
