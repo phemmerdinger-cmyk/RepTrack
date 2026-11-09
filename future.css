@@ -113,3 +113,18 @@ button{transition:background .22s,border-color .22s,transform .22s,box-shadow .2
 .hero-cta .micro{font-size:9px;color:#adb5c2}
 .hero-future .hero-strip{margin-top:18px}
 @media(max-width:520px){.hero-cta .micro{display:none}.hero-cta{margin-top:13px}.hero-cta button{font-size:10px;padding:9px 12px}.hero-future .hero-strip{margin-top:14px}}
+
+/* Editable workout schedule */
+.schedule-edit-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid #303743}
+.schedule-edit-bar .smallbtn{background:rgba(255,255,255,.06);border:1px solid #576174;color:#e7eaf1}
+.schedule-editor{margin:13px 0 20px;padding:17px;background:linear-gradient(140deg,#212631,#151922);border:1px solid #525d6e;border-radius:13px}
+.schedule-editor .field{color:#b4becc}.schedule-editor input,.schedule-editor select{border:1px solid #535c6b;background:#131821;color:#fff;width:100%;border-radius:8px;padding:10px 11px}
+.schedule-editor .micro{color:#b8c3d2}
+.edit-exercise-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 32px 32px 32px;gap:5px;align-items:center;margin:8px 0}
+.edit-exercise-row input{min-width:0;font-size:12px;padding:10px 7px}
+.edit-exercise-row .smallbtn{padding:7px 2px;height:39px;min-width:0;background:#252b35;border-radius:6px}
+.edit-exercise-row button:disabled{opacity:.35;cursor:default}
+.edit-scope{display:flex;gap:11px;align-items:center;margin-top:18px;font-size:11px;line-height:1.5;color:#bfc9d5}
+.edit-scope input{width:18px;height:18px;min-height:18px;flex:0 0 auto;accent-color:#fff}
+#editPlanMessage:empty{display:none}
+@media(max-width:520px){.schedule-editor{padding:12px}.edit-exercise-row{grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) 27px 27px 27px;gap:3px}.edit-exercise-row input{font-size:11px;padding:8px 4px}.edit-exercise-row .smallbtn{height:36px;font-size:13px}}
