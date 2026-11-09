@@ -1,154 +1,91 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#0b1220">
-<title>RepTrack — Workout Log</title>
-<style>
-:root{color-scheme:dark;--bg:#0b1220;--panel:#141f31;--panel2:#1b2a40;--line:#30405a;--muted:#9aabc3;--text:#f4f7fb;--accent:#6ee7b7;--accent2:#35c795;--danger:#fb7185}*{box-sizing:border-box}body{margin:0;background:linear-gradient(155deg,#0e1b2c,#0b1220 45%);font:15px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:var(--text);min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}header{position:sticky;top:0;z-index:10;background:#0b1220e8;backdrop-filter:blur(15px);border-bottom:1px solid var(--line)}.top{max-width:900px;margin:auto;padding:16px 18px;display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;letter-spacing:-.7px;font-size:22px}.brand span{color:var(--accent)}.sub{font-size:12px;color:var(--muted)}.pill{padding:7px 11px;border-radius:20px;background:#143b36;color:#a7f3d0;font-weight:700;font-size:12px}main{max-width:900px;margin:auto;padding:18px 16px 95px}.hero{padding:23px;border:1px solid #315b55;border-radius:22px;background:linear-gradient(125deg,#183d3b,#17253a 70%);margin-bottom:18px}.hero h1{font-size:26px;letter-spacing:-.7px;margin:0 0 7px}.hero p{margin:0;color:#c2d5db}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.stat{background:#ffffff12;border:1px solid #ffffff1e;border-radius:13px;padding:13px}.stat strong{display:block;font-size:22px}.stat small{color:#becbd8;font-size:11px}.tabs{display:flex;gap:8px;margin:18px 0;overflow:auto}.tabs button{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted);padding:10px 15px;white-space:nowrap;font-weight:700}.tabs button.active{background:var(--accent);border-color:var(--accent);color:#102018}.page{display:none}.page.active{display:block}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:13px}.card h2{margin:0 0 11px;font-size:18px;letter-spacing:-.3px}.card p{color:var(--muted);margin:6px 0}.eyebrow{font-size:12px;text-transform:uppercase;color:var(--accent);font-weight:750;letter-spacing:1px}.day-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}.day-row:last-child{border:0;padding-bottom:0}.day-name{font-weight:750}.desc{font-size:12px;color:var(--muted)}.weight{font-weight:800;text-align:right;white-space:nowrap}.tiny{font-size:12px;color:var(--muted);text-align:right}.today{color:var(--accent)}.fieldgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{display:flex;flex-direction:column;gap:5px;color:#cbd5e1;font-weight:600;font-size:13px}.field.full{grid-column:1/-1}input,select,textarea{width:100%;border:1px solid #455771;background:#0b1524;color:white;border-radius:10px;padding:11px;outline:none;min-height:44px}input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{min-height:65px;resize:vertical}.primary{background:var(--accent);color:#0b261e;border:none;border-radius:11px;padding:12px 16px;font-weight:850}.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:11px;padding:11px 14px;font-weight:700}.danger{background:transparent;color:var(--danger);border:1px solid #703748;border-radius:9px;padding:7px 10px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.set-row{display:grid;grid-template-columns:30px 1fr 1fr 42px;gap:8px;align-items:end;margin:8px 0}.set-row .field{font-size:12px}.set-num{color:var(--muted);align-self:center;font-weight:750}.set-row input{min-width:0}.icon-btn{background:var(--panel2);border:1px solid var(--line);color:var(--danger);border-radius:9px;height:44px}.history-item{border-bottom:1px solid var(--line);padding:13px 0;display:flex;justify-content:space-between;gap:12px}.history-item:last-child{border:0}.history-item strong{font-size:15px}.history-item small{display:block;color:var(--muted);margin-top:4px}.empty{padding:28px 10px;text-align:center;color:var(--muted)}.tip{font-size:12px;color:var(--muted);margin-top:12px}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0c2821;padding:12px 18px;border-radius:12px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}.toast.show{opacity:1}.small{font-size:12px;color:var(--muted)}.chart{display:flex;align-items:end;gap:6px;height:150px;border-bottom:1px solid var(--line);padding-top:14px}.barwrap{flex:1;display:flex;flex-direction:column;justify-content:end;align-items:center;height:100%;min-width:0}.bar{width:min(34px,80%);background:linear-gradient(#6ee7b7,#288a70);border-radius:5px 5px 0 0;min-height:3px}.barlabel{font-size:10px;color:var(--muted);white-space:nowrap;margin-top:4px}.note{background:#132f32;border:1px solid #31675a;border-radius:12px;padding:12px;color:#b5e5d3;font-size:13px}.row-between{display:flex;justify-content:space-between;align-items:center;gap:10px}footer{font-size:12px;text-align:center;color:var(--muted);padding:18px}@media(min-width:700px){.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two>.card{height:fit-content}.hero h1{font-size:30px}}@media(max-width:390px){.card{padding:14px}.stat{padding:9px}.stat strong{font-size:19px}}
-
-/* Responsive app + dashboard redesign */
-:root{--bg:#080d16;--panel:#121d2b;--panel2:#1d2c3d;--line:#2a3a4e;--muted:#9cacc0;--accent:#c6fb6d;--accent2:#a9e852}
-body{background:radial-gradient(ellipse at 90% 0%,#1b3028 0%,transparent 32%),#080d16}
-header{background:#0b121bea}.brand{font-size:26px}.brand span{color:var(--accent)}.pill{background:#2f4026;color:var(--accent)}
-.hero{background:linear-gradient(120deg,#1c302c,#132237 68%);border-color:#375244;min-height:195px;padding:27px}.hero h1{font-size:clamp(27px,3vw,42px)}.hero p{max-width:580px}
-.card{box-shadow:0 8px 28px #00000015}.eyebrow{color:var(--accent)}.tabs button.active{background:var(--accent);border-color:var(--accent);color:#162010}.primary{background:var(--accent);color:#162010}.today{color:var(--accent)}.note{background:#172c27;border-color:#375645;color:#cbe9d2}.bar{background:linear-gradient(#c6fb6d,#5c9850)}
-.whoop-head{background:linear-gradient(125deg,#192b25,#172536)}.whoop-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.metric-card strong{display:block;font-size:38px;line-height:1.3;margin:11px 0}.metric-card small{color:var(--muted)}.status-line{display:flex;align-items:center;gap:10px;margin:18px 0 4px}.connection-dot{width:10px;height:10px;background:#808e9c;border-radius:50%}.connection-dot.connected{background:var(--accent);box-shadow:0 0 14px var(--accent)}.doc-link{color:var(--accent);font-weight:750}
-@media(min-width:1000px){header{position:fixed;top:0;left:0;bottom:0;width:246px;border-bottom:0;border-right:1px solid var(--line)}.top{display:block;padding:38px 25px}.top .pill{display:inline-block;margin-top:25px}.top .sub{margin-top:6px}main{max-width:none;margin-left:246px;padding:38px clamp(26px,4vw,72px) 40px}.tabs{position:fixed;z-index:11;top:150px;left:12px;width:222px;display:flex;flex-direction:column;gap:6px;overflow:visible}.tabs button{text-align:left;background:transparent;border-color:transparent;padding:15px 17px;border-radius:13px}.tabs button.active{background:#273d2b;color:var(--accent);border-color:#354e31}.hero{max-width:1400px}.page{max-width:1400px}.two{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px}.card{padding:25px;border-radius:20px}.hero{padding:32px}.stats{max-width:650px;gap:15px}.stat{padding:16px}.stat strong{font-size:30px}#log>.card{max-width:950px}#history{display:none}#history.active{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:18px;align-items:start}#progress{display:none}#progress.active{display:grid;grid-template-columns:1fr 1fr;gap:16px}#progress .card:first-child{grid-column:1/-1}.whoop-metrics{gap:18px}}
-@media(max-width:999px){main{max-width:760px;padding:15px 15px 100px}.top{padding:13px 17px}.hero{padding:21px}.tabs{position:fixed;bottom:0;left:0;right:0;z-index:14;margin:0;padding:8px 6px max(9px,env(safe-area-inset-bottom));background:#0e1724ef;backdrop-filter:blur(16px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;overflow:visible}.tabs button{padding:9px 1px;font-size:10px;white-space:normal;min-height:50px;border-radius:10px}.toast{bottom:90px}.hero h1{font-size:27px}.stat strong{font-size:24px}}
-@media(max-width:520px){.two{display:block}.whoop-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.metric-card{padding:12px 8px}.metric-card strong{font-size:26px}.metric-card small{font-size:10px}.hero{margin-bottom:12px}.stats{gap:6px}.stat{padding:10px 7px}.stat strong{font-size:21px}.stat small{font-size:10px}.set-row{grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) 36px;gap:5px}.set-row input{padding:9px 5px}.icon-btn{width:36px}}
-
-.perf-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}
-.perf-stat,.perf-panel{background:linear-gradient(125deg,#162535,#101a28);border:1px solid var(--line);border-radius:17px;padding:19px}
-.perf-stat small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:700}
-.perf-stat strong{display:block;font-size:clamp(20px,2.4vw,32px);margin:8px 0}
-.perf-panels{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:15px}
-.perf-panel h3{margin:0 0 6px;font-size:17px}.perf-panel p{font-size:12px;color:var(--muted);margin:0 0 14px}
-.perf-bars{display:flex;gap:5px;align-items:flex-end;height:160px;border-bottom:1px solid var(--line)}
-.perf-bars div{flex:1;min-width:0;border-radius:5px 5px 0 0;background:linear-gradient(#bdff78,#4f9874)}
-.perf-row{display:flex;justify-content:space-between;gap:15px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
-.perf-row:last-child{border:0}.perf-row span{font-size:12px;color:var(--muted)}.perf-track{height:6px;background:#283a49;border-radius:10px;overflow:hidden;margin-top:6px}.perf-track div{background:var(--accent);height:100%}
-.perf-control{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.perf-control select{flex:1;min-width:130px;width:auto}
-.perf-clock{font:800 43px ui-monospace,monospace;color:var(--accent);margin:12px 0}.perf-btns{display:flex;gap:8px;flex-wrap:wrap}
-@media(max-width:750px){.perf-grid{grid-template-columns:repeat(2,1fr);gap:8px}.perf-stat,.perf-panel{padding:14px}.perf-panels{grid-template-columns:1fr}}
-</style></head>
-<body><header><div class="top"><div><div class="brand">Rep<span>Track</span></div><div class="sub">Training dashboard</div></div><span class="pill">REPTRACK</span></div></header>
-<main><section class="hero"><div class="eyebrow" id="todayLabel">Your training</div><h1>Training overview</h1><p>Workouts, strength, and recovery in one place.</p><div class="stats"><div class="stat"><strong id="workoutCount">0</strong><small>Sessions logged</small></div><div class="stat"><strong id="weeklyCount">0</strong><small>Last 7 days</small></div><div class="stat"><strong id="bestSquat">—</strong><small>Best squat (lbs)</small></div></div></section>
-<nav class="tabs" aria-label="Sections"><button data-tab="today" class="active">Today's plan</button><button data-tab="log">Log workout</button><button data-tab="history">History</button><button data-tab="progress">Progress</button><button data-tab="whoop">WHOOP</button></nav>
-<section id="today" class="page active">
-<div class="perf-grid">
-<div class="perf-stat"><small>7-day volume</small><strong id="pVolume">0</strong><small>lb-reps</small></div>
-<div class="perf-stat"><small>Working sets</small><strong id="pSets">0</strong><small>Last 7 days</small></div>
-<div class="perf-stat"><small>Estimated squat max</small><strong id="pMax">—</strong><small>lbs · estimated 1RM</small></div>
-<div class="perf-stat"><small>Training streak</small><strong id="pStreak">0</strong><small>Days</small></div></div>
-<div class="perf-panels">
-<div class="perf-panel"><h3>Volume trend</h3><p>Last 14 days of training</p><div id="pVolumeChart"></div></div>
-<div class="perf-panel"><h3>Exercise breakdown</h3><p>Most trained exercises over the last 30 days</p><div id="pBreakdown"></div></div></div>
-<div class="perf-panels">
-<div class="perf-panel"><h3>Strength progression</h3><p>Track performance by exercise and metric</p><div class="perf-control"><select id="pExercise" aria-label="Exercise"></select><select id="pMetric" aria-label="Metric"><option value="estimate">Estimated 1RM</option><option value="weight">Top weight</option><option value="volume">Volume</option></select></div><div id="pStrengthChart"></div><div id="pStrengthSummary"></div></div>
-<div class="perf-panel"><h3>Rest timer</h3><p>Track rest time between sets</p><div class="perf-clock" id="pClock">02:00</div><div class="perf-btns"><button class="secondary" data-rest="60">1 min</button><button class="secondary" data-rest="120">2 min</button><button class="secondary" data-rest="180">3 min</button><button class="primary" id="pStart">Start</button><button class="secondary" id="pReset">Reset</button></div></div></div><div class="two"><div class="card"><div class="eyebrow">Today</div><h2 id="todaysWorkout">Your workout</h2><p id="todayDetails"></p><button class="primary" id="startToday">Log today's workout</button><div class="tip">Weights are targets, not mandatory. Adjust if your form or recovery needs it.</div></div><div class="card"><h2>Weekly squat plan</h2><div id="plan"></div></div></div><div class="note">Growth tip: Hard squat days are Monday, Wednesday, and Friday. Keep bodyweight days easy, and rest if soreness or fatigue affects your form. Add other leg movements based on your recovery.</div></section>
-<section id="log" class="page"><div class="card"><h2>Log a workout</h2><form id="logForm"><div class="fieldgrid"><label class="field">Date<input id="date" type="date" required></label><label class="field">Exercise<select id="exercise"><option>Back Squat</option><option>Heel-Elevated Squat</option><option>Bodyweight Squat</option><option>Leg Press</option><option>Leg Extension</option><option>Romanian Deadlift</option><option>Leg Curl</option><option>Bulgarian Split Squat</option><option>Hip Thrust</option><option>Calf Raise</option><option>Bench Press</option><option>Deadlift</option><option>Other</option></select></label><label class="field full" id="customField" hidden>Exercise name<input id="customExercise" placeholder="Type your exercise"></label></div><div class="row-between" style="margin-top:19px"><h2 style="margin:0">Working sets</h2><button type="button" class="secondary" id="addSet">+ Add set</button></div><div id="sets"></div><label class="field" style="margin-top:14px">Notes (optional)<textarea id="notes" placeholder="How did it feel? Depth, tempo, effort..."></textarea></label><div class="actions"><button class="primary" type="submit">Save workout</button><button class="secondary" type="button" id="clearForm">Clear</button></div></form></div></section>
-<section id="history" class="page"><div class="card"><div class="row-between"><h2>Workout history</h2><button class="secondary" id="exportData">Export backup</button></div><div id="historyList"></div></div><div class="card"><h2>Restore backup</h2><p class="small">Import a RepTrack JSON backup if you switch devices or browsers.</p><input type="file" accept="application/json,.json" id="importData"></div></section>
-<section id="progress" class="page"><div class="card"><h2>Squat progress</h2><p class="small">Your best loaded squat set (by weight) in each of your last 8 recorded squat sessions.</p><div id="chart" class="chart"></div><div id="chartEmpty" class="empty" hidden>Log a few squat workouts to see your progress.</div></div><div class="card"><h2>Your milestones</h2><div id="milestones"></div></div><div class="card"><h2>Data & privacy</h2><p class="small">Your records are saved in this browser on this device, not on a server. Clearing browser data or using a different device can remove or hide them. Export backups regularly.</p><button class="danger" id="deleteAll">Delete all workout data</button></div></section>
-<section id="whoop" class="page"><div class="card whoop-head"><div class="eyebrow">Wearable integration</div><h2>WHOOP × RepTrack</h2><p>Bring your recovery, sleep, and strain next to your workout log. WHOOP authorization is optional and requires a hosted server.</p><div class="status-line"><span id="whoopDot" class="connection-dot"></span><strong id="whoopStatus">Not connected</strong></div><div class="actions"><a id="connectWhoop" class="primary" href="/api/whoop/login" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;min-height:44px">Connect WHOOP</a><button id="refreshWhoop" class="secondary" type="button" hidden>Refresh data</button><button id="disconnectWhoop" class="secondary" type="button" hidden>Disconnect</button></div><p id="whoopHelp" class="small">This standalone file works for workout tracking. To activate WHOOP, host it with the included server setup.</p></div><div class="whoop-metrics"><div class="card metric-card"><div class="eyebrow">Recovery</div><strong id="whoopRecovery">—</strong><small>WHOOP recovery score</small></div><div class="card metric-card"><div class="eyebrow">Sleep</div><strong id="whoopSleep">—</strong><small>Sleep performance</small></div><div class="card metric-card"><div class="eyebrow">Day strain</div><strong id="whoopStrain">—</strong><small>Latest cycle strain</small></div></div><div class="card"><h2>How connecting works</h2><p class="small">1. Register an application in WHOOP's Developer Dashboard. 2. Deploy RepTrack's backend to an HTTPS host with your WHOOP client ID, secret, and redirect URL. 3. Open this website on that host and tap Connect WHOOP to authorize access. Never paste a client secret into this page.</p><a class="doc-link" href="https://developer.whoop.com/docs/developing/getting-started/" target="_blank" rel="noopener noreferrer">WHOOP setup documentation ↗</a></div></section><footer>RepTrack • Train with intention</footer></main><div id="toast" class="toast" role="status"></div>
-<script>
-(()=>{'use strict';const KEY='reptrack-workouts-v1';const plan=[{day:'Sunday',title:'Rest',weight:'—',sets:'Recovery',exercise:null},{day:'Monday',title:'Heavy back squat',weight:'245 lbs',sets:'3 × 6–8',exercise:'Back Squat',pounds:245,reps:7,count:3},{day:'Tuesday',title:'Easy bodyweight squat',weight:'Bodyweight',sets:'2 × 15',exercise:'Bodyweight Squat',pounds:0,reps:15,count:2},{day:'Wednesday',title:'Heel-elevated squat',weight:'215 lbs',sets:'3 × 10–12',exercise:'Heel-Elevated Squat',pounds:215,reps:10,count:3},{day:'Thursday',title:'Easy bodyweight squat',weight:'Bodyweight',sets:'2 × 15',exercise:'Bodyweight Squat',pounds:0,reps:15,count:2},{day:'Friday',title:'Back squat',weight:'230 lbs',sets:'3 × 8–10',exercise:'Back Squat',pounds:230,reps:8,count:3},{day:'Saturday',title:'Easy bodyweight squat',weight:'Bodyweight',sets:'2 × 15',exercise:'Bodyweight Squat',pounds:0,reps:15,count:2}];const $=id=>document.getElementById(id);const localDate=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};const niceDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})};let entries=[];try{const parsed=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(parsed))entries=parsed.filter(valid)}catch{}function valid(x){return x&&typeof x.id==='string'&&/^\d{4}-\d\d-\d\d$/.test(x.date)&&typeof x.exercise==='string'&&Array.isArray(x.sets)&&x.sets.every(s=>Number.isFinite(Number(s.weight))&&Number.isFinite(Number(s.reps))&&Number(s.weight)>=0&&Number(s.reps)>0)}function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));return true}catch{alert('Unable to save. Your browser may be out of storage or private browsing is enabled.');return false}}function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2300)}function changeTab(tab){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===tab));window.scrollTo({top:0,behavior:'smooth'})}document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>changeTab(b.dataset.tab));function addSet(weight='',reps=''){const n=$('sets').children.length+1;const r=document.createElement('div');r.className='set-row';r.innerHTML='<div class="set-num">'+n+'</div><label class="field">Weight (lbs)<input class="setWeight" type="number" inputmode="decimal" min="0" step="0.5" required></label><label class="field">Reps<input class="setReps" type="number" inputmode="numeric" min="1" max="1000" step="1" required></label><button type="button" class="icon-btn" aria-label="Remove set">×</button>';r.querySelector('.setWeight').value=weight;r.querySelector('.setReps').value=reps;r.querySelector('button').onclick=()=>{if($('sets').children.length===1){toast('Keep at least one set');return}r.remove();[...$('sets').children].forEach((e,i)=>e.querySelector('.set-num').textContent=i+1)};$('sets').appendChild(r)}function resetForm(){ $('logForm').reset();$('date').value=localDate();$('customField').hidden=true;$('sets').innerHTML='';for(let i=0;i<3;i++)addSet()}$('exercise').addEventListener('change',()=>{$('customField').hidden=$('exercise').value!=='Other'});$('addSet').onclick=()=>addSet();$('clearForm').onclick=resetForm;function prefill(p){resetForm();$('exercise').value=p.exercise;$('sets').innerHTML='';for(let i=0;i<p.count;i++)addSet(p.pounds,p.reps);changeTab('log')}function renderPlan(){const day=new Date().getDay(),p=plan[day];$('todayLabel').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});$('todaysWorkout').textContent=p.title;$('todayDetails').textContent=p.exercise?p.weight+' • '+p.sets:'Take a recovery day. Your next squat day is Monday.';$('startToday').textContent=p.exercise?'Log today’s workout':'Log another exercise';$('startToday').onclick=()=>p.exercise?prefill(p):changeTab('log');$('plan').innerHTML='';plan.slice(1).concat(plan[0]).forEach((d)=>{const row=document.createElement('div');row.className='day-row';row.innerHTML='<div><div class="day-name '+(d.day===p.day?'today':'')+'">'+d.day+(d.day===p.day?' • Today':'')+'</div><div class="desc">'+d.title+'</div></div><div><div class="weight">'+d.weight+'</div><div class="tiny">'+d.sets+'</div></div>';$('plan').append(row)})}function renderStats(){$('workoutCount').textContent=entries.length;const cutoff=new Date();cutoff.setHours(0,0,0,0);cutoff.setDate(cutoff.getDate()-6);const cut=[cutoff.getFullYear(),String(cutoff.getMonth()+1).padStart(2,'0'),String(cutoff.getDate()).padStart(2,'0')].join('-');$('weeklyCount').textContent=entries.filter(e=>e.date>=cut&&e.date<=localDate()).length;const squat=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(e=>e.sets.map(s=>Number(s.weight)));$('bestSquat').textContent=squat.length?Math.max(...squat):'—'}function renderHistory(){const list=$('historyList');list.innerHTML='';if(!entries.length){list.innerHTML='<div class="empty">No workouts yet. Log your first session!</div>';return}entries.slice().sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created).forEach(e=>{const row=document.createElement('div');row.className='history-item';const left=document.createElement('div');const title=document.createElement('strong');title.textContent=e.exercise;const summary=document.createElement('small');summary.textContent=niceDate(e.date)+' • '+e.sets.length+' sets • '+e.sets.map(s=>s.weight+'×'+s.reps).join(', ');left.append(title,summary);if(e.notes){const note=document.createElement('small');note.textContent=e.notes;left.append(note)}const del=document.createElement('button');del.className='danger';del.textContent='Delete';del.onclick=()=>{if(confirm('Delete this workout?')){entries=entries.filter(x=>x.id!==e.id);if(save()){render();toast('Workout deleted')}}};row.append(left,del);list.append(row)})}function renderProgress(){const squat=entries.filter(e=>/squat/i.test(e.exercise)&&e.sets.some(s=>Number(s.weight)>0)).slice().sort((a,b)=>a.date.localeCompare(b.date)||a.created-b.created);const latest=squat.slice(-8);$('chart').innerHTML='';$('chartEmpty').hidden=latest.length>0;$('chart').hidden=latest.length===0;if(latest.length){const values=latest.map(e=>Math.max(...e.sets.map(s=>Number(s.weight))));const max=Math.max(...values,1);latest.forEach((e,i)=>{const w=document.createElement('div');w.className='barwrap';const num=document.createElement('span');num.className='small';num.textContent=values[i];const bar=document.createElement('div');bar.className='bar';bar.style.height=(values[i]/max*102)+'px';const label=document.createElement('span');label.className='barlabel';label.textContent=e.date.slice(5);w.append(num,bar,label);$('chart').append(w)})}const target=$('milestones');target.innerHTML='';const checks=[['First workout logged',entries.length>=1],['5 sessions logged',entries.length>=5],['10 sessions logged',entries.length>=10],['20 sessions logged',entries.length>=20],['Squat 275 lbs logged',squat.some(e=>e.sets.some(s=>Number(s.weight)>=275))]];checks.forEach(([t,yes])=>{const d=document.createElement('div');d.className='day-row';d.innerHTML='<span>'+t+'</span><strong style="color:'+(yes?'var(--accent)':'var(--muted)')+'">'+(yes?'✓ Complete':'Not yet')+'</strong>';target.append(d)})}function render(){renderStats();renderHistory();renderProgress()}$('logForm').onsubmit=ev=>{ev.preventDefault();const exercise=$('exercise').value==='Other'?$('customExercise').value.trim():$('exercise').value;if(!exercise){toast('Enter an exercise name');return}const sets=[...$('sets').children].map(r=>({weight:Number(r.querySelector('.setWeight').value),reps:Number(r.querySelector('.setReps').value)}));if(!sets.length||sets.some(s=>!Number.isFinite(s.weight)||!Number.isInteger(s.reps)||s.weight<0||s.reps<1)){toast('Check your sets');return}const entry={id:String(Date.now())+'-'+Math.random().toString(36).slice(2),created:Date.now(),date:$('date').value,exercise,sets,notes:$('notes').value.trim().slice(0,1000)};entries.push(entry);if(save()){render();resetForm();changeTab('history');toast('Workout saved!')}};$('exportData').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reptrack-backup-'+localDate()+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)};$('importData').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data)||!data.every(valid))throw Error('Invalid backup');if(!confirm('Import '+data.length+' workouts? Entries will be merged with your existing history.'))return;const ids=new Set(entries.map(x=>x.id));let added=0;for(const x of data){if(!ids.has(x.id)){entries.push(x);ids.add(x.id);added++}}if(save()){render();toast(added+' workouts imported')}}catch{alert('That file is not a valid RepTrack backup.')}finally{e.target.value=''}};$('deleteAll').onclick=()=>{if(confirm('Permanently delete ALL saved workout history on this device?')&&confirm('Are you sure? This cannot be undone unless you have a backup.')){entries=[];if(save()){render();toast('All workout data deleted')}}};resetForm();renderPlan();render()})();
-</script>
-<script>
-(() => {
-const $=id=>document.getElementById(id);
-const status=$('whoopStatus'),help=$('whoopHelp'),connect=$('connectWhoop'),refresh=$('refreshWhoop'),disconnect=$('disconnectWhoop');
-const show=(ok,msg)=>{status.textContent=ok?'Connected':msg||'Not connected';$('whoopDot').classList.toggle('connected',ok);connect.hidden=ok;refresh.hidden=!ok;disconnect.hidden=!ok;};
-const metric=(obj,paths)=>{for(const path of paths){let v=obj;for(const part of path.split('.'))v=v?.[part];if(v!==undefined&&v!==null)return v;}return null;};
-async function sync(){try{const r=await fetch('/api/whoop/summary',{credentials:'same-origin'});if(!r.ok)throw Error('Unable to load WHOOP information');const d=await r.json();if(!d.connected){show(false,'Not connected');help.textContent=d.configured?'Connect your WHOOP account to see your data.':'WHOOP needs server configuration. See the included setup instructions.';return;}show(true);help.textContent='WHOOP data is loaded from your authorized account. Your workout entries remain local to this browser.';
-const recovery=metric(d.recovery||{},['score.recovery_score']);const sleep=metric(d.sleep||{},['score.sleep_performance_percentage']);const strain=metric(d.cycle||{},['score.strain']);
-$('whoopRecovery').textContent=recovery==null?'—':Math.round(recovery)+'%';$('whoopSleep').textContent=sleep==null?'—':Math.round(sleep)+'%';$('whoopStrain').textContent=strain==null?'—':Number(strain).toFixed(1);
-}catch(e){show(false,'Not connected');help.textContent='Live WHOOP syncing is not active in this standalone file. Deploy the provided backend to connect.';}}
-/* Connect WHOOP uses a direct link: works without JavaScript. */
-refresh.addEventListener('click',sync);disconnect.addEventListener('click',async()=>{await fetch('/api/whoop/logout',{method:'POST'});$('whoopRecovery').textContent=$('whoopSleep').textContent=$('whoopStrain').textContent='—';sync();});
-sync();
-})();
-</script>
-
-<script>
-(function(){
-'use strict';
-const el=id=>document.getElementById(id), key='reptrack-workouts-v1';
-const iso=n=>{const d=new Date();d.setDate(d.getDate()-n);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
-const read=()=>{try{const d=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(d)?d.filter(e=>e&&typeof e.date==='string'&&typeof e.exercise==='string'&&Array.isArray(e.sets)):[]}catch{return []}};
-const sets=e=>e.sets.filter(s=>Number.isFinite(+s.weight)&&Number.isFinite(+s.reps));
-const vol=e=>sets(e).reduce((n,s)=>n+(+s.weight)*(+s.reps),0);
-const max=s=>(+s.weight)*(1+Math.min(12,+s.reps)/30);
-const fmt=n=>Math.round(n).toLocaleString('en-US');
-function bars(target,values){
- if(!values.length||!values.some(v=>v.v>0)){target.textContent='Log workouts to see performance trends.';return}
- const mx=Math.max(1,...values.map(v=>v.v));
- const chart=document.createElement('div');chart.className='perf-bars';
- values.forEach(v=>{const b=document.createElement('div');b.style.height=Math.max(3,v.v/mx*100)+'%';b.title=v.day+': '+fmt(v.v);chart.append(b)});
- target.replaceChildren(chart);
- const info=document.createElement('div');info.className='row-between small';const a=document.createElement('span'),b=document.createElement('span');a.textContent=values[0].day;b.textContent=values[values.length-1].day;info.append(a,b);target.append(info);
-}
-function strength(entries){
- const metric=el('pMetric').value,ex=el('pExercise').value;
- const rows=entries.filter(e=>e.exercise===ex).sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
- const values=rows.map(e=>({day:e.date.slice(5),v:metric==='volume'?vol(e):Math.max(0,...sets(e).map(s=>metric==='weight'?+s.weight:max(s)))}));
- bars(el('pStrengthChart'),values);
- el('pStrengthSummary').textContent=values.length?'Best: '+fmt(Math.max(...values.map(v=>v.v)))+' | Latest: '+fmt(values[values.length-1].v):'';
-}
-function render(){
- const entries=read(),recent=entries.filter(e=>e.date>=iso(6)&&e.date<=iso());
- el('pVolume').textContent=fmt(recent.reduce((n,e)=>n+vol(e),0));
- el('pSets').textContent=fmt(recent.reduce((n,e)=>n+sets(e).length,0));
- const squats=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(sets).filter(s=>+s.weight>0);
- el('pMax').textContent=squats.length?fmt(Math.max(...squats.map(max))):'—';
- const dates=new Set(entries.map(e=>e.date));let count=0,i=dates.has(iso(0))?0:1;while(i<366&&dates.has(iso(i))){count++;i++}el('pStreak').textContent=count;
- bars(el('pVolumeChart'),Array.from({length:14},(_,i)=>{const day=iso(13-i);return{day:day.slice(5),v:entries.filter(e=>e.date===day).reduce((n,e)=>n+vol(e),0)}}));
- const groups=new Map();entries.filter(e=>e.date>=iso(29)).forEach(e=>groups.set(e.exercise,(groups.get(e.exercise)||0)+sets(e).length));
- const ordered=[...groups].sort((a,b)=>b[1]-a[1]).slice(0,6);const mx=Math.max(1,...ordered.map(x=>x[1]));const breakdown=el('pBreakdown');breakdown.replaceChildren();
- if(!ordered.length)breakdown.textContent='No logged exercises this month.';
- ordered.forEach(([name,n])=>{const row=document.createElement('div');row.className='perf-row';const left=document.createElement('div');left.style.flex='1';const label=document.createElement('strong');label.textContent=name;const track=document.createElement('div');track.className='perf-track';const fill=document.createElement('div');fill.style.width=(n/mx*100)+'%';track.append(fill);left.append(label,track);const right=document.createElement('span');right.textContent=n+' sets';row.append(left,right);breakdown.append(row)});
- const select=el('pExercise'),previous=select.value,names=[...new Set(entries.map(e=>e.exercise))].sort();select.replaceChildren();
- (names.length?names:['No workouts yet']).forEach(name=>{const o=document.createElement('option');o.textContent=name;select.append(o)});if(names.includes(previous))select.value=previous;strength(entries);
-}
-el('pExercise').onchange=()=>strength(read());el('pMetric').onchange=()=>strength(read());
-document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',render));
-window.addEventListener('storage',render);
-new MutationObserver(render).observe(el('historyList'),{childList:true});
-let remaining=120,running=false,timer=null;
-function draw(){el('pClock').textContent=String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');el('pStart').textContent=running?'Pause':'Start'}
-function stop(){clearInterval(timer);timer=null;running=false;draw()}
-document.querySelectorAll('[data-rest]').forEach(b=>b.onclick=()=>{stop();remaining=+b.dataset.rest;draw()});
-el('pStart').onclick=()=>{if(running){stop();return}running=true;draw();timer=setInterval(()=>{remaining=Math.max(0,remaining-1);if(!remaining){stop();if(navigator.vibrate)navigator.vibrate(150)}draw()},1000)};
-el('pReset').onclick=()=>{stop();remaining=120;draw()};
-render();draw();
-})();
-</script>
-
-<script>
-/* Safe WHOOP setup feedback: no secret values are returned or displayed */
-(()=>{
- const button=document.getElementById('connectWhoop');
- const help=document.getElementById('whoopHelp');
- if(!button||!help)return;
- let status=null;
- async function check(){
-   try{
-     const r=await fetch('/api/whoop/status',{cache:'no-store'});
-     if(!r.ok)throw Error('Unable to check configuration');
-     status=await r.json();
-     if(!status.configured){
-       help.textContent='WHOOP setup is incomplete. Missing Render environment settings: '+(status.missing||[]).join(', ')+'. Add them in Render → Environment, then deploy.';
-     }else if(window.location.hash.includes('whoop-setup-required')){
-       help.textContent='WHOOP setup was not ready on the previous attempt. Configuration is now present; try Connect WHOOP again.';
-     }else{
-       help.textContent='WHOOP server settings are present. If authorization fails, verify the Redirect URI in WHOOP Developer matches '+status.callback+' and that the app allows the selected scopes.';
-     }
-   }catch{
-     status=null;
-     help.textContent='Unable to check the WHOOP setup status. Refresh the page and try again.';
-   }
- }
-
- check();
-})();
-</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070707">
+<meta name="description" content="RepTrack fitness intelligence: training calendar, WHOOP recovery and strength analytics.">
+<title>RepTrack | Fitness Intelligence</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div><div class="wordmark"><span class="mark">R</span>REPTRACK</div><div class="brand-sub">FITNESS INTELLIGENCE</div></div>
+<nav class="side-nav" aria-label="Main navigation">
+<button class="nav-item active" data-view="calendar">CALENDAR</button>
+<button class="nav-item" data-view="analytics">ANALYTICS</button>
+<button class="nav-item" data-view="settings">SETTINGS</button>
+</nav>
+<div class="side-bottom"><div class="conn"><span class="dot" id="connDot"></span><span id="connText">Checking WHOOP</span></div></div>
+</aside>
+<main class="content">
+<div class="topline"><span class="micro">REPTRACK / PERFORMANCE</span><div class="top-actions"><span id="whoopBadge" class="live-pill">SYNCING WHOOP</span><button id="refreshButton" class="smallbtn btn-ghost" type="button">REFRESH</button></div></div>
+<section data-page="calendar">
+<div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>CALENDAR</h1></div><p>Training schedule, recovery and performance in one view.</p></div>
+<div class="intel-grid">
+<div class="intel-card"><div class="micro">WHOOP RECOVERY</div><div id="recoveryMetric" class="metric mono">—</div><div id="recoveryCaption" class="caption">SYNCING</div></div>
+<div class="intel-card"><div class="micro">SLEEP PERFORMANCE</div><div id="sleepMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
+<div class="intel-card"><div class="micro">DAY STRAIN</div><div id="strainMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
+<div class="intel-card"><div class="micro">7-DAY TRAINING VOLUME</div><div id="volumeMetric" class="metric mono">0</div><div class="caption">LB × REPS</div></div>
+</div>
+<div class="section">
+<div class="section-title"><h2>MONTHLY TRAINING</h2><div class="calendar-controls"><button id="prevMonth" type="button" aria-label="Previous month">‹</button><span class="month" id="monthLabel"></span><button id="nextMonth" type="button" aria-label="Next month">›</button><button id="todayButton" class="smallbtn btn-primary" type="button">TODAY</button></div></div>
+<div class="weekdays"><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div><div class="weekday">SUN</div></div>
+<div id="monthGrid" class="month-grid"></div>
+</div>
+<div class="main-split">
+<div class="section">
+<div class="workout-head"><div><div class="micro" id="dayHeading">TODAY</div><div id="dayWorkout" class="workout-title">PUSH</div><div id="dayFocus" class="muted"></div></div><div class="micro" id="selectedRecovery"></div></div>
+<div class="insight"><strong>TRAINING INTELLIGENCE</strong><span id="advice">Loading recovery data.</span></div>
+<div class="section-title"><h3>WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
+<div id="exerciseList"></div>
+<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button></div>
+<div id="dayHistory" style="margin-top:20px"></div>
+</div>
+<div class="section">
+<h3>RECOVERY GUIDANCE</h3>
+<p class="muted" id="guidanceText">Checking WHOOP recovery.</p>
+<div class="insight"><strong>HOW TO USE THIS</strong><span>Recovery is one input, not a guarantee of performance. Adjust training based on soreness, sleep, effort and form.</span></div>
+<h3>REST TIMER</h3><div class="perf-clock" id="clock">02:00</div>
+<div class="perf-btns"><button data-timer="60" type="button">1 MIN</button><button data-timer="120" type="button">2 MIN</button><button data-timer="180" type="button">3 MIN</button><button id="timerStart" class="btn-primary" type="button">START</button><button id="timerReset" type="button">RESET</button></div>
+</div>
+</div>
+<div class="analytics-grid">
+<div class="section"><div class="section-title"><h3>VOLUME / LAST 14 DAYS</h3></div><div id="volumeChart"></div></div>
+<div class="section"><div class="section-title"><h3>TRAINING DISTRIBUTION</h3></div><div id="muscleWork"></div></div>
+</div>
+</section>
+<section class="hidden" data-page="analytics">
+<div class="page-head"><div><div class="micro">PERFORMANCE</div><h1>ANALYTICS</h1></div><p>Track your training load and estimated strength across logged exercises.</p></div>
+<div class="intel-grid">
+<div class="intel-card"><div class="micro">WORKING SETS / 7D</div><div id="setsMetric" class="metric mono">0</div></div>
+<div class="intel-card"><div class="micro">LOGGED EXERCISES / 7D</div><div id="sessionMetric" class="metric mono">0</div></div>
+<div class="intel-card"><div class="micro">ESTIMATED SQUAT MAX</div><div id="squatMetric" class="metric mono">—</div></div>
+<div class="intel-card"><div class="micro">RECOVERY</div><div class="metric">WHOOP</div><div class="caption">In calendar overview</div></div>
+</div>
+<div class="section"><h2>STRENGTH PROGRESSION</h2><p class="muted">Estimated one-rep max from logged sets (Epley formula). Use estimates for trends, not as exact maxes.</p><label class="field">EXERCISE<select id="exerciseSelect"></select></label><div style="margin-top:22px" id="strengthChart"></div></div>
+<div class="analytics-grid"><div class="section"><h3>14-DAY VOLUME</h3><div id="analyticsVolume"></div><p class="muted">See detailed daily volume on the calendar homepage.</p></div><div class="section"><h3>TRAINING MIX</h3><p class="muted">Exercise distribution is integrated into your calendar overview.</p></div></div>
+</section>
+<section class="hidden" data-page="settings">
+<div class="page-head"><div><div class="micro">ACCOUNT & DATA</div><h1>SETTINGS</h1></div></div>
+<div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Checking connection.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="btn-primary smallbtn hidden" style="text-decoration:none">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button><button type="button" onclick="location.reload()">RELOAD METRICS</button></div></div>
+<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
+<div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
+</section>
+</main></div>
+<div id="modalOverlay" class="overlay hidden" role="presentation">
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+<div class="modal-head"><div><div class="micro">WORKOUT LOGGER</div><h2 id="modalTitle">LOG WORKOUT</h2></div><button id="closeModal" type="button" aria-label="Close">✕</button></div>
+<form id="logForm">
+<div class="fields"><label class="field">DATE<input id="logDate" type="date" required></label><label class="field">EXERCISE<input id="logExercise" maxlength="100" required></label></div>
+<div class="section-title" style="margin-top:22px"><h3>WORKING SETS</h3><button id="addSet" type="button">+ ADD SET</button></div>
+<div class="sethead"><span>SET</span><span>WEIGHT / LB</span><span>REPS</span><span></span></div>
+<div id="setsList"></div>
+<label class="field" style="margin-top:14px">NOTES<textarea id="logNotes" maxlength="1000" placeholder="Effort, form, tempo, etc."></textarea></label>
+<div class="action-row"><button class="btn-primary" type="submit">SAVE WORKOUT</button><button id="cancelModal" type="button">CANCEL</button></div>
+</form></div></div>
+<script src="/app.js" defer></script>
 </body></html>
