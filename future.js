@@ -52,8 +52,10 @@ const caution=low?'Low recovery detected: consider rest or lower effort.':mid?'M
 return{...targets,base,r,name,weekSets,caution};
 }
 function updateTodayHero(){
- const today=new Date(),day=today.getDay(),name=['LEGS','PUSH','PULL','LEGS','CHEST','BACK','SHOULDERS + ARMS'][day];
- const focus=['Lower body · posterior','Chest · Shoulders · Triceps','Back · Biceps','Lower body · quad','Chest','Back','Shoulders · Biceps · Triceps'][day];
+ const today=new Date(),day=today.getDay(),stamp=iso(today);
+ const planned=typeof window.RepTrackPlanForDate==='function'?window.RepTrackPlanForDate(stamp):null;
+ const name=planned?.title||['LEGS','PUSH','PULL','LEGS','CHEST','BACK','SHOULDERS + ARMS'][day];
+ const focus=planned?.focus||['Lower body · posterior','Chest · Shoulders · Triceps','Back · Biceps','Lower body · quad','Chest','Back','Shoulders · Biceps · Triceps'][day];
  if(el('heroToday'))el('heroToday').textContent=today.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
  if(el('heroWorkout'))el('heroWorkout').textContent=name+' DAY';
  if(el('heroFocus'))el('heroFocus').textContent=focus+'  ·  Select a date in the calendar to open your workout and log sets.';
@@ -130,7 +132,8 @@ const metric=el('recoveryMetric');if(metric){const ob=new MutationObserver(()=>{
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',refresh));
 el('logForm')?.addEventListener('submit',()=>setTimeout(refresh,80));
 el('restoreInput')?.addEventListener('change',()=>setTimeout(refresh,600));
-window.addEventListener('storage',e=>{if(e.key==='reptrack-workouts-v1')refresh()});
+window.addEventListener('storage',e=>{if(e.key==='reptrack-workouts-v1'||e.key==='reptrack-day-plans-v1'||e.key==='reptrack-weekday-plans-v1')refresh()});
+window.addEventListener('reptrack-plan-changed',refresh);
 document.querySelectorAll('.day').forEach(b=>b.addEventListener('click',refresh));
 el('monthGrid')?.addEventListener('click',e=>{if(e.target.closest('.day'))setTimeout(refresh,20)});
 el('refreshButton')?.addEventListener('click',()=>{lastSynced=new Date();setTimeout(refresh,400)});
