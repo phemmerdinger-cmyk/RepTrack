@@ -97,6 +97,10 @@ const server=http.createServer(async(req,res)=>{
     const records=results.map(r=>r.status==='fulfilled'?latest(r.value):null);
     return send(res,200,{configured:true,connected:true,recovery:records[0],sleep:records[1],cycle:records[2]},newCookie?{'Set-Cookie':newCookie}:{});
   }
+  if(pathname==='/privacy' || pathname==='/privacy.html'){
+    res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+    return fs.createReadStream(path.join(__dirname,'privacy.html')).pipe(res);
+  }
   if(pathname==='/'||pathname==='/index.html'){
     res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
     return fs.createReadStream(path.join(__dirname,'index.html')).pipe(res);
