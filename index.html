@@ -122,4 +122,37 @@ el('pReset').onclick=()=>{stop();remaining=120;draw()};
 render();draw();
 })();
 </script>
+
+<script>
+/* Safe WHOOP setup feedback: no secret values are returned or displayed */
+(()=>{
+ const button=document.getElementById('connectWhoop');
+ const help=document.getElementById('whoopHelp');
+ if(!button||!help)return;
+ let status=null;
+ async function check(){
+   try{
+     const r=await fetch('/api/whoop/status',{cache:'no-store'});
+     if(!r.ok)throw Error('Unable to check configuration');
+     status=await r.json();
+     if(!status.configured){
+       help.textContent='WHOOP setup is incomplete. Missing Render environment settings: '+(status.missing||[]).join(', ')+'. Add them in Render → Environment, then deploy.';
+     }else if(window.location.hash.includes('whoop-setup-required')){
+       help.textContent='WHOOP setup was not ready on the previous attempt. Configuration is now present; try Connect WHOOP again.';
+     }else{
+       help.textContent='WHOOP server settings are present. If authorization fails, verify the Redirect URI in WHOOP Developer matches '+status.callback+' and that the app allows the selected scopes.';
+     }
+   }catch{
+     status=null;
+     help.textContent='Unable to check the WHOOP setup status. Refresh the page and try again.';
+   }
+ }
+ button.addEventListener('click',function(e){
+   if(status && !status.configured){
+     e.preventDefault();e.stopImmediatePropagation();check();return;
+   }
+ },true);
+ check();
+})();
+</script>
 </body></html>
