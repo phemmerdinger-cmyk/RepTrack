@@ -18,6 +18,29 @@ const plan=[
 {title:'BACK',focus:'Lats · Upper Back',ex:[['Pull Up','3 × 6–10'],['Chest-Supported Row','3 × 8–12'],['Lat Pulldown','3 × 10–12'],['Seated Cable Row','3 × 8–12'],['Straight-Arm Pulldown','3 × 12–15']]},
 {title:'SHOULDERS + ARMS',focus:'Delts · Biceps · Triceps',ex:[['Shoulder Press','3 × 6–10'],['Lateral Raise','4 × 12–20'],['Rear Delt Fly','3 × 12–15'],['Biceps Curl','3 × 8–12'],['Triceps Extension','3 × 10–15']]}
 ];
+
+// Calendar plans are stored separately from logged workouts so changing a plan never edits logged sets.
+const PLAN_KEY='reptrack-day-plans-v1',WEEK_KEY='reptrack-weekday-plans-v1';
+function readPlanStore(key){try{const data=JSON.parse(localStorage.getItem(key)||'{}');return data&&typeof data==='object'&&!Array.isArray(data)?data:{}}catch{return {}}}
+let datePlans=readPlanStore(PLAN_KEY),weeklyPlans=readPlanStore(WEEK_KEY);
+const clonePlan=p=>({title:p.title,focus:p.focus,ex:p.ex.map(x=>[x[0],x[1]])});
+const validPlan=p=>p&&typeof p.title==='string'&&p.title.length>0&&p.title.length<=50&&typeof p.focus==='string'&&p.focus.length<=120&&Array.isArray(p.ex)&&p.ex.length<=30&&p.ex.every(x=>Array.isArray(x)&&x.length===2&&typeof x[0]==='string'&&x[0].trim().length>0&&x[0].length<=100&&typeof x[1]==='string'&&x[1].length<=60);
+function presetFor(type,day){
+ if(type==='REST')return{title:'REST',focus:'Rest and recovery',ex:[['Walking','20–30 minutes'],['Mobility','10–15 minutes']]};
+ if(type==='CUSTOM')return{title:'CUSTOM',focus:'Personal session',ex:[['New Exercise','3 × 8–12']]};
+ const candidate=plan.find(p=>p.title===type&&(type!=='LEGS'||day===0?p===plan[0]:p===plan[3]))||plan.find(p=>p.title===type);
+ return clonePlan(candidate||plan[day]);
+}
+function planFor(d){
+ const stamp=iso(d),day=d.getDay();
+ // Today (November 9, 2026) was a legs session; only that date changes, not every Monday.
+ const fallback=stamp==='2026-11-09'?presetFor('LEGS',0):clonePlan(plan[day]);
+ const p=datePlans[stamp]||weeklyPlans[day]||fallback;
+ return validPlan(p)?clonePlan(p):fallback;
+}
+function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
+window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
+
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,timer=null,seconds=120,remaining=120;
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=Array.isArray(x)?x.filter(valid):[]}catch{entries=[]}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));return true}catch{alert('Unable to save workout data in this browser.');return false}}
@@ -41,7 +64,7 @@ $('connText').textContent=whoop?.connected?'WHOOP linked':'WHOOP not linked';
 $('connectLink').classList.toggle('hidden',!!whoop?.connected);
 $('disconnectButton').classList.toggle('hidden',!whoop?.connected);
 $('guidanceText').textContent=guidance(r);
-const day=plan[selected.getDay()];
+const day=planFor(selected);
 $('selectedRecovery').textContent=day.title==='RECOVERY'?'RECOVERY / MOBILITY':readiness(r);
 $('selectedRecovery').className='micro recovery-'+recoveryTone(r);
 $('advice').textContent=guidance(r);
@@ -58,20 +81,20 @@ const grid=$('monthGrid');grid.replaceChildren();
 const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMonth()+1,0).getDate(),today=iso(new Date());
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
-const d=plus(month,n-first),stamp=iso(d),p=plan[d.getDay()];
+const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
 const completed=entries.some(e=>e.date===stamp);
 const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',completed?'● LOGGED':p.title==='RECOVERY'?'REST DAY':'PLANNED'));
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
 grid.append(tile);
 }
 }
 function renderSelected(){
-const p=plan[selected.getDay()],key=iso(selected),done=entries.filter(e=>e.date===key);
+const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key);
 $('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=p.title;$('dayFocus').textContent=p.focus;
 $('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
 $('exerciseList').replaceChildren();
@@ -84,7 +107,7 @@ if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
 done.forEach(e=>{const line=el('div','perf-row'),detail=el('div');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const del=el('button','smallbtn btn-ghost','REMOVE');del.onclick=()=>{if(confirm('Remove logged exercise?')){entries=entries.filter(x=>x.id!==e.id);if(save())renderAll()}};line.append(detail,del);$('dayHistory').append(line)});
 }else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
-$('dayStart').onclick=()=>openLog(selected,p.title==='RECOVERY'?'Walking':p.ex[0][0]);
+$('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
 renderWHOOP();
 }
 function renderAnalytics(){
@@ -121,25 +144,99 @@ wrap.append(chart,el('div','muted','Top estimated 1RM: '+fmt(high)+' lbs · Eple
 }
 
 // Interactive workout detail panel: every calendar tile opens the specific day's plan.
+
+let editorOpen=false,editorDraft=null,editorOriginalType=null;
+const planType=p=>['PUSH','PULL','LEGS','CHEST','BACK','SHOULDERS + ARMS','REST'].includes(p.title)?p.title:'CUSTOM';
+function buildExerciseEditor(){
+ const box=$('editExerciseRows');box.replaceChildren();
+ editorDraft.ex.forEach(([name,sets],index)=>{
+  const row=el('div','edit-exercise-row'),n=el('input'),s=el('input'),up=el('button','smallbtn','↑'),down=el('button','smallbtn','↓'),del=el('button','smallbtn','×');
+  n.value=name;n.maxLength=100;n.placeholder='Exercise name';n.setAttribute('aria-label','Exercise name');
+  s.value=sets;s.maxLength=60;s.placeholder='Sets × reps';s.setAttribute('aria-label','Target sets and reps');
+  n.oninput=()=>editorDraft.ex[index][0]=n.value;s.oninput=()=>editorDraft.ex[index][1]=s.value;
+  up.type=down.type=del.type='button';up.title='Move exercise up';down.title='Move exercise down';del.title='Remove exercise';up.disabled=index===0;down.disabled=index===editorDraft.ex.length-1;
+  up.onclick=()=>{[editorDraft.ex[index-1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index-1]];buildExerciseEditor()};
+  down.onclick=()=>{[editorDraft.ex[index+1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index+1]];buildExerciseEditor()};
+  del.onclick=()=>{editorDraft.ex.splice(index,1);buildExerciseEditor()};
+  row.append(n,s,up,down,del);box.append(row);
+ });
+}
+function openPlanEditor(){
+ editorOpen=true;editorDraft=planFor(selected);
+ editorOriginalType=planType(editorDraft);
+ $('editWorkoutType').value=editorOriginalType;
+ $('editWorkoutName').value=editorDraft.title;
+ $('editWorkoutFocus').value=editorDraft.focus;
+ $('editRepeatWeekly').checked=false;
+ $('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'long'});
+ $('editPlanMessage').textContent='';
+ $('drawerPlanEditor').classList.remove('hidden');
+ buildExerciseEditor();toggleCustomName();
+ $('drawerEditPlan').textContent='✕ CLOSE EDITOR';
+}
+function closePlanEditor(){
+ editorOpen=false;editorDraft=null;$('drawerPlanEditor').classList.add('hidden');$('drawerEditPlan').textContent='✎ EDIT DAY PLAN';
+}
+function toggleCustomName(){
+ const other=$('editWorkoutType').value==='CUSTOM';
+ $('customWorkoutWrap').classList.toggle('hidden',!other);
+}
+$('drawerEditPlan').onclick=()=>editorOpen?closePlanEditor():openPlanEditor();
+$('editWorkoutType').onchange=()=>{
+ if(!editorOpen)return;
+ const type=$('editWorkoutType').value;
+ editorDraft=presetFor(type,selected.getDay());
+ $('editWorkoutName').value=editorDraft.title;
+ $('editWorkoutFocus').value=editorDraft.focus;
+ toggleCustomName();buildExerciseEditor();
+};
+$('editAddExercise').onclick=()=>{
+ if(!editorOpen||editorDraft.ex.length>=30)return;
+ editorDraft.ex.push(['','3 × 8–12']);buildExerciseEditor();
+ const last=$('editExerciseRows').lastElementChild;last?.querySelector('input')?.focus();
+};
+$('editCancelPlan').onclick=closePlanEditor;
+$('editSavePlan').onclick=()=>{
+ if(!editorOpen)return;
+ editorDraft.title=($('editWorkoutType').value==='CUSTOM' ? $('editWorkoutName').value : $('editWorkoutType').value).trim();
+ editorDraft.focus=$('editWorkoutFocus').value.trim();
+ editorDraft.ex=editorDraft.ex.map(x=>[x[0].trim(),x[1].trim()]);
+ if(!validPlan(editorDraft)){ $('editPlanMessage').textContent='Give the workout a name and complete or remove any blank exercise rows.';return}
+ const repeat=$('editRepeatWeekly').checked,stamp=iso(selected),p=clonePlan(editorDraft);
+ if(repeat){const next={...weeklyPlans,[selected.getDay()]:p};if(!savePlanStore(WEEK_KEY,next))return;weeklyPlans=next;const dates={...datePlans};delete dates[stamp];if(savePlanStore(PLAN_KEY,dates))datePlans=dates;}
+ else{const next={...datePlans,[stamp]:p};if(!savePlanStore(PLAN_KEY,next))return;datePlans=next}
+ closePlanEditor();renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'));
+};
+$('editResetPlan').onclick=()=>{
+ if(!confirm('Reset the selected day to the normal schedule? Your logged sets will stay saved.'))return;
+ const stamp=iso(selected),d={...datePlans};delete d[stamp];
+ if(!savePlanStore(PLAN_KEY,d))return;datePlans=d;
+ const w={...weeklyPlans};delete w[selected.getDay()];
+ if($('editRepeatWeekly').checked){if(!savePlanStore(WEEK_KEY,w))return;weeklyPlans=w}
+ // A one-off override for November 9 can be reset to the weekly default rather than its initial legs fallback.
+ if(stamp==='2026-11-09'&&!weeklyPlans[selected.getDay()]){const n={...datePlans,[stamp]:clonePlan(plan[selected.getDay()])};if(savePlanStore(PLAN_KEY,n))datePlans=n}
+ closePlanEditor();renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'));
+};
+
 let drawerOpen=false;
 function openDayDrawer(date){
  selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);drawerOpen=true;
- renderDayDrawer();$('dayDrawerOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
+ closePlanEditor();renderDayDrawer();$('dayDrawerOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
  $('drawerClose').focus();
 }
 function closeDayDrawer(){
- drawerOpen=false;$('dayDrawerOverlay').classList.add('hidden');
+ drawerOpen=false;closePlanEditor();$('dayDrawerOverlay').classList.add('hidden');
  if($('modalOverlay').classList.contains('hidden'))document.body.style.overflow='';
 }
 function renderDayDrawer(){
  if(!drawerOpen)return;
- const p=plan[selected.getDay()],date=iso(selected),logged=entries.filter(e=>e.date===date),doneNames=new Set(logged.map(e=>e.exercise));
+ const p=planFor(selected),date=iso(selected),logged=entries.filter(e=>e.date===date),doneNames=new Set(logged.map(e=>e.exercise));
  $('drawerDate').textContent=dateLabel(selected).toUpperCase();
  $('drawerWorkout').textContent=p.title;
  $('drawerFocus').textContent=p.focus;
  const plannedDone=p.ex.filter(([ex])=>doneNames.has(ex)).length;
  $('drawerCount').textContent=plannedDone+' OF '+p.ex.length+' PLANNED EXERCISES LOGGED';
- $('drawerMeterFill').style.width=(plannedDone/p.ex.length*100)+'%';
+ $('drawerMeterFill').style.width=(p.ex.length?plannedDone/p.ex.length*100:0)+'%';
  const r=recovery();
  $('drawerGuidance').textContent=r===null?'No WHOOP recovery score available yet. Choose effort based on readiness and form.':guidance(r);
  const list=$('drawerExercises');list.replaceChildren();
@@ -205,7 +302,7 @@ const navButtons=[...document.querySelectorAll('[data-view]')];
 function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 const hash=location.hash.replace('#','');if(['calendar','analytics'].includes(hash))switchView(hash);
-window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}});
+window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}});
 load();renderAll();paintTimer();syncWHOOP();
 // Refresh WHOOP readings automatically while the dashboard is open; this is polling, not continuous streaming.
 setInterval(()=>{if(!document.hidden)syncWHOOP()},5*60*1000);
