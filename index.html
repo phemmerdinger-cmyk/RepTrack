@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#070707">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RepTrack">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="description" content="RepTrack fitness intelligence: training calendar, WHOOP recovery and strength analytics.">
 <title>RepTrack | Training Command Center</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -11,6 +16,7 @@
 <link rel="stylesheet" href="/app.css">
 <link rel="stylesheet" href="/future.css">
 <link rel="stylesheet" href="/analytics.css">
+<link rel="stylesheet" href="/workout.css">
 </head>
 <body>
 <div class="app">
@@ -20,12 +26,13 @@
 <button class="nav-item active" data-view="calendar">CALENDAR</button>
 <button class="nav-item" data-view="analytics">ANALYTICS</button>
 <button class="nav-item" data-view="overload">PROGRESSIVE OVERLOAD</button>
+<button class="nav-item" data-view="workout">WORKOUT</button>
 
 </nav>
 <div class="side-bottom"><div class="conn"><span class="dot" id="connDot"></span><span id="connText">Checking WHOOP</span></div></div>
 </aside>
 <main class="content">
-<div class="topline"><span class="micro">REPTRACK / PERFORMANCE</span><div class="top-actions"><span id="whoopBadge" class="live-pill">SYNCING WHOOP</span><button id="refreshButton" class="smallbtn btn-ghost" type="button">REFRESH</button></div></div>
+<div class="topline"><span class="micro">REPTRACK / PERFORMANCE</span><div class="top-actions"><button id="installApp" class="smallbtn btn-ghost" type="button">INSTALL APP</button><span id="whoopBadge" class="live-pill">SYNCING WHOOP</span><button id="refreshButton" class="smallbtn btn-ghost" type="button">REFRESH</button></div></div>
 <section data-page="calendar">
 <div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>CALENDAR</h1></div><p>Training schedule, recovery and performance in one view.</p></div>
 <div class="intel-grid">
@@ -45,7 +52,7 @@
 <div class="insight"><strong>TRAINING INTELLIGENCE</strong><span id="advice">Loading recovery data.</span></div>
 <div class="section-title"><h3>WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
-<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button></div>
+<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">▶ START WORKOUT</button></div>
 <div id="dayHistory" style="margin-top:20px"></div>
 </div>
 <div class="section">
@@ -109,6 +116,31 @@
 
 <div class="section overload-help"><div class="micro">HOW TO TRACK PROGRESS</div><p>Log sets on any calendar day. When you return here, select the exercise and chart metric you want to compare. A heavier weight, an extra rep at the same weight, or more quality work can all indicate progression. Target suggestions are optional and should be adapted to recovery and technique.</p><button type="button" class="btn-primary" id="overloadOpenCalendar">OPEN WORKOUT CALENDAR ↗</button></div>
 </section>
+<section data-page="workout" class="hidden">
+<div class="page-head"><div><div class="micro">PERSONAL PERFORMANCE SESSION</div><h1>WORKOUT MODE</h1></div><p>Track your exercises and rest while WHOOP recovery and strain stay alongside your training.</p></div>
+<div id="workoutIdle" class="section workout-idle">
+<span class="future-pill">REPTRACK LIVE TRAINING</span><h2>Start stronger.</h2><p>Select your scheduled workout or choose any calendar day. Weight and rep targets carry into a distraction-free workout session.</p>
+<div class="idle-preview"><div class="micro" id="idleWorkoutDate">TODAY</div><strong id="idleWorkoutTitle">TODAY'S WORKOUT</strong><div id="idleWorkoutFocus" class="muted"></div></div>
+<button id="workoutBegin" class="btn-primary workout-big-btn" type="button">▶ START WORKOUT</button><p class="muted" style="font-size:11px">RepTrack sessions do not start or stop a native WHOOP activity.</p>
+</div>
+<div id="workoutActive" class="hidden">
+<div class="session-hero">
+<div><div class="micro" id="activeWorkoutDate">SESSION IN PROGRESS</div><h2 id="activeWorkoutName">WORKOUT</h2><div id="activeWorkoutFocus" class="muted"></div></div>
+<div class="session-elapsed"><span class="micro">ELAPSED TIME</span><strong id="workoutElapsed">00:00:00</strong></div></div>
+<div class="session-metrics">
+<div><span class="micro">WHOOP RECOVERY</span><strong id="workoutRecovery">—</strong><small id="workoutRecoveryLabel">SYNCING</small></div>
+<div><span class="micro">WHOOP DAY STRAIN</span><strong id="workoutStrain">—</strong><small>PERIODIC UPDATE</small></div>
+<div><span class="micro">SETS RECORDED</span><strong id="workoutSets">0</strong><small>YOUR REPTRACK LOG</small></div>
+<div><span class="micro">WORKOUT VOLUME</span><strong id="workoutVolume">0</strong><small>LB × REPS</small></div></div>
+<div class="workout-layout">
+<div class="section"><div class="section-title"><div><div class="micro">LIVE WORKOUT PLAN</div><h2>EXERCISES & SETS</h2></div><button id="workoutAddExercise" class="smallbtn" type="button">+ ADD EXERCISE</button></div>
+<div id="workoutExerciseList"></div><div class="session-actions"><button id="workoutFinish" class="btn-primary" type="button">✓ FINISH WORKOUT</button><button id="workoutPause" type="button">PAUSE TIMER</button></div></div>
+<div class="session-tools">
+<div class="section rest-station"><span class="micro">REST INTERVAL</span><div id="workoutRestClock" class="rest-readout">02:00</div><div class="rest-quick"><button type="button" data-workout-rest="60">1 MIN</button><button type="button" data-workout-rest="90">90 SEC</button><button type="button" data-workout-rest="120">2 MIN</button><button type="button" data-workout-rest="180">3 MIN</button></div><div class="action-row"><button id="workoutRestToggle" class="btn-primary" type="button">START REST</button><button id="workoutRestReset" type="button">RESET</button></div></div>
+<div class="section"><div class="micro">TRAINING GUIDANCE</div><p id="workoutWhoopInsight" class="session-guidance">Your WHOOP recovery will inform the session.</p><div id="workoutSyncStatus" class="chart-sub">WHOOP values refresh periodically, not as a live heart-rate stream.</div><a href="https://app.whoop.com/" target="_blank" rel="noopener" class="whoop-external">OPEN WHOOP ↗</a></div>
+</div></div></div>
+<div id="workoutComplete" class="section workout-complete hidden"><span class="future-pill">SESSION COMPLETED</span><h2>Workout complete.</h2><p id="workoutSummary">Your work has been saved.</p><button id="workoutCompleteClose" class="btn-primary" type="button">BACK TO CALENDAR</button></div>
+</section>
 </main></div>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
@@ -128,6 +160,7 @@
 <div class="drawer-note" id="drawerGuidance"></div>
 <div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
 <div class="micro" style="margin:20px 0 10px">LOGGED FOR THIS DAY</div><div id="drawerLogged"></div>
+<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">▶ START THIS WORKOUT</button></div>
 <div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ ADD EXERCISE</button><button id="drawerDone" type="button">DONE</button></div>
 </div></div>
 <div id="modalOverlay" class="overlay hidden" role="presentation">
@@ -144,4 +177,5 @@
 <script src="/app.js" defer></script>
 <script src="/future.js" defer></script>
 <script src="/analytics.js" defer></script>
+<script src="/workout.js" defer></script>
 </body></html>
