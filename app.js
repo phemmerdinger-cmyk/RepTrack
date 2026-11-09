@@ -296,7 +296,15 @@ row.append(n,w,r,x);$('setsList').append(row);
 function openLog(date,exercise){
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
 let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
-if(prev?.sets?.length){for(const s of prev.sets.slice(0,8))addSet(s.weight,s.reps)}else {const target=planFor(date).ex.find(x=>x[0]===exercise)?.[2];const weight=target!==''&&target!==undefined&&Number.isFinite(Number(target))?target:'';addSet(weight);addSet(weight);addSet(weight);}
+const planned=planFor(date).ex.find(x=>x[0]===exercise);
+const target=planned?.[2];
+const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(Number(target));
+const squatWeek=squatMonth.some(x=>x.wednesday===iso(date)||x.sunday===iso(date));
+if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
+ const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
+ for(let i=0;i<3;i++)addSet(target,repTarget);
+}else if(prev?.sets?.length){for(const item of prev.sets.slice(0,8))addSet(item.weight,item.reps)}
+else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function closeLog(){$('modalOverlay').classList.add('hidden');if(!drawerOpen)document.body.style.overflow=''}
