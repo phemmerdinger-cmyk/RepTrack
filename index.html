@@ -10,6 +10,7 @@
 <link rel="apple-touch-icon" href="/favicon.svg">
 <link rel="stylesheet" href="/app.css">
 <link rel="stylesheet" href="/future.css">
+<link rel="stylesheet" href="/analytics.css">
 </head>
 <body>
 <div class="app">
@@ -67,8 +68,19 @@
 <div class="intel-card"><div class="micro">ESTIMATED SQUAT MAX</div><div id="squatMetric" class="metric mono">—</div></div>
 <div class="intel-card"><div class="micro">RECOVERY</div><div class="metric">WHOOP</div><div class="caption">In calendar overview</div></div>
 </div>
-<div class="section"><h2>STRENGTH PROGRESSION</h2><p class="muted">Estimated one-rep max from logged sets (Epley formula). Use estimates for trends, not as exact maxes.</p><label class="field">EXERCISE<select id="exerciseSelect"></select></label><div style="margin-top:22px" id="strengthChart"></div></div>
-<div class="analytics-grid"><div class="section"><h3>14-DAY VOLUME</h3><div id="analyticsVolume"></div><p class="muted">See detailed daily volume on the calendar homepage.</p></div><div class="section"><h3>TRAINING MIX</h3><p class="muted">Exercise distribution is integrated into your calendar overview.</p></div></div>
+<div class="analytics-toolbar"><div><div class="micro">DATA-DRIVEN PERFORMANCE</div><h2>TRAINING ANALYTICS</h2></div><div class="analytics-toolbar-controls"><label class="micro" for="analyticsRange">TIMEFRAME</label><select id="analyticsRange"><option value="30">30 DAYS</option><option value="60">60 DAYS</option><option value="90">90 DAYS</option><option value="180">180 DAYS</option></select></div></div>
+<div class="analytics-stats">
+<div><span class="micro">TOTAL VOLUME</span><strong id="analysisVolume">—</strong><small>WEIGHT × REPS / LB</small></div>
+<div><span class="micro">TRAINING SESSIONS</span><strong id="analysisSessions">—</strong><small>UNIQUE LOGGED DAYS</small></div>
+<div><span class="micro">SETS COMPLETED</span><strong id="analysisSets">—</strong><small>WORKING SETS</small></div>
+<div><span class="micro">VOLUME TREND</span><strong id="analysisChange">—</strong><small>VS PREVIOUS PERIOD</small></div></div>
+<div class="analytics-chart-grid">
+<section class="section analytics-chart-card wide"><div class="section-title"><div><div class="micro">01 / TRAINING LOAD</div><h3>VOLUME OVER TIME</h3></div><div class="analytics-toggle" id="analysisVolumeMode"><button type="button" data-volume-mode="volume" class="active">VOLUME</button><button type="button" data-volume-mode="sets">SETS</button></div></div><div id="analysisVolumeChart" class="chart-host"></div><div class="chart-sub" id="analysisVolumeNote">Based on your logged workouts.</div></section>
+<section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">02 / STRENGTH TRACKING</div><h3>EXERCISE PROGRESSION</h3></div></div><label class="field">EXERCISE<select id="exerciseSelect"></select></label><div class="analytics-toggle" id="analysisStrengthMode"><button type="button" class="active" data-strength-mode="estimate">EST. 1RM</button><button type="button" data-strength-mode="weight">TOP WEIGHT</button><button type="button" data-strength-mode="volume">VOLUME</button></div><div id="strengthChart" class="chart-host"></div><div class="chart-sub" id="analysisStrengthNote">Estimated 1RM is a formula-based trend, not a tested maximum.</div></section>
+<section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">03 / WORKOUT DISTRIBUTION</div><h3>TRAINING SPLIT</h3></div></div><div id="analysisDistribution" class="chart-host"></div></section>
+<section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">04 / CONSISTENCY</div><h3>WEEKLY SETS</h3></div></div><div id="analysisWeeklySets" class="chart-host"></div></section>
+<section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">05 / SESSION QUALITY</div><h3>SESSION VOLUME</h3></div></div><div id="analysisSessionsChart" class="chart-host"></div></section>
+</div>
 <div class="section" id="dataAndConnection" style="margin-top:20px">
 <details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
 <div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Checking connection.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="btn-primary smallbtn hidden" style="text-decoration:none">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button><button type="button" onclick="location.reload()">RELOAD METRICS</button></div></div>
@@ -110,4 +122,5 @@
 </form></div></div>
 <script src="/app.js" defer></script>
 <script src="/future.js" defer></script>
+<script src="/analytics.js" defer></script>
 </body></html>
