@@ -302,7 +302,7 @@ document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterva
 const navButtons=[...document.querySelectorAll('[data-view]')];
 function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-const hash=location.hash.replace('#','');if(['calendar','analytics'].includes(hash))switchView(hash);
+const hash=location.hash.replace('#','');if(['calendar','analytics','overload'].includes(hash))switchView(hash);
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}});
 load();renderAll();paintTimer();syncWHOOP();
 // Refresh WHOOP readings automatically while the dashboard is open; this is polling, not continuous streaming.
