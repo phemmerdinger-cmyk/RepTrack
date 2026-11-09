@@ -107,3 +107,9 @@ button{transition:background .22s,border-color .22s,transform .22s,box-shadow .2
 .utility-inner .section{box-shadow:none;background:#ffffff05}
 @media(max-width:820px){.hero-future .hero-left{max-width:80%}.hero-future .hero-left h1#heroWorkout{font-size:clamp(39px,8vw,65px)}}
 @media(max-width:520px){.hero-future .hero-left{max-width:100%}.hero-future .hero-left h1#heroWorkout{font-size:clamp(36px,9vw,54px);max-width:300px}.hero-future #heroFocus{max-width:265px}.hero-day{margin-top:16px}.day-drawer{width:100%;padding:22px 17px}.utility-details summary{flex-wrap:wrap}.utility-details summary span{flex:1 0 100%}}
+
+.hero-cta{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-top:17px}
+.hero-cta button{font-size:11px;letter-spacing:.06em;padding:11px 15px}
+.hero-cta .micro{font-size:9px;color:#adb5c2}
+.hero-future .hero-strip{margin-top:18px}
+@media(max-width:520px){.hero-cta .micro{display:none}.hero-cta{margin-top:13px}.hero-cta button{font-size:10px;padding:9px 12px}.hero-future .hero-strip{margin-top:14px}}
