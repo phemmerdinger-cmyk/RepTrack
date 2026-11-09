@@ -22,7 +22,7 @@ let graphMode='volume',lastSynced=null,calendarMode='month';
 function makeHero(){
 const calendar=$('[data-page="calendar"]');if(!calendar)return;
 const hero=node('div','hero-future fade-up');
-hero.innerHTML='<div class="hero-left"><span class="future-pill"><span class="live-indicator"></span> PERFORMANCE SYSTEM / V2</span><h1>Training,<br><span>reimagined.</span></h1><p>A live training command center. Real recovery inputs, actionable sessions, and your entire progression in one system.</p><div class="hero-strip"><span class="hero-meta">CYCLE <strong>7-DAY ROTATION</strong></span><span class="hero-meta">DATA <strong id="heroData">SYNCING</strong></span><span class="hero-meta">MODE <strong id="heroMode">ADAPTIVE</strong></span></div></div><div class="hero-orbit" aria-hidden="true"><span class="orbit-point"></span><div class="orbit-core"><strong id="orbitValue">—</strong><small>RECOVERY</small></div></div>';
+hero.innerHTML='<div class="hero-left"><span class="future-pill"><span class="live-indicator"></span> TODAY’S TRAINING / LIVE</span><div id="heroToday" class="hero-day">TODAY</div><h1 id="heroWorkout">YOUR WORKOUT</h1><p id="heroFocus">Your training schedule at a glance. Tap a calendar day to log exercises.</p><div class="hero-strip"><span class="hero-meta">CYCLE <strong>7-DAY ROTATION</strong></span><span class="hero-meta">DATA <strong id="heroData">SYNCING</strong></span><span class="hero-meta">MODE <strong id="heroMode">ADAPTIVE</strong></span></div></div><div class="hero-orbit" aria-hidden="true"><span class="orbit-point"></span><div class="orbit-core"><strong id="orbitValue">—</strong><small>RECOVERY</small></div></div>';
 const head=calendar.querySelector('.page-head');head?.after(hero);
 }
 function makeAdaptive(){
@@ -49,6 +49,13 @@ const base=model==='auto'?(low?'recovery':mid?'hypertrophy':'strength'):model;
 const targets={strength:{label:'PROGRESSIVE LOAD',sets:isLegs?'12–17':'14–19',intensity:'RPE 7–8',rest:'2–3 MIN'},hypertrophy:{label:'CONTROLLED VOLUME',sets:'13–18',intensity:'RPE 6–8',rest:'90–150 SEC'},recovery:{label:'REDUCED LOAD',sets:'6–10',intensity:'RPE 5–6',rest:'AS NEEDED'}}[base];
 const caution=low?'Low recovery detected: consider rest or lower effort.':mid?'Moderate recovery: leave reps in reserve.':r==null?'No recovery score: use your energy and technique to guide effort.':'High recovery: follow your planned intensity if you feel good.';
 return{...targets,base,r,name,weekSets,caution};
+}
+function updateTodayHero(){
+ const today=new Date(),day=today.getDay(),name=['LEGS','PUSH','PULL','LEGS','CHEST','BACK','SHOULDERS + ARMS'][day];
+ const focus=['Lower body · posterior','Chest · Shoulders · Triceps','Back · Biceps','Lower body · quad','Chest','Back','Shoulders · Biceps · Triceps'][day];
+ if(el('heroToday'))el('heroToday').textContent=today.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}).toUpperCase();
+ if(el('heroWorkout'))el('heroWorkout').textContent=name+' DAY';
+ if(el('heroFocus'))el('heroFocus').textContent=focus+'  ·  Select a date in the calendar to open your workout and log sets.';
 }
 function updatePanels(){
 if(!el('actionTitle'))return;
@@ -114,10 +121,10 @@ document.querySelectorAll('.day .recovery-dot').forEach(x=>x.remove());
 if(tile&&r!=null){const dot=node('span','recovery-dot');dot.style.background=r>=67?'#38e28a':r>=34?'#ffcc53':'#ff586a';dot.title='Today WHOOP recovery '+r+'%';tile.append(dot)}
 }
 function refresh(){
-updatePanels();renderSignal();renderHeat();addRecoveryMarker();if(calendarMode==='week')showCalendarMode();
+updateTodayHero();updatePanels();renderSignal();renderHeat();addRecoveryMarker();if(calendarMode==='week')showCalendarMode();
 }
 function watch(){
-const calendar=el('monthGrid');if(calendar){const obs=new MutationObserver(()=>{if(calendarMode==='week')showCalendarMode();addRecoveryMarker()});obs.observe(calendar,{childList:true})}
+const calendar=el('monthGrid');if(calendar){const obs=new MutationObserver((changes)=>{if(changes.some(c=>c.target===calendar)){if(calendarMode==='week')showCalendarMode();addRecoveryMarker()}});obs.observe(calendar,{childList:true})}
 const metric=el('recoveryMetric');if(metric){const ob=new MutationObserver(()=>{lastSynced=new Date();updatePanels();addRecoveryMarker()});ob.observe(metric,{childList:true,characterData:true,subtree:true})}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',refresh));
 el('logForm')?.addEventListener('submit',()=>setTimeout(refresh,80));
