@@ -92,11 +92,20 @@ $('selectedRecovery').textContent=day.title==='RECOVERY'?'RECOVERY / MOBILITY':r
 $('selectedRecovery').className='micro recovery-'+recoveryTone(r);
 $('advice').textContent=guidance(r);
 }
-async function syncWHOOP(){
-$('refreshButton').disabled=true;
-try{const res=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store'});if(!res.ok)throw Error('Unable to retrieve WHOOP metrics');whoop=await res.json();$('syncMessage').textContent=whoop.connected?'Latest WHOOP data loaded.':'WHOOP is not connected in this browser.'}
-catch(e){whoop={connected:false};$('syncMessage').textContent='WHOOP metrics unavailable. Your workout calendar is still usable.'}
-finally{$('refreshButton').disabled=false;renderWHOOP();}
+let whoopSyncInProgress=false,lastWhoopSyncAttempt=0,lastWhoopSuccess=0;
+async function syncWHOOP(force=false){
+ if(whoopSyncInProgress||document.hidden||(!force&&Date.now()-lastWhoopSyncAttempt<45000))return;
+ whoopSyncInProgress=true;lastWhoopSyncAttempt=Date.now();
+ try{
+  const res=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store'});
+  if(!res.ok)throw Error('Unable to retrieve WHOOP metrics');
+  whoop=await res.json();
+  lastWhoopSuccess=Date.now();
+  $('syncMessage').textContent=whoop.connected?'WHOOP data checked at '+new Date(lastWhoopSuccess).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'. Refreshes automatically.':'WHOOP is not connected in this browser.';
+ }catch(e){
+  // Preserve last-known WHOOP data during temporary network failures.
+  $('syncMessage').textContent='WHOOP temporarily unavailable. '+(lastWhoopSuccess?'Showing the last available readings.':'No readings available yet.');
+ }finally{whoopSyncInProgress=false;renderWHOOP();}
 }
 function renderCalendar(){
 $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
@@ -332,7 +341,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
-$('exerciseSelect').onchange=renderExerciseTrend;$('refreshButton').onclick=syncWHOOP;
+$('exerciseSelect').onchange=renderExerciseTrend;
 $('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};renderWHOOP()};
 $('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
@@ -345,8 +354,10 @@ function switchView(view){for(const b of navButtons)b.classList.toggle('active',
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 const hash=location.hash.replace('#','');if(['calendar','analytics','overload','workout'].includes(hash))switchView(hash);
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}});
-load();renderAll();paintTimer();syncWHOOP();
-// Refresh WHOOP readings automatically while the dashboard is open; this is polling, not continuous streaming.
-setInterval(()=>{if(!document.hidden)syncWHOOP()},5*60*1000);
+load();renderAll();paintTimer();syncWHOOP(true);
+// Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
+setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWHOOP()});
+window.addEventListener('focus',()=>syncWHOOP());
+window.addEventListener('online',()=>syncWHOOP(true));
 })();
