@@ -120,7 +120,8 @@
 <div class="page-head"><div><div class="micro">PERSONAL PERFORMANCE SESSION</div><h1>WORKOUT MODE</h1></div><p>Track your exercises and rest while WHOOP recovery and strain stay alongside your training.</p></div>
 <div id="workoutIdle" class="section workout-idle">
 <span class="future-pill">REPTRACK LIVE TRAINING</span><h2>Start stronger.</h2><p>Select your scheduled workout or choose any calendar day. Weight and rep targets carry into a distraction-free workout session.</p>
-<div class="idle-preview"><div class="micro" id="idleWorkoutDate">TODAY</div><strong id="idleWorkoutTitle">TODAY'S WORKOUT</strong><div id="idleWorkoutFocus" class="muted"></div></div>
+<div class="workout-pick"><label class="field" for="preWorkoutSelect">CHOOSE TODAY'S WORKOUT<select id="preWorkoutSelect"><option value="scheduled">SCHEDULED WORKOUT</option><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS_QUAD">LEGS · QUAD FOCUS</option><option value="LEGS_POSTERIOR">LEGS · POSTERIOR FOCUS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS_ARMS">SHOULDERS + ARMS</option><option value="REST">RECOVERY / MOBILITY</option><option value="CUSTOM">CUSTOM WORKOUT</option></select></label><p class="workout-pick-note">This switches only the workout you're about to start. Your calendar schedule stays unchanged.</p></div>
+<div class="idle-preview"><div class="micro" id="idleWorkoutDate">TODAY</div><strong id="idleWorkoutTitle">TODAY'S WORKOUT</strong><div id="idleWorkoutFocus" class="muted"></div><div id="idleWorkoutExercises" class="workout-exercise-preview"></div></div>
 <button id="workoutBegin" class="btn-primary workout-big-btn" type="button">▶ START WORKOUT</button><p class="muted" style="font-size:11px">RepTrack sessions do not start or stop a native WHOOP activity.</p>
 </div>
 <div id="workoutActive" class="hidden">
