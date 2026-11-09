@@ -160,4 +160,7 @@ navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 const hash=location.hash.replace('#','');if(['calendar','analytics','settings'].includes(hash))switchView(hash);
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}});
 load();renderAll();paintTimer();syncWHOOP();
+// Refresh WHOOP readings automatically while the dashboard is open; this is polling, not continuous streaming.
+setInterval(()=>{if(!document.hidden)syncWHOOP()},5*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWHOOP()});
 })();
