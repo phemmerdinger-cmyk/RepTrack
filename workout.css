@@ -1,0 +1,41 @@
+
+/* RepTrack installable mobile / focused workout mode */
+@supports(padding:env(safe-area-inset-top)){.side{padding-top:max(0px,env(safe-area-inset-top))}.content{padding-bottom:calc(96px + env(safe-area-inset-bottom))}}
+.workout-idle{min-height:340px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:16px;overflow:hidden;position:relative;background:radial-gradient(ellipse at 85% 50%,#54617430,transparent 40%),linear-gradient(120deg,#222733,#0c0f14 80%)}
+.workout-idle:after{content:'';border:1px solid #ffffff33;position:absolute;width:220px;height:220px;border-radius:50%;right:-65px;top:-50px;box-shadow:0 0 0 40px #ffffff05,0 0 0 80px #ffffff05;pointer-events:none}
+.workout-idle h2{font-size:clamp(30px,5vw,55px);margin:0;text-transform:none;letter-spacing:-.075em}.workout-idle p{font-size:13px;max-width:590px;color:#afb7c6}
+.idle-preview{padding:16px 20px;border:1px solid #505867;border-radius:11px;background:#ffffff0a;display:grid;gap:5px;min-width:min(100%,320px)}
+.idle-preview strong{font:700 23px 'Space Grotesk',sans-serif;letter-spacing:-.045em}
+.workout-big-btn{padding:15px 23px;font-size:12px;letter-spacing:.08em}
+.session-hero{display:flex;justify-content:space-between;gap:25px;align-items:center;padding:24px 28px;border-radius:17px;background:linear-gradient(120deg,#252b37,#0d1015);border:1px solid #ffffff2b;margin-bottom:15px}
+.session-hero h2{font-size:clamp(27px,4vw,52px);letter-spacing:-.065em;margin:7px 0 5px;text-transform:uppercase}
+.session-hero .muted{font-size:12px}.session-elapsed{text-align:right;min-width:155px}
+.session-elapsed strong{display:block;font:700 clamp(25px,3vw,40px) 'Space Grotesk';letter-spacing:-.065em;margin-top:4px}
+.session-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.session-metrics>div{border:1px solid #ffffff20;background:linear-gradient(140deg,#1b202a,#0e1218);border-radius:13px;padding:17px;display:grid;gap:7px}
+.session-metrics strong{font:700 clamp(24px,3vw,37px) 'Space Grotesk';letter-spacing:-.045em}
+.session-metrics small{font-size:9px;color:#8f9ba9;letter-spacing:.09em}
+.workout-layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(290px,.7fr);gap:16px}
+.workout-layout>.section{min-width:0}.session-tools{display:grid;align-content:start;gap:16px}.session-tools .section{margin:0}
+.live-exercise{border:1px solid #ffffff20;border-radius:13px;background:linear-gradient(130deg,#1c212b,#10131a);padding:16px;margin:12px 0}
+.live-exercise-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.live-exercise h3{font-size:16px;margin:6px 0 4px;text-transform:none}.live-exercise .muted{font-size:11px}
+.session-set-count{font-size:10px;letter-spacing:.06em;color:#c3cbd7;white-space:nowrap}
+.live-last-set{font-size:10px;color:#9fa7b7;padding:10px 0}
+.live-set-history{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.live-set-history span{font-size:10px;padding:7px 9px;border:1px solid #56606b;border-radius:7px;color:#e4e9f1}
+.live-set-form{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-top:12px}
+.live-set-form label{display:grid;gap:7px;color:#b4bfcb;font-size:10px;letter-spacing:.08em;min-width:0}
+.live-set-form input{width:100%;min-width:0;background:#10141c;border:1px solid #505868;border-radius:8px;min-height:47px}
+.live-set-form button{min-height:47px;font-size:11px;white-space:nowrap}
+.session-actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.rest-readout{font:700 clamp(49px,5vw,74px) 'Space Grotesk';letter-spacing:-.08em;margin:12px 0 17px;text-align:center}
+.rest-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.rest-quick button{padding:9px 3px;font-size:10px}
+.session-guidance{color:#c3ccd9;font-size:12px;line-height:1.7;margin:11px 0}
+.whoop-external{display:inline-block;font-size:11px;text-decoration:none;margin-top:16px;color:#e9edf3;border:1px solid #424a55;border-radius:8px;padding:10px}
+.workout-complete{text-align:center;padding:30px;max-width:700px;margin:auto}.workout-complete h2{font-size:clamp(28px,4vw,50px);text-transform:none;letter-spacing:-.06em;margin:15px 0}
+#installApp{white-space:nowrap}
+@media(max-width:1050px){.workout-layout{grid-template-columns:1fr}.session-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.session-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.session-hero{padding:18px}.session-tools{grid-template-columns:1fr}}
+@media(max-width:520px){.side-nav{gap:2px}.side-nav .nav-item{font-size:8px;padding:8px 3px}.topline{flex-wrap:wrap}.top-actions{width:100%;justify-content:flex-end}.workout-idle{min-height:310px;padding:22px}.session-hero{flex-direction:column;align-items:flex-start;gap:13px}.session-elapsed{text-align:left}.session-metrics{gap:7px}.session-metrics>div{padding:12px}.session-metrics strong{font-size:28px}.live-exercise{padding:12px}.live-set-form{grid-template-columns:1fr 1fr}.live-set-form button{grid-column:1/-1}.workout-layout{gap:10px}.rest-readout{font-size:55px}.workout-complete{padding:20px}}
