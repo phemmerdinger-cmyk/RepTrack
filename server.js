@@ -120,7 +120,7 @@ const server=http.createServer(async(req,res)=>{
     const records=results.map(r=>r.status==='fulfilled'?latest(r.value):null);
     return send(res,200,{configured:true,connected:true,recovery:records[0],sleep:records[1],cycle:records[2]},newCookie?{'Set-Cookie':newCookie}:{});
   }
-  if(req.method==='GET' && (pathname==='/app.css'||pathname==='/app.js'||pathname==='/favicon.svg')){
+  if(req.method==='GET' && (pathname==='/app.css'||pathname==='/app.js'||pathname==='/favicon.svg'||pathname==='/future.css'||pathname==='/future.js')){
     const asset=pathname.slice(1);
     const mime=asset.endsWith('.css')?'text/css; charset=utf-8':asset.endsWith('.js')?'text/javascript; charset=utf-8':'image/svg+xml';
     res.writeHead(200,{'Content-Type':mime,'Cache-Control':'public, max-age=60','X-Content-Type-Options':'nosniff'});
