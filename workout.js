@@ -8,7 +8,7 @@ const fmt=n=>Math.round(n).toLocaleString('en-US');
 const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n};
 const readJSON=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v===null?fallback:v}catch{return fallback}};
 const readLogs=()=>{const a=readJSON(LOG,[]);return Array.isArray(a)?a:[]};
-let session=readJSON(KEY,null),restDuration=120,restEnds=0,restPaused=120,restTimer=null,deferredInstall=null;
+let session=readJSON(KEY,null),restDuration=120,restEnds=0,restPaused=120,restTimer=null;
 const valid=s=>s&&typeof s.id==='string'&&typeof s.started==='number'&&typeof s.date==='string'&&typeof s.title==='string'&&Array.isArray(s.ex)&&s.ex.length<=50;
 if(!valid(session))session=null;
 const elapsed=()=>session?Math.max(0,Math.floor(((session.pausedAt||Date.now())-session.started-session.pausedMs)/1000)):0;
@@ -117,15 +117,6 @@ function render(){
  session.ex.forEach((item,i)=>host.append(exerciseCard(item,i)));
  renderMetric();updateClock();
 }
-function installPrompt(){
- const standalone=window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone;
- if(standalone){alert('RepTrack is already running as a home-screen app.');return}
- if(deferredInstall){const prompt=deferredInstall;deferredInstall=null;prompt.prompt();prompt.userChoice?.then(()=>{});return}
- const ios=/iPad|iPhone|iPod/.test(navigator.userAgent);
- alert(ios?'To install RepTrack: open this website in Safari, tap Share (square with upward arrow), then choose Add to Home Screen. Open RepTrack from its new icon.':'To install RepTrack: open the browser menu and choose Install App or Add to Home Screen. Supported Chrome browsers may also show an install icon.');
-}
-window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstall=event});
-$('installApp').addEventListener('click',installPrompt);
 $('workoutBegin').addEventListener('click',()=>start());
 $('startSelectedWorkout').addEventListener('click',()=>start());
 $('drawerStartWorkout').addEventListener('click',()=>{document.getElementById('drawerDone')?.click();start()});
