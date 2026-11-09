@@ -1,0 +1,163 @@
+
+(()=>{'use strict';
+const $=id=>document.getElementById(id),KEY='reptrack-workouts-v1';
+const pad=n=>String(n).padStart(2,'0'),iso=d=>[d.getFullYear(),pad(d.getMonth()+1),pad(d.getDate())].join('-');
+const fromISO=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const plus=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const valid=e=>e&&typeof e.id==='string'&&/^\d{4}-\d\d-\d\d$/.test(e.date)&&typeof e.exercise==='string'&&Array.isArray(e.sets);
+const sets=e=>e.sets.filter(s=>Number.isFinite(+s.weight)&&+s.weight>=0&&Number.isFinite(+s.reps)&&+s.reps>0);
+const vol=e=>sets(e).reduce((n,s)=>n+(+s.weight)*(+s.reps),0);
+const oneRM=s=>Number(s.weight)*(1+Math.min(12,Number(s.reps))/30);
+const plan=[
+{title:'LEGS',focus:'Lower body · posterior',ex:[['Back Squat','3 × 6–10'],['Romanian Deadlift','3 × 8–10'],['Bulgarian Split Squat','3 × 8–12'],['Leg Curl','3 × 10–15'],['Calf Raise','4 × 12–15']]},
+{title:'PUSH',focus:'Chest · Shoulders · Triceps',ex:[['Bench Press','3 × 6–10'],['Incline Dumbbell Press','3 × 8–12'],['Shoulder Press','3 × 8–12'],['Lateral Raise','3 × 12–20'],['Triceps Pushdown','3 × 10–15']]},
+{title:'PULL',focus:'Back · Biceps',ex:[['Lat Pulldown','3 × 8–12'],['Barbell Row','3 × 6–10'],['Seated Cable Row','3 × 10–12'],['Rear Delt Fly','3 × 12–20'],['Biceps Curl','3 × 8–12']]},
+{title:'LEGS',focus:'Lower body · quad',ex:[['Back Squat','3 × 6–8'],['Leg Press','3 × 10–12'],['Leg Extension','3 × 12–15'],['Hip Thrust','3 × 8–12'],['Calf Raise','4 × 12–15']]},
+{title:'CHEST + BACK',focus:'Chest · Back',ex:[['Incline Dumbbell Press','3 × 8–12'],['Pull Up','3 × 6–10'],['Chest Fly','3 × 10–15'],['Chest-Supported Row','3 × 8–12'],['Cable Pullover','3 × 10–15']]},
+{title:'SHOULDERS + ARMS',focus:'Delts · Biceps · Triceps',ex:[['Shoulder Press','3 × 6–10'],['Lateral Raise','4 × 12–20'],['Rear Delt Fly','3 × 12–15'],['Biceps Curl','3 × 8–12'],['Triceps Extension','3 × 10–15']]},
+{title:'RECOVERY',focus:'Rest · Mobility',ex:[['Walking','20–30 minutes'],['Mobility','10–15 minutes']]}
+];
+let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,timer=null,seconds=120,remaining=120;
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=Array.isArray(x)?x.filter(valid):[]}catch{entries=[]}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));return true}catch{alert('Unable to save workout data in this browser.');return false}}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
+const dateLabel=d=>d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+const recovery=()=>{let v=whoop?.recovery?.score?.recovery_score;return Number.isFinite(+v)?Math.round(+v):null};
+const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
+const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
+const guidance=r=>r===null?'No recovery score is available. Follow the plan and adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
+function renderWHOOP(){
+const r=recovery(),s=whoop?.sleep?.score?.sleep_performance_percentage,t=whoop?.cycle?.score?.strain;
+$('recoveryMetric').textContent=r===null?'—':r+'%';
+$('sleepMetric').textContent=Number.isFinite(+s)?Math.round(+s)+'%':'—';
+$('strainMetric').textContent=Number.isFinite(+t)?(+t).toFixed(1):'—';
+$('recoveryMetric').className='metric recovery-'+recoveryTone(r);
+$('recoveryCaption').textContent=readiness(r);
+$('whoopBadge').textContent=whoop?.connected?'WHOOP CONNECTED':'WHOOP NOT CONNECTED';
+$('whoopBadge').classList.toggle('connected',!!whoop?.connected);
+$('connDot').classList.toggle('on',!!whoop?.connected);
+$('connText').textContent=whoop?.connected?'WHOOP linked':'WHOOP not linked';
+$('connectLink').classList.toggle('hidden',!!whoop?.connected);
+$('disconnectButton').classList.toggle('hidden',!whoop?.connected);
+$('guidanceText').textContent=guidance(r);
+const day=plan[selected.getDay()];
+$('selectedRecovery').textContent=day.title==='RECOVERY'?'RECOVERY / MOBILITY':readiness(r);
+$('selectedRecovery').className='micro recovery-'+recoveryTone(r);
+$('advice').textContent=guidance(r);
+}
+async function syncWHOOP(){
+$('refreshButton').disabled=true;
+try{const res=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store'});if(!res.ok)throw Error('Unable to retrieve WHOOP metrics');whoop=await res.json();$('syncMessage').textContent=whoop.connected?'Latest WHOOP data loaded.':'WHOOP is not connected in this browser.'}
+catch(e){whoop={connected:false};$('syncMessage').textContent='WHOOP metrics unavailable. Your workout calendar is still usable.'}
+finally{$('refreshButton').disabled=false;renderWHOOP();}
+}
+function renderCalendar(){
+$('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+const grid=$('monthGrid');grid.replaceChildren();
+const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMonth()+1,0).getDate(),today=iso(new Date());
+const cells=Math.ceil((first+days)/7)*7;
+for(let n=0;n<cells;n++){
+const d=plus(month,n-first),stamp=iso(d),p=plan[d.getDay()];
+const completed=entries.some(e=>e.date===stamp);
+const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':''));tile.dataset.date=stamp;
+if(d.getMonth()!==month.getMonth())tile.classList.add('out');
+if(stamp===today)tile.classList.add('today');
+if(stamp===iso(selected))tile.classList.add('selected');
+if(completed)tile.classList.add('done');
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',completed?'● LOGGED':p.title==='RECOVERY'?'REST DAY':'PLANNED'));
+tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();});
+grid.append(tile);
+}
+}
+function renderSelected(){
+const p=plan[selected.getDay()],key=iso(selected),done=entries.filter(e=>e.date===key);
+$('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=p.title;$('dayFocus').textContent=p.focus;
+$('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
+$('exerciseList').replaceChildren();
+for(const [exercise,prescription] of p.ex){
+const row=el('div','exercise-row'),left=el('div'),btn=el('button','smallbtn btn-ghost','LOG');
+left.append(el('strong','',exercise),el('small','',prescription));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
+}
+$('dayHistory').replaceChildren();
+if(done.length){
+$('dayHistory').append(el('div','micro','LOGGED TODAY'));
+done.forEach(e=>{const line=el('div','perf-row'),detail=el('div');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const del=el('button','smallbtn btn-ghost','REMOVE');del.onclick=()=>{if(confirm('Remove logged exercise?')){entries=entries.filter(x=>x.id!==e.id);if(save())renderAll()}};line.append(detail,del);$('dayHistory').append(line)});
+}else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
+$('dayStart').onclick=()=>openLog(selected,p.title==='RECOVERY'?'Walking':p.ex[0][0]);
+renderWHOOP();
+}
+function renderAnalytics(){
+const now=new Date(),weekStart=plus(now,-6),monthStart=plus(now,-29);
+const weekly=entries.filter(e=>e.date>=iso(weekStart)&&e.date<=iso(now));
+$('volumeMetric').textContent=fmt(weekly.reduce((n,e)=>n+vol(e),0));
+$('setsMetric').textContent=fmt(weekly.reduce((n,e)=>n+sets(e).length,0));
+const squat=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(sets).filter(s=>+s.weight>0);
+$('squatMetric').textContent=squat.length?fmt(Math.max(...squat.map(oneRM)))+' LB':'—';
+$('sessionMetric').textContent=weekly.length;
+const bars=$('volumeChart');bars.replaceChildren();
+const values=Array.from({length:14},(_,i)=>{const date=iso(plus(now,i-13));return{date,value:entries.filter(e=>e.date===date).reduce((n,e)=>n+vol(e),0)}});
+const high=Math.max(1,...values.map(v=>v.value)),plot=el('div','chart');
+values.forEach(v=>{const b=el('div','chartbar');b.style.height=Math.max(2,v.value/high*100)+'%';b.title=v.date+' — '+fmt(v.value)+' lb-reps';plot.append(b)});
+bars.append(plot);
+const labels=el('div','chartlabels');labels.append(el('span','',values[0].date.slice(5)),el('span','',values.at(-1).date.slice(5)));bars.append(labels);
+const count=new Map();entries.filter(e=>e.date>=iso(monthStart)).forEach(e=>count.set(e.exercise,(count.get(e.exercise)||0)+sets(e).length));
+const popular=[...count.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6),max=Math.max(1,...popular.map(x=>x[1]));
+$('muscleWork').replaceChildren();
+if(!popular.length)$('muscleWork').append(el('div','muted','Log exercises to view training distribution.'));
+for(const [name,n] of popular){const wrapper=el('div',''),r=el('div','perf-row'),meter=el('div','perf-track'),fill=el('div');fill.style.width=n/max*100+'%';meter.append(fill);r.append(el('strong','',name),el('span','',n+' SETS'));wrapper.append(r,meter);$('muscleWork').append(wrapper)}
+const select=$('exerciseSelect'),chosen=select.value,names=[...new Set(entries.map(e=>e.exercise))].sort();
+select.replaceChildren();for(const name of names.length?names:['No exercises logged']){const o=el('option','',name);o.value=name;select.append(o)}
+if(names.includes(chosen))select.value=chosen;renderExerciseTrend();
+}
+function renderExerciseTrend(){
+const name=$('exerciseSelect').value;
+const rows=entries.filter(e=>e.exercise===name).sort((a,b)=>a.date.localeCompare(b.date)).slice(-12);
+const values=rows.map(e=>({date:e.date,value:Math.max(0,...sets(e).map(oneRM))}));
+const high=Math.max(1,...values.map(e=>e.value)),wrap=$('strengthChart');wrap.replaceChildren();
+if(!values.length){wrap.append(el('div','muted','Select a logged exercise to see estimated strength trends.'));return}
+const chart=el('div','chart');for(const item of values){const b=el('div','chartbar');b.style.height=Math.max(2,item.value/high*100)+'%';b.title=item.date+' · '+fmt(item.value)+' estimated 1RM';chart.append(b)}
+wrap.append(chart,el('div','muted','Top estimated 1RM: '+fmt(high)+' lbs · Epley formula, approximate.'));
+}
+function renderAll(){renderCalendar();renderSelected();renderAnalytics()}
+function addSet(weight='',reps=''){
+const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),x=el('button','del','×');
+w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
+r.type='number';r.step='1';r.min='1';r.inputMode='numeric';r.required=true;r.placeholder='reps';r.value=reps;x.type='button';x.title='Remove set';x.onclick=()=>{if($('setsList').children.length>1){row.remove();[...$('setsList').children].forEach((e,i)=>e.firstChild.textContent=i+1)}};
+row.append(n,w,r,x);$('setsList').append(row);
+}
+function openLog(date,exercise){
+modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
+let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+if(prev?.sets?.length){for(const s of prev.sets.slice(0,8))addSet(s.weight,s.reps)}else {addSet();addSet();addSet();}
+$('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');$('logExercise').focus();
+}
+function closeLog(){$('modalOverlay').classList.add('hidden')}
+$('logForm').addEventListener('submit',ev=>{
+ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
+const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value)}));
+if(!exercise||!date||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Check the exercise, date, weight and reps.');return}
+const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
+entries.push(item);if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);closeLog();renderAll();}
+});
+$('addSet').onclick=()=>addSet();$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
+$('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLog()});
+$('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
+$('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
+$('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
+$('exerciseSelect').onchange=renderExerciseTrend;$('refreshButton').onclick=syncWHOOP;
+$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};renderWHOOP()};
+$('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
+function paintTimer(){$('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);$('timerStart').textContent=timer?'PAUSE':'START'}
+$('timerStart').onclick=()=>{if(timer){clearInterval(timer);timer=null;paintTimer();return}if(remaining<=0)remaining=seconds;timer=setInterval(()=>{remaining=Math.max(0,remaining-1);if(!remaining){clearInterval(timer);timer=null;if(navigator.vibrate)navigator.vibrate(100)}paintTimer()},1000);paintTimer()};
+$('timerReset').onclick=()=>{clearInterval(timer);timer=null;remaining=seconds;paintTimer()};
+document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterval(timer);timer=null;seconds=Number(b.dataset.timer);remaining=seconds;paintTimer()});
+const navButtons=[...document.querySelectorAll('[data-view]')];
+function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
+navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
+const hash=location.hash.replace('#','');if(['calendar','analytics','settings'].includes(hash))switchView(hash);
+window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}});
+load();renderAll();paintTimer();syncWHOOP();
+})();
