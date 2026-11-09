@@ -97,7 +97,8 @@ document.querySelectorAll('[data-volume-mode]').forEach(b=>b.addEventListener('c
 document.querySelectorAll('[data-strength-mode]').forEach(b=>b.addEventListener('click',()=>{strengthMode=b.dataset.strengthMode;document.querySelectorAll('[data-strength-mode]').forEach(x=>x.classList.toggle('active',x===b));strength()}));
 $('exerciseSelect').addEventListener('change',strength);
 $('overloadExercise').addEventListener('change',overload);$('overloadMetric').addEventListener('change',overload);
-document.querySelectorAll('[data-view="analytics"]').forEach(b=>b.addEventListener('click',render));
+document.querySelectorAll('[data-view="analytics"],[data-view="overload"]').forEach(b=>b.addEventListener('click',render));
+$('overloadOpenCalendar').addEventListener('click',()=>{document.querySelector('[data-view="calendar"]')?.click()});
 window.addEventListener('storage',e=>{if(e.key===KEY)render()});
 window.addEventListener('reptrack-workouts-changed',render);
 render();
