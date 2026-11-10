@@ -54,7 +54,7 @@ const editDraftSet=(name)=>{
   updates.push({weight:amount,reps:count,warmup:item.warmup});
  }
  record.sets=updates;
- if(!record.sets.length)session.logs=session.logs.filter(x=>x!==record);
+ // Retain an empty record so legacy unsaved sets do not reappear.
  if(!write()){session.logs=old;return}
  render();
 };
