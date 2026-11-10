@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="/future.css">
 <link rel="stylesheet" href="/analytics.css">
 <link rel="stylesheet" href="/workout.css">
+<link rel="stylesheet" href="/experiments.css">
 </head>
 <body>
 <div class="app">
@@ -27,6 +28,7 @@
 <button class="nav-item" data-view="analytics">ANALYTICS</button>
 <button class="nav-item" data-view="overload">PROGRESSIVE OVERLOAD</button>
 <button class="nav-item" data-view="workout">WORKOUT</button>
+<button class="nav-item" data-view="experiments">EXPERIMENTS</button>
 
 </nav>
 <div class="side-bottom"><div class="conn"><span class="dot" id="connDot"></span><span id="connText">Checking WHOOP</span></div></div>
@@ -36,6 +38,7 @@
 <button class="mobile-nav-tab" type="button" data-view="analytics" aria-label="Analytics"><span class="mobile-nav-icon" aria-hidden="true">▥</span><span>ANALYTICS</span></button>
 <button class="mobile-nav-tab" type="button" data-view="overload" aria-label="Progressive Overload"><span class="mobile-nav-icon" aria-hidden="true">↗</span><span>OVERLOAD</span></button>
 <button class="mobile-nav-tab" type="button" data-view="workout" aria-label="Workout"><span class="mobile-nav-icon" aria-hidden="true">▶</span><span>WORKOUT</span></button>
+<button class="mobile-nav-tab" type="button" data-view="experiments" aria-label="Experiments"><span class="mobile-nav-icon" aria-hidden="true">⚗</span><span>EXPERIMENTS</span></button>
 </nav>
 <main class="content">
 <div class="topline"><span class="micro">REPTRACK / PERFORMANCE</span><div class="top-actions"><span id="whoopBadge" class="live-pill" aria-live="polite">SYNCING WHOOP</span></div></div>
@@ -51,7 +54,7 @@
 <div class="weekdays"><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div><div class="weekday">SUN</div></div>
 <div id="monthGrid" class="month-grid"></div>
 <div class="squat-tracker" id="squatTracker" aria-live="polite">
-<div class="squat-tracker-top"><div><div class="micro">NOV 9 – DEC 8 · 30-DAY SQUAT CHECK-IN</div><div class="squat-tracker-title">BACK SQUAT CONSISTENCY <span id="squatDayCount">0 / 30 DAYS</span></div></div><span class="squat-tracker-status" id="squatTrackerStatus">TRACKING</span></div>
+<div class="squat-tracker-top"><div><div class="micro" id="squatTrackerWindow">NOV 9 – DEC 8 · 30-DAY SQUAT CHECK-IN</div><div class="squat-tracker-title">BACK SQUAT CONSISTENCY <span id="squatDayCount">0 / 30 DAYS</span></div></div><span class="squat-tracker-status" id="squatTrackerStatus">TRACKING</span></div>
 <div class="squat-tracker-meter"><div id="squatTrackerFill"></div></div>
 <div class="squat-tracker-days" id="squatTrackerDays"></div>
 <p class="squat-tracker-note" id="squatTrackerNote">✓ appears on calendar days with at least one logged Back Squat set. Planned squats alone do not count.</p>
@@ -164,6 +167,19 @@
 </div></div></div>
 <div id="workoutComplete" class="section workout-complete hidden"><span class="future-pill">SESSION COMPLETED</span><h2>Workout complete.</h2><p id="workoutSummary">Your work has been saved.</p><button id="workoutCompleteClose" class="btn-primary" type="button">BACK TO CALENDAR</button></div>
 </section>
+<section class="hidden" data-page="experiments">
+<div class="page-head"><div><div class="micro">PERSONAL TRAINING LAB</div><h1>EXPERIMENTS</h1></div><p>Turn a training challenge into scheduled workouts. Only logged sets count toward completion.</p></div>
+<div class="experiment-card">
+<div class="experiment-heading"><div class="experiment-mark">⚗</div><div><div class="micro">YOUR FIRST EXPERIMENT</div><h2>SQUAT EVERY DAY</h2></div><span id="experimentState" class="experiment-status">NOT STARTED</span></div>
+<label class="field experiment-description-label" for="experimentDescription">WHAT ARE YOU TESTING?</label>
+<textarea id="experimentDescription" maxlength="600" rows="3" placeholder="Describe your experiment...">I am squatting every day for the next month.</textarea>
+<p class="experiment-help">Applying this adds 2 working sets of Back Squat at the start of every workout for 30 days, using weights based on your estimated 325 lb squat max. Your other exercises stay in place.</p>
+<div class="experiment-controls"><label class="field" for="experimentMax">ESTIMATED SQUAT 1RM / LB<input id="experimentMax" type="number" min="45" max="1000" step="5" value="325"></label><label class="field" for="experimentDays">DURATION<input id="experimentDays" type="number" value="30" disabled></label></div>
+<div class="experiment-prescription"><div class="micro">DAILY PERCENTAGE ROTATION</div><div class="experiment-day-grid" id="experimentDaysPreview"></div><p class="chart-sub">Wednesday and Sunday preserve your existing four-week heavy/volume squat progression. Other days are lighter. Percentages are approximate, rounded to the nearest 5 lb.</p></div>
+<div class="experiment-actions"><button class="btn-primary" id="experimentApply" type="button">ADD TO MY CALENDAR</button><button class="smallbtn btn-ghost hidden" id="experimentStop" type="button">STOP EXPERIMENT</button></div>
+<div id="experimentMessage" class="experiment-message" aria-live="polite"></div>
+</div>
+</section>
 </main></div>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
@@ -201,4 +217,5 @@
 <script src="/future.js" defer></script>
 <script src="/analytics.js" defer></script>
 <script src="/workout.js" defer></script>
+<script src="/experiments.js" defer></script>
 </body></html>
