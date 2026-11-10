@@ -80,6 +80,10 @@ const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
 const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
 const guidance=r=>r===null?'No recovery score is available. Follow the plan and adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
 function renderWHOOP(){
+window.RepTrackWHOOPData=whoop;
+window.RepTrackWHOOPLastSync=lastWhoopSuccess||0;
+window.dispatchEvent(new Event('reptrack-whoop-updated'));
+
 const r=recovery(),s=whoop?.sleep?.score?.sleep_performance_percentage,t=whoop?.cycle?.score?.strain;
 $('recoveryMetric').textContent=r===null?'—':r+'%';
 $('sleepMetric').textContent=s!==null&&s!==undefined&&Number.isFinite(+s)?Math.round(+s)+'%':'—';
