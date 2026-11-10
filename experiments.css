@@ -49,3 +49,9 @@
  .mobile-nav-tab[data-view="experiments"]{font-size:7.5px}
  .mobile-nav-tab[data-view="workout"]{font-size:11px}
 }
+
+/* Keep the iPhone status-bar time clear of RepTrack branding. Desktop retains its top navigation. */
+@media (max-width:700px){
+  .side{display:none!important}
+  .content{padding-top:calc(env(safe-area-inset-top, 0px) + 18px)!important}
+}
