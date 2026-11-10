@@ -103,7 +103,7 @@ const server=http.createServer(async(req,res)=>{
     }
     const state=crypto.randomBytes(24).toString('base64url');
     const url=new URL(URL_BASE+'/oauth/oauth2/auth');
-    url.search=new URLSearchParams({client_id:CLIENT_ID,response_type:'code',redirect_uri:callback(),scope:'read:recovery read:sleep read:cycles offline',state}).toString();
+    url.search=new URLSearchParams({client_id:CLIENT_ID,response_type:'code',redirect_uri:callback(),scope:'read:recovery read:sleep read:cycles read:workout offline',state}).toString();
     return redirect(res,url.toString(),[secureCookie('whoop_state',state,600)]);
   }
   if(pathname==='/api/whoop/callback' && req.method==='GET'){
@@ -144,11 +144,26 @@ const server=http.createServer(async(req,res)=>{
         return send(res,200,{configured:true,connected:false},{'Set-Cookie':clearCookie('reptrack_whoop')});
       }
     }
-    const results=await Promise.allSettled(['recovery?limit=1','activity/sleep?limit=1','cycle?limit=1'].map(p=>apiGet(p,tokens.access_token)));
+    const since=new Date(Date.now()-45*86400000).toISOString();
+    const results=await Promise.allSettled(['recovery?limit=1','activity/sleep?limit=1','cycle?limit=1','activity/workout?limit=25&start='+encodeURIComponent(since)].map(p=>apiGet(p,tokens.access_token)));
     if(results.every(r=>r.status==='rejected'))
       return send(res,502,{error:'WHOOP did not return metrics. Check scopes and your account connection.'},newCookie?{'Set-Cookie':newCookie}:{});
     const records=results.map(r=>r.status==='fulfilled'?latest(r.value):null);
-    return send(res,200,{configured:true,connected:true,recovery:records[0],sleep:records[1],cycle:records[2]},newCookie?{'Set-Cookie':newCookie}:{});
+    const workoutsResult=results[3];
+    let workouts=workoutsResult.status==='fulfilled'&&Array.isArray(workoutsResult.value.records)?workoutsResult.value.records:[];
+    if(workoutsResult.status==='fulfilled'){
+      let next=workoutsResult.value.next_token;
+      // Recent history only, bounded to avoid excessive WHOOP API requests.
+      for(let page=0;page<2&&next;page++){
+        try{
+          const more=await apiGet('activity/workout?limit=25&start='+encodeURIComponent(since)+'&nextToken='+encodeURIComponent(next),tokens.access_token);
+          workouts.push(...(Array.isArray(more.records)?more.records:[]));
+          next=more.next_token;
+        }catch{break}
+      }
+    }
+    const safeWorkout=w=>({id:w.id,start:w.start,end:w.end,timezone_offset:w.timezone_offset,sport_name:w.sport_name,score_state:w.score_state,score:w.score?{strain:w.score.strain,average_heart_rate:w.score.average_heart_rate,max_heart_rate:w.score.max_heart_rate,kilojoule:w.score.kilojoule}:null});
+    return send(res,200,{configured:true,connected:true,recovery:records[0],sleep:records[1],cycle:records[2],workouts:workouts.slice(0,75).filter(w=>w&&typeof w.id==='string').map(safeWorkout),workoutAccess:workoutsResult.status==='fulfilled'},newCookie?{'Set-Cookie':newCookie}:{});
   }
   if(req.method==='GET' && (pathname==='/icon-192.png'||pathname==='/icon-512.png')){
     const size=pathname==='/icon-192.png'?192:512;
