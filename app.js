@@ -229,7 +229,7 @@ left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==
 $('dayHistory').replaceChildren();
 if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
-done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
+done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>(s.warmup?'WARMUP ':'')+s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
 }else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
 $('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
@@ -381,7 +381,7 @@ function renderDayDrawer(){
  if(!logged.length)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
  else logged.forEach(e=>{
   const row=el('div','drawer-exercise'),desc=el('div','');
-  desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>x.weight+' lb × '+x.reps).join(' · ')));
+  desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>(x.warmup?'WARMUP ':'')+x.weight+' lb × '+x.reps).join(' · ')));
   const buttons=el('div','log-actions');
   const edit=el('button','smallbtn','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);
   const del=el('button','smallbtn','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);
@@ -393,21 +393,24 @@ $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOve
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
 function renderAll(){renderCalendar();renderSquatTracker();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
-window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId)=>{
+window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId,warmup=false)=>{
  if(!/^\d{4}-\d\d-\d\d$/.test(date)||!exercise||!Number.isFinite(+weight)||+weight<0||!Number.isInteger(+reps)||+reps<1)return false;
  const id=String(sessionId||'').slice(0,80),existing=entries.find(e=>e.date===date&&e.exercise===exercise&&e.sessionId===id);
- if(existing){existing.sets.push({weight:+weight,reps:+reps})}
- else entries.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:String(exercise).slice(0,100),sets:[{weight:+weight,reps:+reps}],sessionId:id,notes:''});
+ const set={weight:+weight,reps:+reps,warmup:!!warmup};
+ if(existing){existing.sets.push(set)}
+ else entries.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:String(exercise).slice(0,100),sets:[set],sessionId:id,notes:''});
  if(!save())return false;
  renderAll();return true;
 };
 window.RepTrackSessionSetCount=(sessionId)=>entries.filter(e=>e.sessionId===sessionId).reduce((n,e)=>n+sets(e).length,0);
 
-function addSet(weight='',reps=''){
-const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),x=el('button','del','×');
+function addSet(weight='',reps='',warmup=false){
+const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),kind=el('select','set-type'),x=el('button','del','×');
 w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
-r.type='number';r.step='1';r.min='1';r.inputMode='numeric';r.required=true;r.placeholder='reps';r.value=reps;x.type='button';x.title='Remove set';x.onclick=()=>{if($('setsList').children.length>1){row.remove();[...$('setsList').children].forEach((e,i)=>e.firstChild.textContent=i+1)}};
-row.append(n,w,r,x);$('setsList').append(row);
+r.type='number';r.step='1';r.min='1';r.inputMode='numeric';r.required=true;r.placeholder='reps';r.value=reps;
+for(const [value,label] of [['working','WORKING'],['warmup','WARMUP']]){const opt=el('option','',label);opt.value=value;kind.append(opt)}
+kind.value=warmup?'warmup':'working';kind.setAttribute('aria-label','Set type: warmup or working');x.type='button';x.title='Remove set';x.onclick=()=>{if($('setsList').children.length>1){row.remove();[...$('setsList').children].forEach((e,i)=>e.firstChild.textContent=i+1)}};
+row.append(n,w,r,kind,x);$('setsList').append(row);
 }
 function openLog(date,exercise){
 editingLogId=null;
@@ -424,7 +427,7 @@ if(expSquat&&explicit){
 }else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
  for(let i=0;i<3;i++)addSet(target,repTarget);
-}else if(prev?.sets?.length){for(const item of prev.sets.slice(0,8))addSet(item.weight,item.reps)}
+}else if(prev?.sets?.length){for(const item of prev.sets.slice(0,12))addSet(item.weight,item.reps,!!item.warmup)}
 else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
@@ -437,7 +440,7 @@ function openEditLog(id){
  $('logExercise').value=item.exercise;
  $('logNotes').value=item.notes||'';
  $('setsList').replaceChildren();
- for(const s of item.sets){addSet(s.weight,s.reps)}
+ for(const s of item.sets){addSet(s.weight,s.reps,!!s.warmup)}
  if(!item.sets.length)addSet();
  $('modalTitle').textContent='EDIT LOGGED EXERCISE';
  $('modalOverlay').classList.remove('hidden');
@@ -463,7 +466,7 @@ function deleteDayLogs(date){
 function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow=''}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
-const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value)}));
+const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value),warmup:row.children[3].value==='warmup'}));
 if(!exercise||!date||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Check the exercise, date, weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
 const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.id===editingLogId):-1;
@@ -473,7 +476,7 @@ else entries.push(item);
 if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll()}
 else entries=previous;
 });
-$('addSet').onclick=()=>addSet();$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
+$('addSet').onclick=()=>addSet();$('addWarmupSet').onclick=()=>addSet('', '', true);$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
