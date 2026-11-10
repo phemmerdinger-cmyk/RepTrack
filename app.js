@@ -76,7 +76,7 @@ function experimentPrescription(date,exp=experiment){
  // Preserve the earlier heavy/volume working weights during this exact programmed block.
  const stamp=experimentDate(date);
  const programmed=squatMonth.find(x=>x.wednesday===stamp||x.sunday===stamp);
- if(programmed){
+ if(programmed&&max===325&&percentage===EXPERIMENT_PERCENTAGES[dow]){
   weight=programmed.wednesday===stamp?programmed.heavy:programmed.volume;
  }
  const adjustedPct=Math.round(weight/max*100);
