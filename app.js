@@ -150,6 +150,8 @@ $('dayHistory').append(el('div','micro','LOGGED TODAY'));
 done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
 }else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
 $('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
+$('clearSelectedDay').classList.toggle('hidden',!done.length);
+$('clearSelectedDay').onclick=()=>deleteDayLogs(key);
 renderWHOOP();
 }
 function renderAnalytics(){
@@ -282,6 +284,8 @@ function renderDayDrawer(){
  $('drawerMeterFill').style.width=(p.ex.length?plannedDone/p.ex.length*100:0)+'%';
  const r=recovery();
  $('drawerGuidance').textContent=r===null?'No WHOOP recovery score available yet. Choose effort based on readiness and form.':guidance(r);
+ $('drawerClearDay').classList.toggle('hidden',!logged.length);
+ $('drawerClearDay').onclick=()=>deleteDayLogs(date);
  const list=$('drawerExercises');list.replaceChildren();
  p.ex.forEach(([exercise,prescription,targetWeight],i)=>{
   const row=el('div','drawer-exercise');
@@ -361,6 +365,8 @@ function deleteLoggedExercise(id){
  const previous=entries;entries=next;
  if(save()){renderAll()}else entries=previous;
 }
+window.RepTrackEditLoggedExercise=id=>openEditLog(id);
+window.RepTrackDeleteLoggedExercise=id=>deleteLoggedExercise(id);
 function deleteDayLogs(date){
  const logs=entries.filter(e=>e.date===date);
  if(!logs.length)return;
