@@ -165,7 +165,7 @@ async function syncWHOOP(force=false){
  }catch(e){
   // Preserve last-known WHOOP data during temporary network failures.
   $('syncMessage').textContent='WHOOP temporarily unavailable. '+(lastWhoopSuccess?'Showing the last available readings.':'No readings available yet.');
- }finally{whoopSyncInProgress=false;renderWHOOP();}
+ }finally{whoopSyncInProgress=false;renderWHOOP();renderCalendar();renderSelected();renderDayDrawer();}
 }
 // 30-day back-squat check-in, November 9–December 8 inclusive.
 // A completed day requires at least one real Back Squat set; a planned set never qualifies.
@@ -248,6 +248,33 @@ window.RepTrackDeleteCompletedSession=id=>{
  renderAll();
 };
 
+function whoopActivities(){
+ return whoop?.connected&&whoop?.workoutAccess&&Array.isArray(whoop.workouts)?whoop.workouts.filter(w=>w&&typeof w.id==='string'&&typeof w.start==='string'):[];
+}
+function whoopActivityDate(activity){
+ const timestamp=Date.parse(activity.start);if(!Number.isFinite(timestamp))return '';
+ const tz=/^([+-])(\d{2}):(\d{2})$/.exec(activity.timezone_offset||'');
+ const offset=tz?(tz[1]==='-'?-1:1)*(Number(tz[2])*60+Number(tz[3]))*60000:0;
+ return new Date(timestamp+offset).toISOString().slice(0,10);
+}
+function whoopActivitiesOn(date){return whoopActivities().filter(x=>whoopActivityDate(x)===date)}
+const whoopWorkoutName=w=>String(w.sport_name||'WHOOP Workout').replace(/[_-]/g,' ').replace(/\b\w/g,m=>m.toUpperCase());
+function renderWhoopDay(host,date){
+ if(!host)return;host.replaceChildren();
+ const matches=whoopActivitiesOn(date);
+ if(!matches.length)return;
+ host.append(el('div','micro','WHOOP SYNCED ACTIVITIES'));
+ for(const workout of matches){
+  const card=el('div','whoop-calendar-card'),info=el('div','');
+  const duration=Math.max(0,Math.round((Date.parse(workout.end)-Date.parse(workout.start))/60000));
+  const score=workout.score||{};
+  const strain=Number.isFinite(Number(score.strain))&&score.strain!==null?Number(score.strain).toFixed(1):'—';
+  const hr=score.average_heart_rate==null?'—':Math.round(Number(score.average_heart_rate));
+  info.append(el('strong','','✓ '+whoopWorkoutName(workout)),el('small','',duration+' MIN · STRAIN '+strain+' · AVG HR '+hr+' BPM'));
+  card.append(info);host.append(card);
+ }
+}
+
 function renderCalendar(){
 $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
 const grid=$('monthGrid');grid.replaceChildren();
@@ -255,14 +282,14 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const savedRecord=completedSessions().filter(x=>x.date===stamp).at(-1),savedWorkout=!!savedRecord,completed=savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
-const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+(savedRecord?.title||p.title)+(savedWorkout?', completed workout saved':completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
+const savedRecord=completedSessions().filter(x=>x.date===stamp).at(-1),savedWorkout=!!savedRecord,whoopRecord=whoopActivitiesOn(stamp).at(0),completed=!!whoopRecord||savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
+const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+(savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord):p.title))+(whoopRecord?', WHOOP activity synced':savedWorkout?', completed workout saved':completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
 if(squatted)tile.classList.add('squat-done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',savedRecord?.title||p.title),el('span','day-sub',savedRecord?'SAVED · '+Number(savedRecord.sets||0)+' SETS':p.focus),el('span','day-foot',savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord):p.title)),el('span','day-sub',savedRecord?'SAVED · '+Number(savedRecord.sets||0)+' SETS':whoopRecord?'WHOOP STRAIN '+(whoopRecord.score?.strain??'—'):p.focus),el('span','day-foot',whoopRecord?'✓ WHOOP':savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
 if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
 if(squatExperiment){tile.classList.add('experiment-planned');const tag=el('span','experiment-calendar-tag','SQ '+squatExperiment.weight+' LB');tag.title='Squat Every Day · 2 sets at '+squatExperiment.weight+' lb ('+squatExperiment.percentage+'% estimated max)';tile.append(tag);tile.setAttribute('aria-label',tile.getAttribute('aria-label')+', squat experiment 2 sets at '+squatExperiment.weight+' lb')}
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
@@ -278,6 +305,7 @@ for(const [exercise,prescription,targetWeight] of p.ex){
 const row=el('div','exercise-row'),left=el('div'),btn=el('button','smallbtn btn-ghost','LOG');
 left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
 }
+renderWhoopDay($('whoopSelectedDay'),key);
 renderCompletedForDate($('completedDayWorkouts'),key);
 $('dayHistory').replaceChildren();
 if(done.length){
@@ -430,6 +458,7 @@ function renderDayDrawer(){
   btn.type='button';btn.onclick=()=>openLog(selected,exercise);
   row.append(number,desc,btn);list.append(row);
  });
+ renderWhoopDay($('drawerWhoopActivities'),date);
  renderCompletedForDate($('drawerCompletedWorkouts'),date);
  const past=$('drawerLogged');past.replaceChildren();
  if(!logged.length)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
@@ -563,7 +592,7 @@ $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
 $('exerciseSelect').onchange=renderExerciseTrend;
-$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};renderWHOOP()};
+$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
 $('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
 function paintTimer(){$('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);$('timerStart').textContent=timer?'PAUSE':'START'}
