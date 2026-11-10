@@ -171,11 +171,12 @@ const SQUAT_START=new Date(2026,10,9),SQUAT_TOTAL_DAYS=30;
 const isBackSquatLog=e=>/\bback\s+squat\b/i.test(e.exercise||'')&&sets(e).length>0;
 function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date))}
 function renderSquatTracker(){
- const dates=backSquatDates(),today=iso(new Date()),start=iso(SQUAT_START),end=iso(plus(SQUAT_START,SQUAT_TOTAL_DAYS-1));
+ const dates=backSquatDates(),today=iso(new Date()),trackerStart=experiment?.start?fromISO(experiment.start):SQUAT_START,start=iso(trackerStart),end=iso(plus(trackerStart,SQUAT_TOTAL_DAYS-1));
+ $('squatTrackerWindow').textContent=trackerStart.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' – '+plus(trackerStart,29).toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' · 30-DAY SQUAT CHECK-IN';
  const box=$('squatTrackerDays');box.replaceChildren();
  let completed=0,elapsed=0;
  for(let i=0;i<SQUAT_TOTAL_DAYS;i++){
-  const date=plus(SQUAT_START,i),stamp=iso(date),logged=dates.has(stamp),past=stamp<=today;
+  const date=plus(trackerStart,i),stamp=iso(date),logged=dates.has(stamp),past=stamp<=today;
   if(logged)completed++;
   if(past)elapsed++;
   const button=el('button','squat-day-chip'+(logged?' completed':past?' missed':' future'),logged?'✓':String(i+1));
@@ -188,7 +189,7 @@ function renderSquatTracker(){
  $('squatDayCount').textContent=completed+' / 30 DAYS';
  $('squatTrackerFill').style.width=completed/SQUAT_TOTAL_DAYS*100+'%';
  const finished=today>end,upcoming=today<start;
- $('squatTrackerStatus').textContent=finished?'FINAL REPORT':upcoming?'STARTS NOV 9':'DAY '+Math.min(30,elapsed)+' / 30';
+ $('squatTrackerStatus').textContent=finished?'FINAL REPORT':upcoming?'UPCOMING':'DAY '+Math.min(30,elapsed)+' / 30';
  $('squatTrackerNote').textContent=finished
   ?'30-day result: You logged back squats on '+completed+' out of 30 days ('+Math.round(completed/30*100)+'%). ✓ on calendar days means sets were actually logged.'
   :completed+' completed back-squat day'+(completed===1?'':'s')+' · '+(upcoming?30:Math.max(0,30-elapsed))+' days remaining. ✓ means a Back Squat set was actually logged, not just planned.';
@@ -414,7 +415,11 @@ const planned=planFor(date).ex.find(x=>x[0]===exercise);
 const target=planned?.[2];
 const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(Number(target));
 const squatWeek=squatMonth.some(x=>x.wednesday===iso(date)||x.sunday===iso(date));
-if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
+const expSquat=exercise==='Back Squat'?experimentPrescription(date):null;
+if(expSquat&&explicit){
+ const repTarget=expSquat.percentage>=70?5:expSquat.percentage>=60?6:8;
+ for(let i=0;i<2;i++)addSet(target,repTarget);
+}else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
  for(let i=0;i<3;i++)addSet(target,repTarget);
 }else if(prev?.sets?.length){for(const item of prev.sets.slice(0,8))addSet(item.weight,item.reps)}
