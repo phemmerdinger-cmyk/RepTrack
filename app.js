@@ -70,7 +70,8 @@ function experimentPrescription(date,exp=experiment){
  const dateObj=date instanceof Date?date:fromISO(date);
  const week=Math.floor(index/7),dow=dateObj.getDay();
  const max=Number(exp.max)||325;
- const percentage=EXPERIMENT_PERCENTAGES[dow];
+ const proposed=Number(exp?.percentages?.[dow]);
+ const percentage=Number.isFinite(proposed)&&proposed>=20&&proposed<=95?proposed:EXPERIMENT_PERCENTAGES[dow];
  let weight=Math.max(5,Math.round(max*percentage/100/5)*5);
  // Preserve the earlier heavy/volume working weights during this exact programmed block.
  const stamp=experimentDate(date);
@@ -202,7 +203,7 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const completed=entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp);
+const completed=entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
 const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
@@ -211,6 +212,7 @@ if(completed)tile.classList.add('done');
 if(squatted)tile.classList.add('squat-done');
 tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
 if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
+if(squatExperiment){tile.classList.add('experiment-planned');const tag=el('span','experiment-calendar-tag','SQ '+squatExperiment.weight+' LB');tag.title='Squat Every Day · 2 sets at '+squatExperiment.weight+' lb ('+squatExperiment.percentage+'% estimated max)';tile.append(tag);tile.setAttribute('aria-label',tile.getAttribute('aria-label')+', squat experiment 2 sets at '+squatExperiment.weight+' lb')}
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
 grid.append(tile);
 }
