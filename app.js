@@ -197,6 +197,57 @@ function renderSquatTracker(){
   :completed+' completed back-squat day'+(completed===1?'':'s')+' · '+(upcoming?30:Math.max(0,30-elapsed))+' days remaining. ✓ means a Back Squat set was actually logged, not just planned.';
 }
 
+// Completed workout sessions are separate from plans and in-progress session drafts.
+const COMPLETED_KEY='reptrack-sessions-v1';
+function completedSessions(){try{const v=JSON.parse(localStorage.getItem(COMPLETED_KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)):[]}catch{return []}}
+function renderCompletedForDate(host,date){
+ host.replaceChildren();
+ const completed=completedSessions().filter(x=>x.date===date);
+ for(const item of completed){
+  const card=el('div','completed-workout-card'),info=el('div','');
+  info.append(el('strong','','✓ '+item.title+' · SAVED'),el('small','',Number(item.sets||0)+' SETS · '+fmt(Number(item.volume||0))+' LB-REPS · '+Math.max(0,Math.floor(Number(item.duration||0)/60))+' MIN'));
+  const remove=el('button','smallbtn btn-ghost','DELETE');remove.type='button';remove.onclick=()=>window.RepTrackDeleteCompletedSession(item.id);
+  card.append(info,remove);host.append(card);
+ }
+}
+window.RepTrackSaveCompletedSession=(summary,staged)=>{
+ if(!summary||!/^session-[a-zA-Z0-9-]+$/.test(summary.id)||!/^\d{4}-\d{2}-\d{2}$/.test(summary.date)||!Array.isArray(staged)||staged.length>60)return false;
+ const priorLogs=entries.slice(),priorSessions=completedSessions();
+ if(priorSessions.some(x=>x.id===summary.id))return false;
+ const prepared=[];
+ for(const record of staged){
+  if(!record||typeof record.exercise!=='string'||!record.exercise.trim()||!Array.isArray(record.sets)||record.sets.length>200)return false;
+  const workSets=record.sets.map(set=>({weight:Number(set.weight),reps:Number(set.reps),warmup:!!set.warmup}));
+  if(workSets.some(set=>!Number.isFinite(set.weight)||set.weight<0||!Number.isInteger(set.reps)||set.reps<1))return false;
+  if(workSets.length)prepared.push({id:Date.now()+'-'+Math.random().toString(36).slice(2),created:summary.started,date:summary.date,exercise:record.exercise.slice(0,100),sets:workSets,sessionId:summary.id,notes:''});
+ }
+ // Legacy session logs might already be in the calendar. Replace only those belonging to this session.
+ entries=entries.filter(e=>e.sessionId!==summary.id).concat(prepared);
+ if(!save()){entries=priorLogs;return false}
+ try{localStorage.setItem(COMPLETED_KEY,JSON.stringify([...priorSessions.slice(-199),summary]))}
+ catch{entries=priorLogs;save();return false}
+ selected=fromISO(summary.date);month=new Date(selected.getFullYear(),selected.getMonth(),1);
+ renderAll();return true;
+};
+window.RepTrackDiscardDraftSession=id=>{
+ if(typeof id!=='string')return;
+ // Existing app versions recorded draft sets directly to workout history.
+ if(entries.some(e=>e.sessionId===id)&&!completedSessions().some(x=>x.id===id)){
+  const prev=entries;entries=entries.filter(e=>e.sessionId!==id);
+  if(save())renderAll();else entries=prev;
+ }
+};
+window.RepTrackDeleteCompletedSession=id=>{
+ const record=completedSessions().find(x=>x.id===id);
+ if(!record||!confirm('Delete the saved '+record.title+' workout from '+record.date+' and all its logged sets?'))return;
+ const sessions=completedSessions().filter(x=>x.id!==id),prior=entries;
+ entries=entries.filter(e=>e.sessionId!==id);
+ if(!save()){entries=prior;return}
+ try{localStorage.setItem(COMPLETED_KEY,JSON.stringify(sessions))}
+ catch{entries=prior;save();return}
+ renderAll();
+};
+
 function renderCalendar(){
 $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
 const grid=$('monthGrid');grid.replaceChildren();
@@ -204,14 +255,14 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const completed=entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
+const savedWorkout=completedSessions().some(x=>x.date===stamp),completed=savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
 const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
 if(squatted)tile.classList.add('squat-done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
 if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
 if(squatExperiment){tile.classList.add('experiment-planned');const tag=el('span','experiment-calendar-tag','SQ '+squatExperiment.weight+' LB');tag.title='Squat Every Day · 2 sets at '+squatExperiment.weight+' lb ('+squatExperiment.percentage+'% estimated max)';tile.append(tag);tile.setAttribute('aria-label',tile.getAttribute('aria-label')+', squat experiment 2 sets at '+squatExperiment.weight+' lb')}
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
@@ -227,6 +278,7 @@ for(const [exercise,prescription,targetWeight] of p.ex){
 const row=el('div','exercise-row'),left=el('div'),btn=el('button','smallbtn btn-ghost','LOG');
 left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
 }
+renderCompletedForDate($('completedDayWorkouts'),key);
 $('dayHistory').replaceChildren();
 if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
@@ -378,6 +430,7 @@ function renderDayDrawer(){
   btn.type='button';btn.onclick=()=>openLog(selected,exercise);
   row.append(number,desc,btn);list.append(row);
  });
+ renderCompletedForDate($('drawerCompletedWorkouts'),date);
  const past=$('drawerLogged');past.replaceChildren();
  if(!logged.length)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
  else logged.forEach(e=>{
@@ -499,7 +552,7 @@ const navButtons=[...document.querySelectorAll('[data-view]')];
 function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
 const hash=location.hash.replace('#','');if(['calendar','analytics','overload','workout','experiments'].includes(hash))switchView(hash);
-window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}else if(e.key===EXPERIMENT_KEY){updateExperimentState()}});
+window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===COMPLETED_KEY){renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}else if(e.key===EXPERIMENT_KEY){updateExperimentState()}});
 load();renderAll();paintTimer();syncWHOOP(true);
 // Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
 setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
