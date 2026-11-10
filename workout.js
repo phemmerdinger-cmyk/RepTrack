@@ -120,6 +120,10 @@ function exerciseCard(ex,index){
  const history=el('div','live-set-history');
  logged.sets.forEach((set,i)=>history.append(el('span','',String(i+1).padStart(2,'0')+'  '+set.weight+' lb × '+set.reps)));
  container.append(history);
+ const actions=el('div','live-edit-actions');
+ const edit=el('button','','EDIT LOGGED SETS');edit.type='button';edit.onclick=()=>window.RepTrackEditLoggedExercise?.(logged.id);
+ const remove=el('button','','DELETE LOGGED EXERCISE');remove.type='button';remove.onclick=()=>window.RepTrackDeleteLoggedExercise?.(logged.id);
+ actions.append(edit,remove);container.append(actions);
  }
  const form=el('form','live-set-form'),weightField=el('label',''),repField=el('label',''),w=el('input'),r=el('input'),button=el('button','btn-primary','✓ LOG SET');
  w.type='number';w.step='0.5';w.min='0';w.required=true;w.inputMode='decimal';w.placeholder='LB';w.setAttribute('aria-label','Weight in pounds');
@@ -165,7 +169,7 @@ document.querySelectorAll('[data-view="workout"]').forEach(b=>b.addEventListener
 document.querySelectorAll('[data-view="calendar"]').forEach(b=>b.addEventListener('click',showPreview));
 window.addEventListener('reptrack-plan-changed',showPreview);
 window.addEventListener('reptrack-whoop-updated',renderMetric);
-window.addEventListener('reptrack-workouts-changed',()=>{if(session)updateClock()});
+window.addEventListener('reptrack-workouts-changed',()=>{if(session)render()});
 window.addEventListener('storage',e=>{if(e.key===KEY){const v=readJSON(KEY,null);session=valid(v)?v:null;render()}});
 const metric=$('recoveryMetric');if(metric){new MutationObserver(renderMetric).observe(metric,{childList:true,subtree:true,characterData:true})}
 const strain=$('strainMetric');if(strain){new MutationObserver(renderMetric).observe(strain,{childList:true,subtree:true,characterData:true})}
