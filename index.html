@@ -67,7 +67,7 @@
 <div class="section-title"><h3>WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
 <div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">▶ START WORKOUT</button></div>
-<div id="dayHistory" style="margin-top:20px"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
+<div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" style="margin-top:20px"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
 </div>
 <div class="section">
 <h3>RECOVERY GUIDANCE</h3>
@@ -160,11 +160,22 @@
 <div><span class="micro">WORKOUT VOLUME</span><strong id="workoutVolume">0</strong><small>LB × REPS</small></div></div>
 <div class="workout-layout">
 <div class="section"><div class="section-title"><div><div class="micro">LIVE WORKOUT PLAN</div><h2>EXERCISES & SETS</h2></div><button id="workoutAddExercise" class="smallbtn" type="button">+ ADD EXERCISE</button></div>
-<div id="workoutExerciseList"></div><div class="session-actions"><button id="workoutFinish" class="btn-primary" type="button">✓ FINISH WORKOUT</button><button id="workoutPause" type="button">PAUSE TIMER</button></div></div>
+<div id="workoutExerciseList"></div><div class="session-actions"><button id="workoutFinish" class="btn-primary" type="button">✓ FINISH WORKOUT</button><button id="workoutPause" type="button">PAUSE TIMER</button></div><p class="session-save-note">Your sets are saved as a draft on this device. They appear in the calendar only when you save the finished workout.</p></div>
 <div class="session-tools">
 <div class="section rest-station"><span class="micro">REST INTERVAL</span><div id="workoutRestClock" class="rest-readout">02:00</div><div class="rest-quick"><button type="button" data-workout-rest="60">1 MIN</button><button type="button" data-workout-rest="90">90 SEC</button><button type="button" data-workout-rest="120">2 MIN</button><button type="button" data-workout-rest="180">3 MIN</button></div><div class="action-row"><button id="workoutRestToggle" class="btn-primary" type="button">START REST</button><button id="workoutRestReset" type="button">RESET</button></div></div>
 <div class="section"><div class="micro">TRAINING GUIDANCE</div><p id="workoutWhoopInsight" class="session-guidance">Your WHOOP recovery will inform the session.</p><div id="workoutSyncStatus" class="chart-sub">WHOOP metrics update periodically. For live beat-by-beat heart rate, use WHOOP itself or a separate Bluetooth-enabled native app.</div><a href="https://app.whoop.com/" target="_blank" rel="noopener" class="whoop-external">OPEN WHOOP ↗</a></div>
 </div></div></div>
+<div id="workoutDecision" class="section workout-decision hidden" role="group" aria-labelledby="workoutDecisionTitle">
+<span class="future-pill">END WORKOUT</span>
+<h2 id="workoutDecisionTitle">Save this workout?</h2>
+<p id="workoutDecisionSummary">Your sets are ready to save.</p>
+<div class="workout-decision-actions">
+<button id="workoutSave" class="btn-primary" type="button">✓ SAVE WORKOUT</button>
+<button id="workoutDiscard" class="workout-discard-btn" type="button">DISCARD WORKOUT</button>
+<button id="workoutKeepGoing" type="button">KEEP WORKING OUT</button>
+</div>
+<p class="session-save-note">Save adds your completed workout to today's calendar and strength history. Discard removes this session's draft and will not affect older workouts.</p>
+</div>
 <div id="workoutComplete" class="section workout-complete hidden"><span class="future-pill">SESSION COMPLETED</span><h2>Workout complete.</h2><p id="workoutSummary">Your work has been saved.</p><button id="workoutCompleteClose" class="btn-primary" type="button">BACK TO CALENDAR</button></div>
 </section>
 <section class="hidden" data-page="experiments">
@@ -197,7 +208,7 @@
 </div>
 <div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
-<div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
+<div id="drawerCompletedWorkouts" class="completed-day-workouts"></div><div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
 <div class="drawer-log-heading"><div class="micro">LOGGED FOR THIS DAY</div><button id="drawerClearDay" class="smallbtn btn-ghost" type="button">DELETE DAY LOGS</button></div><div id="drawerLogged"></div>
 <div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">▶ START THIS WORKOUT</button></div>
 <div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ ADD EXERCISE</button><button id="drawerDone" type="button">DONE</button></div>
