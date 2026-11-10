@@ -457,6 +457,8 @@ function renderDayDrawer(){
  $('drawerFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
  $('drawerWorkoutResult').classList.toggle('hidden',!finished);
  $('drawerPlannedSection').classList.toggle('hidden',finished);
+ $('drawerScheduleEditBar').classList.toggle('hidden',finished);
+ if(finished)$('drawerPlanEditor').classList.add('hidden');
  $('drawerResultHeading').textContent=actualTitle;
  $('drawerResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone.length===1?'Y':'IES')+' · '+savedDone.length+' SAVED SESSION'+(savedDone.length===1?'':'S')+' · '+logged.reduce((n,e)=>n+sets(e).length,0)+' LOGGED SETS';
  $('drawerLoggedHeader').classList.toggle('hidden',!logged.length);
