@@ -609,5 +609,11 @@ load();renderAll();paintTimer();syncWHOOP(true);
 setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWHOOP()});
 window.addEventListener('focus',()=>syncWHOOP());
+window.addEventListener('reptrack-whoop-manual-refresh',()=>{
+ whoop=window.RepTrackWHOOPData;
+ lastWhoopSuccess=window.RepTrackWHOOPLastSync||Date.now();
+ lastWhoopSyncAttempt=lastWhoopSuccess;
+ renderWHOOP();renderCalendar();renderSelected();renderDayDrawer();
+});
 window.addEventListener('online',()=>syncWHOOP(true));
 })();
