@@ -202,6 +202,7 @@ function exerciseCard(ex,index){
  const [name,target,weight]=ex,container=el('article','live-exercise'),top=el('div','live-exercise-head'),info=el('div'),count=recordFor(name)?.sets?.length||0;
  info.append(el('span','micro','EXERCISE '+String(index+1).padStart(2,'0')),el('h3','',name));
  const detail=el('div','muted',(target||'Custom sets')+(weight!==''&&weight!=null?' · Target '+weight+' lb':''));
+ if(name==='Back Squat')detail.textContent+=' · 45 × 4 warmup → 135 × 8 warmup → 2 working sets';
  info.append(detail);top.append(info,el('span','session-set-count',count+' SET'+(count===1?'':'S')+' DONE'));container.append(top);
  const prior=priorRecord(name),logged=recordFor(name);
  if(prior?.sets?.length){const s=prior.sets.at(-1);container.append(el('div','live-last-set','PREVIOUS SESSION · '+s.weight+' LB × '+s.reps+' REPS'))}
@@ -214,17 +215,29 @@ function exerciseCard(ex,index){
  const remove=el('button','','DELETE LOGGED EXERCISE');remove.type='button';remove.onclick=()=>removeDraftExercise(name);
  actions.append(edit,remove);container.append(actions);
  }
- const form=el('form','live-set-form'),weightField=el('label',''),repField=el('label',''),typeField=el('label',''),w=el('input'),r=el('input'),setType=el('select',''),button=el('button','btn-primary','✓ LOG SET');
+ const form=el('form','live-set-form'),weightField=el('label',''),repField=el('label',''),typeField=el('label',''),w=el('input'),r=el('input'),setType=el('select',''),button=el('button','btn-primary','＋ ADD SET');
  w.type='number';w.step='0.5';w.min='0';w.required=true;w.inputMode='decimal';w.placeholder='LB';w.setAttribute('aria-label','Weight in pounds');
  r.type='number';r.step='1';r.min='1';r.required=true;r.inputMode='numeric';r.placeholder='REPS';r.setAttribute('aria-label','Number of repetitions');
  const last=logged?.sets?.at(-1)||prior?.sets?.at(-1);
  const prescribed=weight!==''&&weight!=null&&Number.isFinite(+weight);
- w.value=last?.weight??(prescribed?weight:'');
- r.value=last?.reps??(/6–8/.test(target)?6:/8–10/.test(target)?8:/10–12/.test(target)?10:'');
+ const repGoal=/6–8/.test(target)?6:/8–10/.test(target)?8:/10–12/.test(target)?10:6;
+ const squatSequence=name==='Back Squat'?[
+  {weight:45,reps:4,warmup:true},
+  {weight:135,reps:8,warmup:true},
+  {weight:prescribed?weight:last?.weight??'',reps:repGoal,warmup:false},
+  {weight:prescribed?weight:last?.weight??'',reps:repGoal,warmup:false}
+ ]:null;
+ const nextSet=squatSequence?.[count];
+ w.value=nextSet?.weight??last?.weight??(prescribed?weight:'');
+ r.value=nextSet?.reps??last?.reps??repGoal;
+ if(squatSequence){
+  const cue=el('div','live-next-set','NEXT · SET '+(count+1)+(nextSet?.warmup?' / WARMUP':' / WORKING'));
+  container.append(cue);
+ }
  weightField.append(el('span','','WEIGHT / LB'),w);repField.append(el('span','','REPS'),r);
  for(const [value,label] of [['working','WORKING'],['warmup','WARMUP']]){const option=el('option','',label);option.value=value;setType.append(option)}
- setType.value=logged?.sets?.length?'working':'warmup';
- setType.addEventListener('change',()=>{button.textContent=setType.value==='warmup'?'✓ LOG WARMUP':'✓ LOG WORKING SET'});
+ setType.value=nextSet?.warmup?'warmup':'working';
+ setType.addEventListener('change',()=>{button.textContent=setType.value==='warmup'?'＋ ADD WARMUP SET':'＋ ADD WORKING SET'});
  typeField.append(el('span','','SET TYPE'),setType);
  button.type='submit';form.append(weightField,repField,typeField,button);
  form.addEventListener('submit',ev=>{ev.preventDefault();if(!session)return;const amount=Number(w.value),reps=Number(r.value);if(!Number.isFinite(amount)||amount<0||!Number.isInteger(reps)||reps<1)return;
