@@ -240,3 +240,29 @@
  .sethead,.setline{grid-template-columns:19px minmax(42px,1fr) minmax(39px,.75fr) minmax(73px,1fr) 24px;gap:2px}
  .setline input{font-size:12px}
 }
+
+/* A workout is a draft until the athlete explicitly saves it. */
+.session-save-note{font-size:11px;color:#a1adbd;line-height:1.6;margin:14px 0 0}
+.workout-decision{max-width:750px;margin:18px auto;padding:30px;background:radial-gradient(circle at 90% 0%,#64748b28,transparent 47%),linear-gradient(145deg,#222a36,#0b0e15);border:1px solid #7b879854;border-radius:18px;text-align:center}
+.workout-decision h2{font-size:clamp(26px,4vw,44px);text-transform:none;letter-spacing:-.065em;margin:17px 0 10px}
+.workout-decision>p:not(.session-save-note){color:#c1cad7;line-height:1.6;font-size:14px}
+.workout-decision-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:22px}
+.workout-decision-actions button{min-height:55px;font-size:12px;letter-spacing:.05em}
+#workoutKeepGoing{grid-column:1/-1}
+.workout-discard-btn{border:1px solid #98616b;background:#311b22;color:#f7c3ca}
+.workout-discard-btn:hover{background:#4b2630;color:white}
+.completed-day-workouts{display:grid;gap:8px;margin:12px 0}
+.completed-workout-card{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #9ca8bb5c;border-radius:11px;background:linear-gradient(120deg,#28313e,#131923);padding:13px 14px}
+.completed-workout-card strong{display:block;font-size:12px;letter-spacing:.035em;color:#f5f7fa}
+.completed-workout-card small{font-size:10px;display:block;color:#a8b5c4;margin-top:5px}
+.completed-workout-card button{min-height:40px;flex:0 0 auto;border-color:#86535a;color:#f2bac3}
+.day.done .day-foot{color:#f8f9fd}
+@media(max-width:700px){
+ .workout-decision{margin:12px 0;padding:22px 14px}
+ .workout-decision-actions{grid-template-columns:1fr}
+ .workout-decision-actions button{min-height:58px}
+ #workoutKeepGoing{grid-column:auto}
+ .session-save-note{font-size:10px}
+ .completed-workout-card{padding:11px 10px}
+ .completed-workout-card strong{font-size:11px}
+}
