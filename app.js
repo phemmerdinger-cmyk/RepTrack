@@ -53,12 +53,60 @@ function squatMonthWorkout(stamp){
 }
 window.RepTrackSquatMonth=squatMonth;
 
+// Experiments are virtual calendar additions, not destructive edits of the saved base plans.
+const EXPERIMENT_KEY='reptrack-experiments-v1';
+function readExperiment(){try{const v=JSON.parse(localStorage.getItem(EXPERIMENT_KEY)||'null');return v&&typeof v==='object'?v:null}catch{return null}}
+let experiment=readExperiment();
+const EXPERIMENT_PERCENTAGES=[70,50,45,75,40,60,50]; // Sun through Sat
+const experimentDate=(date)=>iso(date instanceof Date?date:fromISO(date));
+const experimentDaysElapsed=(date,exp)=>{
+ if(!exp?.start)return null;
+ const a=fromISO(exp.start),b=date instanceof Date?date:fromISO(date);
+ return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000);
+};
+function experimentPrescription(date,exp=experiment){
+ const index=experimentDaysElapsed(date,exp);
+ if(!exp?.active||index===null||index<0||index>=30)return null;
+ const dateObj=date instanceof Date?date:fromISO(date);
+ const week=Math.floor(index/7),dow=dateObj.getDay();
+ const max=Number(exp.max)||325;
+ const percentage=EXPERIMENT_PERCENTAGES[dow];
+ let weight=Math.max(5,Math.round(max*percentage/100/5)*5);
+ // Preserve the earlier heavy/volume working weights during this exact programmed block.
+ const stamp=experimentDate(date);
+ const programmed=squatMonth.find(x=>x.wednesday===stamp||x.sunday===stamp);
+ if(programmed){
+  weight=programmed.wednesday===stamp?programmed.heavy:programmed.volume;
+ }
+ const adjustedPct=Math.round(weight/max*100);
+ const reps=adjustedPct>=70?'2 × 5–6':adjustedPct>=60?'2 × 6–8':'2 × 8–10';
+ return {weight,percentage:adjustedPct,sets:2,reps,week:week+1,day:index+1};
+}
+function applySquatExperiment(planObject,date){
+ const p=clonePlan(planObject),prescription=experimentPrescription(date);
+ if(!prescription)return p;
+ // Replace existing Back Squat instead of adding duplicate squat movements on leg days.
+ p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name));
+ p.ex.unshift(['Back Squat',prescription.reps,prescription.weight]);
+ p.focus+=' · Squat Every Day '+prescription.percentage+'%';
+ return p;
+}
+window.RepTrackExperimentPrescription=stamp=>experimentPrescription(stamp);
+window.RepTrackApplyExperiments=(planObject,stamp)=>planObject?applySquatExperiment(planObject,stamp):null;
+window.RepTrackExperimentStatus=()=>experiment;
+function updateExperimentState(){
+ experiment=readExperiment();
+ renderAll();
+ window.dispatchEvent(new Event('reptrack-plan-changed'));
+}
+window.addEventListener('reptrack-experiments-changed',updateExperimentState);
+
 function planFor(d){
  const stamp=iso(d),day=d.getDay();
  // Today (November 9, 2026) was a legs session; only that date changes, not every Monday.
  const fallback=stamp==='2026-11-09'?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
  const p=datePlans[stamp]||weeklyPlans[day]||fallback;
- return validPlan(p)?clonePlan(p):fallback;
+ return applySquatExperiment(validPlan(p)?p:fallback,d);
 }
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
 window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
@@ -435,8 +483,8 @@ document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterva
 const navButtons=[...document.querySelectorAll('[data-view]')];
 function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-const hash=location.hash.replace('#','');if(['calendar','analytics','overload','workout'].includes(hash))switchView(hash);
-window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}});
+const hash=location.hash.replace('#','');if(['calendar','analytics','overload','workout','experiments'].includes(hash))switchView(hash);
+window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}else if(e.key===EXPERIMENT_KEY){updateExperimentState()}});
 load();renderAll();paintTimer();syncWHOOP(true);
 // Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
 setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
