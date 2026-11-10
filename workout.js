@@ -119,14 +119,14 @@ function exerciseCard(ex,index){
  if(prior?.sets?.length){const s=prior.sets.at(-1);container.append(el('div','live-last-set','PREVIOUS SESSION · '+s.weight+' LB × '+s.reps+' REPS'))}
  if(logged?.sets?.length){
  const history=el('div','live-set-history');
- logged.sets.forEach((set,i)=>history.append(el('span','',String(i+1).padStart(2,'0')+'  '+set.weight+' lb × '+set.reps)));
+ logged.sets.forEach((set,i)=>history.append(el('span',set.warmup?'warmup-history':'',String(i+1).padStart(2,'0')+'  '+set.weight+' lb × '+set.reps+(set.warmup?' · WARMUP':''))));
  container.append(history);
  const actions=el('div','live-edit-actions');
  const edit=el('button','','EDIT LOGGED SETS');edit.type='button';edit.onclick=()=>window.RepTrackEditLoggedExercise?.(logged.id);
  const remove=el('button','','DELETE LOGGED EXERCISE');remove.type='button';remove.onclick=()=>window.RepTrackDeleteLoggedExercise?.(logged.id);
  actions.append(edit,remove);container.append(actions);
  }
- const form=el('form','live-set-form'),weightField=el('label',''),repField=el('label',''),w=el('input'),r=el('input'),button=el('button','btn-primary','✓ LOG SET');
+ const form=el('form','live-set-form'),weightField=el('label',''),repField=el('label',''),typeField=el('label',''),w=el('input'),r=el('input'),setType=el('select',''),button=el('button','btn-primary','✓ LOG SET');
  w.type='number';w.step='0.5';w.min='0';w.required=true;w.inputMode='decimal';w.placeholder='LB';w.setAttribute('aria-label','Weight in pounds');
  r.type='number';r.step='1';r.min='1';r.required=true;r.inputMode='numeric';r.placeholder='REPS';r.setAttribute('aria-label','Number of repetitions');
  const last=logged?.sets?.at(-1)||prior?.sets?.at(-1);
@@ -134,9 +134,13 @@ function exerciseCard(ex,index){
  w.value=last?.weight??(prescribed?weight:'');
  r.value=last?.reps??(/6–8/.test(target)?6:/8–10/.test(target)?8:/10–12/.test(target)?10:'');
  weightField.append(el('span','','WEIGHT / LB'),w);repField.append(el('span','','REPS'),r);
- button.type='submit';form.append(weightField,repField,button);
+ for(const [value,label] of [['working','WORKING'],['warmup','WARMUP']]){const option=el('option','',label);option.value=value;setType.append(option)}
+ setType.value=logged?.sets?.length?'working':'warmup';
+ setType.addEventListener('change',()=>{button.textContent=setType.value==='warmup'?'✓ LOG WARMUP':'✓ LOG WORKING SET'});
+ typeField.append(el('span','','SET TYPE'),setType);
+ button.type='submit';form.append(weightField,repField,typeField,button);
  form.addEventListener('submit',ev=>{ev.preventDefault();if(!session)return;const amount=Number(w.value),reps=Number(r.value);if(!Number.isFinite(amount)||amount<0||!Number.isInteger(reps)||reps<1)return;
- const ok=window.RepTrackLogSessionSet?.(session.date,name,amount,reps,session.id);
+ const ok=window.RepTrackLogSessionSet?.(session.date,name,amount,reps,session.id,setType.value==='warmup');
  if(ok){clearRest();restEnds=Date.now()+restDuration*1000;render();}});
  container.append(form);
  return container;
