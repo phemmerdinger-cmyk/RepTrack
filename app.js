@@ -458,16 +458,33 @@ window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId,warmup=false)=
 };
 window.RepTrackSessionSetCount=(sessionId)=>entries.filter(e=>e.sessionId===sessionId).reduce((n,e)=>n+sets(e).length,0);
 
+function renumberSetCards(){
+ const cards=[...$('setsList').children];
+ cards.forEach((card,i)=>{const label=card.querySelector('.set-position');if(label)label.textContent='SET '+(i+1)});
+ $('setCountLabel').textContent=cards.length+' SET'+(cards.length===1?'':'S');
+}
 function addSet(weight='',reps='',warmup=false){
-const row=el('div','setline'),n=el('span','muted',String($('setsList').children.length+1)),w=el('input'),r=el('input'),kind=el('select','set-type'),x=el('button','del','×');
-w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.required=true;w.placeholder='lbs';w.value=weight;
-r.type='number';r.step='1';r.min='1';r.inputMode='numeric';r.required=true;r.placeholder='reps';r.value=reps;
-for(const [value,label] of [['working','WORKING'],['warmup','WARMUP']]){const opt=el('option','',label);opt.value=value;kind.append(opt)}
-kind.value=warmup?'warmup':'working';kind.setAttribute('aria-label','Set type: warmup or working');x.type='button';x.title='Remove set';x.onclick=()=>{if($('setsList').children.length>1){row.remove();[...$('setsList').children].forEach((e,i)=>e.firstChild.textContent=i+1)}};
-row.append(n,w,r,kind,x);$('setsList').append(row);
+ const row=el('div','setline set-card'),top=el('div','set-card-top'),number=el('span','set-position','');
+ const type=el('select','set-type'),remove=el('button','set-delete','×'),fields=el('div','set-card-fields');
+ for(const [value,label] of [['warmup','WARMUP'],['working','WORKING']]){
+  const option=el('option','',label);option.value=value;type.append(option);
+ }
+ type.value=warmup?'warmup':'working';type.setAttribute('aria-label','Warmup or working set');
+ remove.type='button';remove.title='Remove set';remove.setAttribute('aria-label','Remove this set');
+ remove.onclick=()=>{row.remove();renumberSetCards()};
+ top.append(number,type,remove);
+ for(const [caption,value,kind] of [['WEIGHT / LB',weight,'weight'],['REPS',reps,'reps']]){
+  const label=el('label','set-input-label'),span=el('span','',caption),input=el('input','');
+  input.type='number';input.required=true;input.value=value;input.inputMode=kind==='weight'?'decimal':'numeric';
+  input.min=kind==='weight'?'0':'1';input.step=kind==='weight'?'0.5':'1';
+  input.placeholder=kind==='weight'?'Enter lbs':'Enter reps';input.dataset[kind==='weight'?'setWeight':'setReps']='';
+  label.append(span,input);fields.append(label);
+ }
+ row.append(top,fields);$('setsList').append(row);renumberSetCards();
 }
 function openLog(date,exercise){
 editingLogId=null;
+$('setEditorHint').textContent='Edit each set below. Warmups are saved separately from working sets.';
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
 let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
 const planned=planFor(date).ex.find(x=>x[0]===exercise);
@@ -475,13 +492,17 @@ const target=planned?.[2];
 const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(Number(target));
 const squatWeek=squatMonth.some(x=>x.wednesday===iso(date)||x.sunday===iso(date));
 const expSquat=exercise==='Back Squat'?experimentPrescription(date):null;
-if(iso(date)==='2026-11-09'&&exercise==='Back Squat'){
- // Prefill the reported top set only; do not invent or pre-log the warmups.
- addSet(265,6,false);
-}else if(expSquat&&explicit){
- const repTarget=expSquat.percentage>=70?5:expSquat.percentage>=60?6:8;
- for(let i=0;i<2;i++)addSet(target,repTarget);
-}else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
+if(exercise==='Back Squat'){
+ // User's daily squat warmups: bar 45 × 4 then 135 × 8, before exactly two working sets.
+ addSet(45,4,true);
+ addSet(135,8,true);
+ const isReportedDate=iso(date)==='2026-11-09';
+ const workingWeight=isReportedDate?265:(explicit?target:'');
+ const workingReps=isReportedDate?6:(expSquat?expSquat.percentage>=70?5:expSquat.percentage>=60?6:8:6);
+ addSet(workingWeight,workingReps,false);
+ addSet(workingWeight,workingReps,false);
+ $('setEditorHint').textContent='Daily Back Squat: 45 × 4 and 135 × 8 warmups, then 2 working sets. Change any weight or reps as needed.';
+}else if(squatWeek&&explicit&&exercise==='Heel-Elevated Squat'){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
  const scheduled=squatMonth.find(w=>w.wednesday===iso(date)||w.sunday===iso(date));
  for(let i=0;i<(scheduled?.light&&exercise==='Back Squat'?2:3);i++)addSet(target,repTarget);
@@ -493,6 +514,7 @@ function openEditLog(id){
  const item=entries.find(e=>e.id===id);
  if(!item)return;
  editingLogId=id;
+ $('setEditorHint').textContent='Adjust individual weights, reps or set type. Use + Add Set to insert another.';
  modalDate=item.date;
  $('logDate').value=item.date;
  $('logExercise').value=item.exercise;
@@ -524,7 +546,7 @@ function deleteDayLogs(date){
 function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow=''}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
-const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value),warmup:row.children[3].value==='warmup'}));
+const rows=[...$('setsList').children].map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup'}));
 if(!exercise||!date||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Check the exercise, date, weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
 const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.id===editingLogId):-1;
@@ -534,7 +556,7 @@ else entries.push(item);
 if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll()}
 else entries=previous;
 });
-$('addSet').onclick=()=>addSet();$('addWarmupSet').onclick=()=>addSet('', '', true);$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
+$('addSet').onclick=()=>addSet('', '', false);$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
