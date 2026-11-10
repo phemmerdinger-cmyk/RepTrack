@@ -117,6 +117,35 @@ async function syncWHOOP(force=false){
   $('syncMessage').textContent='WHOOP temporarily unavailable. '+(lastWhoopSuccess?'Showing the last available readings.':'No readings available yet.');
  }finally{whoopSyncInProgress=false;renderWHOOP();}
 }
+// 30-day back-squat check-in, November 9–December 8 inclusive.
+// A completed day requires at least one real Back Squat set; a planned set never qualifies.
+const SQUAT_START=new Date(2026,10,9),SQUAT_TOTAL_DAYS=30;
+const isBackSquatLog=e=>/\bback\s+squat\b/i.test(e.exercise||'')&&sets(e).length>0;
+function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date))}
+function renderSquatTracker(){
+ const dates=backSquatDates(),today=iso(new Date()),start=iso(SQUAT_START),end=iso(plus(SQUAT_START,SQUAT_TOTAL_DAYS-1));
+ const box=$('squatTrackerDays');box.replaceChildren();
+ let completed=0,elapsed=0;
+ for(let i=0;i<SQUAT_TOTAL_DAYS;i++){
+  const date=plus(SQUAT_START,i),stamp=iso(date),logged=dates.has(stamp),past=stamp<=today;
+  if(logged)completed++;
+  if(past)elapsed++;
+  const button=el('button','squat-day-chip'+(logged?' completed':past?' missed':' future'),logged?'✓':String(i+1));
+  button.type='button';
+  button.title='Day '+(i+1)+' · '+stamp+(logged?' · Back squat logged':past?' · No back squat logged':' · Upcoming');
+  button.setAttribute('aria-label',button.title);
+  button.addEventListener('click',()=>{selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(date)});
+  box.append(button);
+ }
+ $('squatDayCount').textContent=completed+' / 30 DAYS';
+ $('squatTrackerFill').style.width=completed/SQUAT_TOTAL_DAYS*100+'%';
+ const finished=today>end,upcoming=today<start;
+ $('squatTrackerStatus').textContent=finished?'FINAL REPORT':upcoming?'STARTS NOV 9':'DAY '+Math.min(30,elapsed)+' / 30';
+ $('squatTrackerNote').textContent=finished
+  ?'30-day result: You logged back squats on '+completed+' out of 30 days ('+Math.round(completed/30*100)+'%). ✓ on calendar days means sets were actually logged.'
+  :completed+' completed back-squat day'+(completed===1?'':'s')+' · '+(upcoming?30:Math.max(0,30-elapsed))+' days remaining. ✓ means a Back Squat set was actually logged, not just planned.';
+}
+
 function renderCalendar(){
 $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
 const grid=$('monthGrid');grid.replaceChildren();
@@ -124,13 +153,15 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const completed=entries.some(e=>e.date===stamp);
-const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':''));tile.dataset.date=stamp;
+const completed=entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp);
+const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
+if(squatted)tile.classList.add('squat-done');
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
+if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
 grid.append(tile);
 }
@@ -310,7 +341,7 @@ $('drawerClose').onclick=closeDayDrawer;$('drawerDone').onclick=closeDayDrawer;
 $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOverlay'))closeDayDrawer()});
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
-function renderAll(){renderCalendar();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
+function renderAll(){renderCalendar();renderSquatTracker();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
 window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId)=>{
  if(!/^\d{4}-\d\d-\d\d$/.test(date)||!exercise||!Number.isFinite(+weight)||+weight<0||!Number.isInteger(+reps)||+reps<1)return false;
  const id=String(sessionId||'').slice(0,80),existing=entries.find(e=>e.date===date&&e.exercise===exercise&&e.sessionId===id);
