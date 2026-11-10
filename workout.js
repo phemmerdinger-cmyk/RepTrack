@@ -23,7 +23,8 @@ let selection='scheduled',previewDate=null;
 function showPage(){document.querySelector('[data-view="workout"]')?.click()}
 function chosenPlan(date){
  if(selection==='scheduled')return window.RepTrackPlanForDate?.(date);
- return window.RepTrackWorkoutPreset?.(selection);
+ const p=window.RepTrackWorkoutPreset?.(selection);
+ return window.RepTrackApplyExperiments?.(p,date)||p;
 }
 function showPreview(){
  const date=previewDate||pickDate(),p=chosenPlan(date)||{title:'WORKOUT',focus:'Your session',ex:[]};
@@ -168,6 +169,7 @@ $('workoutCompleteClose').addEventListener('click',()=>{document.querySelector('
 document.querySelectorAll('[data-view="workout"]').forEach(b=>b.addEventListener('click',render));
 document.querySelectorAll('[data-view="calendar"]').forEach(b=>b.addEventListener('click',showPreview));
 window.addEventListener('reptrack-plan-changed',showPreview);
+window.addEventListener('reptrack-experiments-changed',()=>{if(!session)showPreview()});
 window.addEventListener('reptrack-whoop-updated',renderMetric);
 window.addEventListener('reptrack-workouts-changed',()=>{if(session)render()});
 window.addEventListener('storage',e=>{if(e.key===KEY){const v=readJSON(KEY,null);session=valid(v)?v:null;render()}});
