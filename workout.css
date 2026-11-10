@@ -97,3 +97,55 @@
   .mobile-nav-tab{font-size:9.5px;min-height:64px}
   .mobile-nav-tab .mobile-nav-icon{font-size:23px}
 }
+
+/* WHOOP-inspired workout glance without misrepresenting historical heart rate as live telemetry */
+.workout-status-banner{display:flex;align-items:center;gap:9px;margin-bottom:10px;padding:8px 12px;border:1px solid #ffffff22;border-radius:9px;background:#171b23;font-size:10px;font-weight:800;letter-spacing:.09em}
+.workout-status-banner #workoutDataAge{margin-left:auto;color:#a5afbe;letter-spacing:.02em;font-size:9px;text-align:right}
+.workout-pulse-dot{width:8px;height:8px;flex:none;border-radius:50%;background:#f8f9fb;box-shadow:0 0 0 4px #ffffff12;animation:livePulse 1.8s ease-in-out infinite}
+.whoop-vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px}
+.whoop-hr-primary,.whoop-strain-primary{min-height:195px;border:1px solid #ffffff25;border-radius:17px;padding:21px;background:linear-gradient(145deg,#242a36,#0c0e14 76%);display:flex;flex-direction:column;justify-content:center;box-shadow:inset 0 1px #ffffff12}
+.whoop-heart-icon{font-size:15px;line-height:0;display:inline-block;margin-right:5px;color:#f1f3f7}
+.whoop-hr-value{display:flex;align-items:baseline;gap:10px}
+.whoop-hr-value strong{font:750 clamp(52px,6vw,84px) 'Space Grotesk',sans-serif;letter-spacing:-.1em;line-height:1.2}
+.whoop-hr-value span{font-size:14px;color:#a7b1c0;font-weight:750}
+.whoop-hr-caption{font-size:10px;line-height:1.5;color:#9ba7b7;letter-spacing:.05em;margin-top:8px}
+.whoop-strain-value{display:flex;align-items:baseline;gap:8px}
+.whoop-strain-value strong{font:750 clamp(48px,6vw,76px) 'Space Grotesk',sans-serif;letter-spacing:-.09em;line-height:1.15}
+.whoop-strain-value span{font-size:14px;color:#aeb8c5}
+.strain-track{height:8px;margin:22px 0 9px;border-radius:12px;background:#ffffff28;overflow:hidden}
+.strain-track>div{height:100%;width:0;background:linear-gradient(90deg,#929aa7,#fff);border-radius:12px;transition:width .6s}
+.whoop-vitals-secondary{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.whoop-vitals-secondary>div{min-width:0;padding:15px;border:1px solid #ffffff1b;background:#151922;border-radius:12px;display:flex;flex-direction:column;gap:8px}
+.whoop-vitals-secondary span{font-size:9px;letter-spacing:.08em;color:#a6b0bf;font-weight:750}
+.whoop-vitals-secondary strong{font:750 clamp(23px,3vw,32px) 'Space Grotesk',sans-serif;letter-spacing:-.055em}
+.whoop-vitals-secondary small{font-size:9px;color:#8d99a9}
+@media(max-width:700px){
+ /* Three secondary tabs; Workout is the dominant action. */
+ .mobile-nav{grid-template-columns:minmax(0,.82fr) minmax(0,.82fr) minmax(0,.82fr) minmax(0,1.48fr);gap:5px}
+ .mobile-nav-tab{min-height:70px;font-size:10.5px}
+ .mobile-nav-tab[data-view="workout"]{background:linear-gradient(135deg,#f9fafc,#ccd3df);color:#11151b;font-size:12px;font-weight:900;border-color:#f5f6f9;box-shadow:0 3px 22px #ffffff19}
+ .mobile-nav-tab[data-view="workout"] .mobile-nav-icon{font-size:29px}
+ .mobile-nav-tab[data-view="workout"].active{background:#fff;box-shadow:0 0 0 2px #ffffff5c,0 7px 21px #ffffff18}
+ .mobile-nav-tab:not([data-view="workout"]).active{background:#454c58;color:#fff;border-color:#6c7482;box-shadow:inset 0 1px #ffffff19}
+ [data-page="workout"] .page-head{margin:0 0 12px}
+ [data-page="workout"] .page-head h1{font-size:36px}
+ [data-page="workout"] .page-head p{font-size:11px}
+ .session-hero{margin-bottom:9px}
+ .session-metrics{grid-template-columns:repeat(2,minmax(0,1fr));margin:9px 0}
+ .whoop-vitals{gap:8px;margin:0 0 9px}
+ .whoop-hr-primary,.whoop-strain-primary{min-height:155px;padding:14px 12px;border-radius:13px}
+ .whoop-vitals-secondary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .whoop-vitals-secondary>div{padding:12px}
+ .whoop-hr-value strong{font-size:clamp(43px,13vw,64px)}
+ .whoop-strain-value strong{font-size:clamp(43px,12vw,60px)}
+ .whoop-strain-primary .strain-track{margin:14px 0 7px}
+ .whoop-hr-caption{font-size:9px}
+ .workout-status-banner{font-size:9px}
+ .workout-status-banner #workoutDataAge{font-size:8px}
+ .workout-big-btn{width:100%;min-height:62px;border-radius:13px;font-size:14px}
+ [data-page="workout"] .workout-layout .section{padding:16px}
+ .rest-station{position:relative}
+ .live-set-form button{font-size:13px}
+ .session-actions button{min-height:50px}
+}
+@media(max-width:370px){.mobile-nav-tab[data-view="workout"]{font-size:11px}.mobile-nav-tab:not([data-view="workout"]){font-size:9px}}
