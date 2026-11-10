@@ -209,3 +209,34 @@
  .day .squat-check{width:16px;height:16px;right:3px;bottom:4px;font-size:11px}
  .day.squat-done .day-foot{font-size:7px;max-width:calc(100% - 12px)}
 }
+
+/* Separate weight and reps for EVERY set, including warmups. */
+.sethead,.setline{
+ display:grid;
+ grid-template-columns:27px minmax(62px,1fr) minmax(57px,.8fr) minmax(88px,1.05fr) 34px;
+ gap:6px;align-items:center;
+}
+.sethead span:nth-child(4){text-align:left}
+.setline input,.setline select{width:100%;min-width:0;box-sizing:border-box}
+.setline select.set-type{font-size:11px;font-weight:700;border:1px solid #535c6b;border-radius:8px;min-height:43px;padding:7px 3px;background:#141922;color:#f2f4f8}
+.log-set-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.log-set-actions button{font-size:10px;white-space:nowrap;padding:10px}
+.log-set-actions button:first-child{border-color:#66717e}
+.set-editor-hint{font-size:11px;line-height:1.6;color:#aeb8c7;margin:4px 0 15px}
+.live-set-form{grid-template-columns:minmax(0,1fr) minmax(0,.8fr) minmax(105px,1fr) auto}
+.live-set-form select{width:100%;min-height:47px;background:#10141c;border:1px solid #505868;border-radius:8px;color:#fff;font-weight:700;font-size:12px;padding:7px}
+.live-set-history .warmup-history{border-color:#7b8794;background:#ffffff08;color:#b3becd}
+@media(max-width:700px){
+ .live-set-form{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(110px,1fr)}
+ .live-set-form button{grid-column:1/-1}
+ .sethead,.setline{grid-template-columns:21px minmax(48px,1fr) minmax(45px,.8fr) minmax(76px,1fr) 28px;gap:3px}
+ .setline input{padding:10px 4px;font-size:13px}
+ .setline select.set-type{font-size:9px;min-height:41px;padding:5px 2px}
+ .setline .del{padding:8px 3px}
+ .log-set-actions button{padding:9px 7px;font-size:10px}
+ .sethead{font-size:8px}
+}
+@media(max-width:365px){
+ .sethead,.setline{grid-template-columns:19px minmax(42px,1fr) minmax(39px,.75fr) minmax(73px,1fr) 24px;gap:2px}
+ .setline input{font-size:12px}
+}
