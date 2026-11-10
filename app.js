@@ -422,7 +422,10 @@ const target=planned?.[2];
 const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(Number(target));
 const squatWeek=squatMonth.some(x=>x.wednesday===iso(date)||x.sunday===iso(date));
 const expSquat=exercise==='Back Squat'?experimentPrescription(date):null;
-if(expSquat&&explicit){
+if(iso(date)==='2026-11-09'&&exercise==='Back Squat'){
+ // Prefill the reported top set only; do not invent or pre-log the warmups.
+ addSet(265,6,false);
+}else if(expSquat&&explicit){
  const repTarget=expSquat.percentage>=70?5:expSquat.percentage>=60?6:8;
  for(let i=0;i<2;i++)addSet(target,repTarget);
 }else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
