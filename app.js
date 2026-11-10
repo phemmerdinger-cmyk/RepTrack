@@ -428,7 +428,7 @@ if(expSquat&&explicit){
 }else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
  const scheduled=squatMonth.find(w=>w.wednesday===iso(date)||w.sunday===iso(date));
- for(let i=0;i<scheduled?.light&&exercise==='Back Squat'?2:3;i++)addSet(target,repTarget);
+ for(let i=0;i<(scheduled?.light&&exercise==='Back Squat'?2:3);i++)addSet(target,repTarget);
 }else if(prev?.sets?.length){for(const item of prev.sets.slice(0,12))addSet(item.weight,item.reps,!!item.warmup)}
 else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
