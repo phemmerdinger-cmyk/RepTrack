@@ -72,6 +72,7 @@ button.addEventListener('click',async()=>{
  }catch{notice.textContent='WHOOP is temporarily unavailable. Your calendar and manual workout history are unaffected.'}
  finally{button.disabled=false;button.textContent='CHECK FOR FINISHED WORKOUTS'}
 });
+$('startSelectedWorkout')?.addEventListener('click',()=>{document.querySelector('[data-view="workout"]')?.click();render()});
 $('drawerStartWorkout')?.addEventListener('click',()=>{
  $('drawerDone')?.click();document.querySelector('[data-view="workout"]')?.click();render();
 });
