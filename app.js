@@ -255,14 +255,14 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const savedWorkout=completedSessions().some(x=>x.date===stamp),completed=savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
-const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+p.title+(completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
+const savedRecord=completedSessions().filter(x=>x.date===stamp).at(-1),savedWorkout=!!savedRecord,completed=savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
+const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+(savedRecord?.title||p.title)+(savedWorkout?', completed workout saved':completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
 if(squatted)tile.classList.add('squat-done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',p.title),el('span','day-sub',p.focus),el('span','day-foot',savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',savedRecord?.title||p.title),el('span','day-sub',savedRecord?'SAVED · '+Number(savedRecord.sets||0)+' SETS':p.focus),el('span','day-foot',savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
 if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
 if(squatExperiment){tile.classList.add('experiment-planned');const tag=el('span','experiment-calendar-tag','SQ '+squatExperiment.weight+' LB');tag.title='Squat Every Day · 2 sets at '+squatExperiment.weight+' lb ('+squatExperiment.percentage+'% estimated max)';tile.append(tag);tile.setAttribute('aria-label',tile.getAttribute('aria-label')+', squat experiment 2 sets at '+squatExperiment.weight+' lb')}
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
