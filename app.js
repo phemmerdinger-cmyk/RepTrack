@@ -70,7 +70,7 @@ window.RepTrackWorkoutPreset=key=>{
 };
 window.RepTrackSelectedDate=()=>iso(selected);
 
-let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,timer=null,seconds=120,remaining=120;
+let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,editingLogId=null,timer=null,seconds=120,remaining=120;
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=Array.isArray(x)?x.filter(valid):[]}catch{entries=[]}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(entries));return true}catch{alert('Unable to save workout data in this browser.');return false}}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
@@ -147,7 +147,7 @@ left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==
 $('dayHistory').replaceChildren();
 if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
-done.forEach(e=>{const line=el('div','perf-row'),detail=el('div');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const del=el('button','smallbtn btn-ghost','REMOVE');del.onclick=()=>{if(confirm('Remove logged exercise?')){entries=entries.filter(x=>x.id!==e.id);if(save())renderAll()}};line.append(detail,del);$('dayHistory').append(line)});
+done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
 }else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
 $('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
 renderWHOOP();
@@ -296,10 +296,10 @@ function renderDayDrawer(){
  else logged.forEach(e=>{
   const row=el('div','drawer-exercise'),desc=el('div','');
   desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>x.weight+' lb × '+x.reps).join(' · ')));
-  const del=el('button','smallbtn','REMOVE');del.type='button';del.onclick=()=>{
-   if(confirm('Remove this logged exercise?')){entries=entries.filter(x=>x.id!==e.id);if(save())renderAll();}
-  };
-  row.append(desc,del);past.append(row);
+  const buttons=el('div','log-actions');
+  const edit=el('button','smallbtn','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);
+  const del=el('button','smallbtn','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);
+  buttons.append(edit,del);row.append(desc,buttons);past.append(row);
  });
 }
 $('drawerClose').onclick=closeDayDrawer;$('drawerDone').onclick=closeDayDrawer;
@@ -324,6 +324,7 @@ r.type='number';r.step='1';r.min='1';r.inputMode='numeric';r.required=true;r.pla
 row.append(n,w,r,x);$('setsList').append(row);
 }
 function openLog(date,exercise){
+editingLogId=null;
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
 let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
 const planned=planFor(date).ex.find(x=>x[0]===exercise);
@@ -337,13 +338,48 @@ if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squa
 else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
-function closeLog(){$('modalOverlay').classList.add('hidden');if(!drawerOpen)document.body.style.overflow=''}
+function openEditLog(id){
+ const item=entries.find(e=>e.id===id);
+ if(!item)return;
+ editingLogId=id;
+ modalDate=item.date;
+ $('logDate').value=item.date;
+ $('logExercise').value=item.exercise;
+ $('logNotes').value=item.notes||'';
+ $('setsList').replaceChildren();
+ for(const s of item.sets){addSet(s.weight,s.reps)}
+ if(!item.sets.length)addSet();
+ $('modalTitle').textContent='EDIT LOGGED EXERCISE';
+ $('modalOverlay').classList.remove('hidden');
+ document.body.style.overflow='hidden';
+ $('logExercise').focus();
+}
+function deleteLoggedExercise(id){
+ const item=entries.find(e=>e.id===id);
+ if(!item||!confirm('Delete '+item.exercise+' from '+item.date+'? This will remove its logged sets from your charts.'))return;
+ const next=entries.filter(e=>e.id!==id);
+ const previous=entries;entries=next;
+ if(save()){renderAll()}else entries=previous;
+}
+function deleteDayLogs(date){
+ const logs=entries.filter(e=>e.date===date);
+ if(!logs.length)return;
+ if(!confirm('Delete all '+logs.length+' logged exercises from '+date+'? Your planned workout will remain. This cannot be undone.'))return;
+ const previous=entries;entries=entries.filter(e=>e.date!==date);
+ if(save())renderAll();else entries=previous;
+}
+function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow=''}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
 const rows=[...$('setsList').children].map(row=>({weight:Number(row.children[1].value),reps:Number(row.children[2].value)}));
 if(!exercise||!date||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Check the exercise, date, weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
-entries.push(item);if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);closeLog();renderAll();}
+const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.id===editingLogId):-1;
+if(editingLogId&&editedIndex===-1){alert('The original workout entry is no longer available.');return}
+if(editedIndex>=0)entries[editedIndex]={...entries[editedIndex],date:item.date,exercise:item.exercise,sets:item.sets,notes:item.notes};
+else entries.push(item);
+if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll()}
+else entries=previous;
 });
 $('addSet').onclick=()=>addSet();$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
