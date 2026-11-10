@@ -69,14 +69,30 @@ function setPause(){
  write();render();
 }
 function renderMetric(){
+ const whoop=window.RepTrackWHOOPData;
  const recovery=$('recoveryMetric')?.textContent?.trim()||'—',strain=$('strainMetric')?.textContent?.trim()||'—',sleep=$('sleepMetric')?.textContent?.trim()||'—';
- $('workoutRecovery').textContent=recovery;$('workoutStrain').textContent=strain;
+ const readNum=x=>x!==null&&x!==undefined&&x!==''&&Number.isFinite(Number(x))?Number(x):null;
+ const stat=(id,val,unit='')=>{const x=readNum(val);$(id).textContent=x===null?'—':Math.round(x)+(unit||'')};
+ $('workoutRecovery').textContent=recovery;
+ $('workoutStrain').textContent=strain;
+ $('workoutStrainLarge').textContent=strain;
  $('workoutRecovery').className=recovery==='—'?'':$('recoveryMetric')?.className?.replace('metric ','')||'';
- const connected=$('whoopBadge')?.textContent?.includes('CONNECTED');
- $('workoutRecoveryLabel').textContent=connected?'WHOOP RECOVERY':'WHOOP NOT CONNECTED';
+ const strainValue=readNum(whoop?.cycle?.score?.strain);
+ $('workoutStrainProgress').style.width=(strainValue===null?0:Math.min(100,Math.max(0,strainValue/21*100)))+'%';
+ stat('workoutDayAvgHr',whoop?.cycle?.score?.average_heart_rate);
+ stat('workoutMaxHr',whoop?.cycle?.score?.max_heart_rate);
+ stat('workoutRestingHr',whoop?.recovery?.score?.resting_heart_rate);
+ stat('workoutHRV',whoop?.recovery?.score?.hrv_rmssd_milli);
+ $('workoutSleep').textContent=sleep;
+ const connected=!!whoop?.connected;
+ $('workoutRecoveryLabel').textContent=connected?'WHOOP DAILY RECOVERY':'WHOOP NOT CONNECTED';
+ const latest=Number(window.RepTrackWHOOPLastSync||0);
+ const age=latest?Math.floor((Date.now()-latest)/60000):null;
+ $('workoutDataAge').textContent=latest?'WHOOP CHECKED '+(age===0?'JUST NOW':age+' MIN AGO'):'WHOOP AWAITING DATA';
+ $('workoutHeartRateStatus').textContent=connected?'CYCLE SUMMARY · NOT YOUR CURRENT HEARTBEAT':'NOT LIVE · CONNECT WHOOP FOR CYCLE DATA';
  const score=parseFloat(recovery);const guidance=!Number.isFinite(score)?'Use your energy and form to set your training intensity.':score>=67?'Recovery is high. Follow your training plan if you feel ready.':score>=34?'Moderate recovery. Consider keeping a few reps in reserve.':'Low recovery. Consider reducing intensity or taking a rest day.';
  $('workoutWhoopInsight').textContent=guidance+' Sleep performance: '+sleep+'.';
- $('workoutSyncStatus').textContent=connected?'WHOOP recovery and day strain refresh when available, typically every 5 minutes while the app is open. This is not a live HR stream.':'Your RepTrack lifting session works independently. Reconnect WHOOP under Analytics → Data & Connection if needed.';
+ $('workoutSyncStatus').textContent=connected?'WHOOP recovery, cycle strain and cycle heart-rate summaries are checked automatically about every minute while this app is open. They are not continuous heart-rate readings.':'Your lifting tracker works independently of WHOOP. Connect WHOOP under Analytics → Data & Connection.';
 }
 function updateClock(){
  if(!session)return;
@@ -148,6 +164,7 @@ $('workoutCompleteClose').addEventListener('click',()=>{document.querySelector('
 document.querySelectorAll('[data-view="workout"]').forEach(b=>b.addEventListener('click',render));
 document.querySelectorAll('[data-view="calendar"]').forEach(b=>b.addEventListener('click',showPreview));
 window.addEventListener('reptrack-plan-changed',showPreview);
+window.addEventListener('reptrack-whoop-updated',renderMetric);
 window.addEventListener('reptrack-workouts-changed',()=>{if(session)updateClock()});
 window.addEventListener('storage',e=>{if(e.key===KEY){const v=readJSON(KEY,null);session=valid(v)?v:null;render()}});
 const metric=$('recoveryMetric');if(metric){new MutationObserver(renderMetric).observe(metric,{childList:true,subtree:true,characterData:true})}
