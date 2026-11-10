@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/analytics.css">
 <link rel="stylesheet" href="/workout.css">
 <link rel="stylesheet" href="/experiments.css">
+<link rel="stylesheet" href="/whoop-sync.css">
 </head>
 <body>
 <div class="app">
@@ -27,7 +28,7 @@
 <button class="nav-item active" data-view="calendar">CALENDAR</button>
 <button class="nav-item" data-view="analytics">ANALYTICS</button>
 <button class="nav-item" data-view="overload">PROGRESSIVE OVERLOAD</button>
-<button class="nav-item" data-view="workout">WORKOUT</button>
+<button class="nav-item" data-view="workout">WHOOP</button>
 <button class="nav-item" data-view="experiments">EXPERIMENTS</button>
 
 </nav>
@@ -67,7 +68,7 @@
 <div class="section-title"><h3>WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
 <div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">▶ START WORKOUT</button></div>
-<div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" style="margin-top:20px"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
+<div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" style="margin-top:20px"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
 </div>
 <div class="section">
 <h3>RECOVERY GUIDANCE</h3>
@@ -131,52 +132,19 @@
 <div class="section overload-help"><div class="micro">HOW TO TRACK PROGRESS</div><p>Log sets on any calendar day. When you return here, select the exercise and chart metric you want to compare. A heavier weight, an extra rep at the same weight, or more quality work can all indicate progression. Target suggestions are optional and should be adapted to recovery and technique.</p><button type="button" class="btn-primary" id="overloadOpenCalendar">OPEN WORKOUT CALENDAR ↗</button></div>
 </section>
 <section data-page="workout" class="hidden">
-<div class="page-head"><div><div class="micro">PERSONAL PERFORMANCE SESSION</div><h1>WORKOUT MODE</h1></div><p>Track your exercises and rest while WHOOP recovery and strain stay alongside your training.</p></div>
-<div id="workoutIdle" class="section workout-idle">
-<span class="future-pill">REPTRACK LIVE TRAINING</span><h2>Start stronger.</h2><p>Select your scheduled workout or choose any calendar day. Weight and rep targets carry into a distraction-free workout session.</p>
-<div class="workout-pick"><label class="field" for="preWorkoutSelect">CHOOSE TODAY'S WORKOUT<select id="preWorkoutSelect"><option value="scheduled">SCHEDULED WORKOUT</option><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS_QUAD">LEGS · QUAD FOCUS</option><option value="LEGS_POSTERIOR">LEGS · POSTERIOR FOCUS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS_ARMS">SHOULDERS + ARMS</option><option value="REST">RECOVERY / MOBILITY</option><option value="CUSTOM">CUSTOM WORKOUT</option></select></label><p class="workout-pick-note">This switches only the workout you're about to start. Your calendar schedule stays unchanged.</p></div>
-<div class="idle-preview"><div class="micro" id="idleWorkoutDate">TODAY</div><strong id="idleWorkoutTitle">TODAY'S WORKOUT</strong><div id="idleWorkoutFocus" class="muted"></div><div id="idleWorkoutExercises" class="workout-exercise-preview"></div></div>
-<button id="workoutBegin" class="btn-primary workout-big-btn" type="button">▶ START WORKOUT</button><p class="muted" style="font-size:11px">RepTrack sessions do not start or stop a native WHOOP activity.</p>
+<div class="page-head"><div><div class="micro">CONNECTED ACTIVITY HISTORY</div><h1>WHOOP SYNC</h1></div><p>Record workouts in WHOOP. RepTrack brings completed WHOOP activities into your training calendar automatically whenever the app is open.</p></div>
+<div class="whoop-sync-intro">
+<div class="whoop-sync-mark">W</div>
+<div><div class="micro">ONE WORKOUT APP</div><h2>TRAIN IN WHOOP.<br>REVIEW IN REPTRACK.</h2>
+<p>Your WHOOP activity type, duration, strain, and available heart-rate summary appear here and on the matching calendar day. RepTrack refreshes periodically whenever you open it.</p></div>
 </div>
-<div id="workoutActive" class="hidden">
-<div class="workout-status-banner"><span class="workout-pulse-dot"></span><span>REPTRACK SESSION ACTIVE</span><span id="workoutDataAge">WHOOP DATA UPDATES PERIODICALLY</span></div>
-<div class="session-hero">
-<div><div class="micro" id="activeWorkoutDate">SESSION IN PROGRESS</div><h2 id="activeWorkoutName">WORKOUT</h2><div id="activeWorkoutFocus" class="muted"></div></div>
-<div class="session-elapsed"><span class="micro">ELAPSED TIME</span><strong id="workoutElapsed">00:00:00</strong></div></div>
-<div class="whoop-vitals" aria-label="WHOOP wellness metrics">
-<div class="whoop-hr-primary"><div class="micro"><span class="whoop-heart-icon">♥</span> LATEST CYCLE AVG HEART RATE</div><div class="whoop-hr-value"><strong id="workoutDayAvgHr">—</strong><span>BPM</span></div><div class="whoop-hr-caption" id="workoutHeartRateStatus">WHOOP API DOES NOT STREAM LIVE HEART RATE</div></div>
-<div class="whoop-strain-primary"><div class="micro">WHOOP DAY STRAIN</div><div class="strain-track"><div id="workoutStrainProgress"></div></div><div class="whoop-strain-value"><strong id="workoutStrainLarge">—</strong><span>/ 21</span></div><div class="whoop-hr-caption">DAY STRAIN · PERIODIC API UPDATE</div></div>
-<div class="whoop-vitals-secondary">
-<div><span>RESTING HEART RATE</span><strong id="workoutRestingHr">—</strong><small>BPM · DAILY RECOVERY</small></div>
-<div><span>HEART RATE VARIABILITY</span><strong id="workoutHRV">—</strong><small>MS · DAILY RECOVERY</small></div>
-<div><span>CYCLE MAX HEART RATE</span><strong id="workoutMaxHr">—</strong><small>BPM · CYCLE SUMMARY</small></div>
-<div><span>SLEEP PERFORMANCE</span><strong id="workoutSleep">—</strong><small>% · LAST SLEEP</small></div>
+<div class="whoop-sync-actions"><a class="whoop-sync-link" href="https://app.whoop.com/" target="_blank" rel="noopener">OPEN WHOOP</a><button id="whoopSyncNow" type="button">CHECK FOR FINISHED WORKOUTS</button></div>
+<div id="whoopSyncNotice" class="whoop-sync-notice" aria-live="polite">Checking WHOOP connection…</div>
+<div class="whoop-sync-section">
+<div class="section-title"><div><div class="micro">AUTOMATIC ACTIVITY IMPORT</div><h2>RECENT WHOOP WORKOUTS</h2></div><span id="whoopWorkoutCount" class="future-pill">—</span></div>
+<div id="whoopWorkoutList" class="whoop-workout-list"><p class="muted">Checking for workouts…</p></div>
 </div>
-</div>
-<div class="session-metrics">
-<div><span class="micro">WHOOP RECOVERY</span><strong id="workoutRecovery">—</strong><small id="workoutRecoveryLabel">SYNCING</small></div>
-<div><span class="micro">WHOOP DAY STRAIN</span><strong id="workoutStrain">—</strong><small>PERIODIC UPDATE</small></div>
-<div><span class="micro">SETS RECORDED</span><strong id="workoutSets">0</strong><small>YOUR REPTRACK LOG</small></div>
-<div><span class="micro">WORKOUT VOLUME</span><strong id="workoutVolume">0</strong><small>LB × REPS</small></div></div>
-<div class="workout-layout">
-<div class="section"><div class="section-title"><div><div class="micro">LIVE WORKOUT PLAN</div><h2>EXERCISES & SETS</h2></div><button id="workoutAddExercise" class="smallbtn" type="button">+ ADD EXERCISE</button></div>
-<div id="workoutExerciseList"></div><div class="session-actions"><button id="workoutFinish" class="btn-primary" type="button">✓ FINISH WORKOUT</button><button id="workoutPause" type="button">PAUSE TIMER</button></div><p class="session-save-note">Your sets are saved as a draft on this device. They appear in the calendar only when you save the finished workout.</p></div>
-<div class="session-tools">
-<div class="section rest-station"><span class="micro">REST INTERVAL</span><div id="workoutRestClock" class="rest-readout">02:00</div><div class="rest-quick"><button type="button" data-workout-rest="60">1 MIN</button><button type="button" data-workout-rest="90">90 SEC</button><button type="button" data-workout-rest="120">2 MIN</button><button type="button" data-workout-rest="180">3 MIN</button></div><div class="action-row"><button id="workoutRestToggle" class="btn-primary" type="button">START REST</button><button id="workoutRestReset" type="button">RESET</button></div></div>
-<div class="section"><div class="micro">TRAINING GUIDANCE</div><p id="workoutWhoopInsight" class="session-guidance">Your WHOOP recovery will inform the session.</p><div id="workoutSyncStatus" class="chart-sub">WHOOP metrics update periodically. For live beat-by-beat heart rate, use WHOOP itself or a separate Bluetooth-enabled native app.</div><a href="https://app.whoop.com/" target="_blank" rel="noopener" class="whoop-external">OPEN WHOOP ↗</a></div>
-</div></div></div>
-<div id="workoutDecision" class="section workout-decision hidden" role="group" aria-labelledby="workoutDecisionTitle">
-<span class="future-pill">END WORKOUT</span>
-<h2 id="workoutDecisionTitle">Save this workout?</h2>
-<p id="workoutDecisionSummary">Your sets are ready to save.</p>
-<div class="workout-decision-actions">
-<button id="workoutSave" class="btn-primary" type="button">✓ SAVE WORKOUT</button>
-<button id="workoutDiscard" class="workout-discard-btn" type="button">DISCARD WORKOUT</button>
-<button id="workoutKeepGoing" type="button">KEEP WORKING OUT</button>
-</div>
-<p class="session-save-note">Save adds your completed workout to today's calendar and strength history. Discard removes this session's draft and will not affect older workouts.</p>
-</div>
-<div id="workoutComplete" class="section workout-complete hidden"><span class="future-pill">SESSION COMPLETED</span><h2>Workout complete.</h2><p id="workoutSummary">Your work has been saved.</p><button id="workoutCompleteClose" class="btn-primary" type="button">BACK TO CALENDAR</button></div>
+<div class="whoop-sync-footnote">WHOOP's public API shares activity details such as strain, heart rate, and duration. It does not provide the individual Strength Trainer weights, sets, and reps. You can still enter those in RepTrack's calendar when you want strength-progress tracking.</div>
 </section>
 <section class="hidden" data-page="experiments">
 <div class="page-head"><div><div class="micro">PERSONAL TRAINING LAB</div><h1>EXPERIMENTS</h1></div><p>Turn a training challenge into scheduled workouts. Only logged sets count toward completion.</p></div>
@@ -208,9 +176,9 @@
 </div>
 <div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
-<div id="drawerCompletedWorkouts" class="completed-day-workouts"></div><div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
+<div id="drawerWhoopActivities" class="whoop-day-activities"></div><div id="drawerCompletedWorkouts" class="completed-day-workouts"></div><div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
 <div class="drawer-log-heading"><div class="micro">LOGGED FOR THIS DAY</div><button id="drawerClearDay" class="smallbtn btn-ghost" type="button">DELETE DAY LOGS</button></div><div id="drawerLogged"></div>
-<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">▶ START THIS WORKOUT</button></div>
+<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div>
 <div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ ADD EXERCISE</button><button id="drawerDone" type="button">DONE</button></div>
 </div></div>
 <div id="modalOverlay" class="overlay hidden" role="presentation">
@@ -228,6 +196,6 @@
 <script src="/app.js" defer></script>
 <script src="/future.js" defer></script>
 <script src="/analytics.js" defer></script>
-<script src="/workout.js" defer></script>
+<script src="/whoop-sync.js" defer></script>
 <script src="/experiments.js" defer></script>
 </body></html>
