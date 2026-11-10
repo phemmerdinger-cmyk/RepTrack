@@ -298,7 +298,16 @@ grid.append(tile);
 }
 function renderSelected(){
 const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key);
-$('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=p.title;$('dayFocus').textContent=p.focus;
+const whoopDone=whoopActivitiesOn(key),savedDone=completedSessions().filter(e=>e.date===key);
+const finished=whoopDone.length>0||savedDone.length>0||done.length>0;
+const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):done.length?p.title+' · LOGGED':p.title);
+$('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=actualTitle;
+$('dayFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+$('selectedWorkoutResult').classList.toggle('hidden',!finished);
+$('selectedPlannedSection').classList.toggle('hidden',finished);
+$('selectedAdditionalActions').classList.toggle('hidden',!finished);
+$('selectedResultHeading').textContent=actualTitle;
+$('selectedResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone.length===1?'Y':'IES')+' · '+savedDone.length+' SAVED SESSION'+(savedDone.length===1?'':'S')+' · '+done.reduce((n,e)=>n+sets(e).length,0)+' LOGGED SETS';
 $('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
 $('exerciseList').replaceChildren();
 for(const [exercise,prescription,targetWeight] of p.ex){
@@ -311,8 +320,9 @@ $('dayHistory').replaceChildren();
 if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
 done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>(s.warmup?'WARMUP ':'')+s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
-}else $('dayHistory').append(el('div','muted','No exercises logged for this date.'));
+}else if(!finished)$('dayHistory').append(el('div','muted','No exercises logged for this date.'));
 $('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
+$('addAfterWorkout').onclick=()=>openLog(selected,'');
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
 $('clearSelectedDay').onclick=()=>deleteDayLogs(key);
 renderWHOOP();
@@ -439,9 +449,17 @@ function closeDayDrawer(){
 function renderDayDrawer(){
  if(!drawerOpen)return;
  const p=planFor(selected),date=iso(selected),logged=entries.filter(e=>e.date===date),doneNames=new Set(logged.map(e=>e.exercise));
+ const whoopDone=whoopActivitiesOn(date),savedDone=completedSessions().filter(e=>e.date===date);
+ const finished=whoopDone.length>0||savedDone.length>0||logged.length>0;
+ const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):logged.length?p.title+' · LOGGED':p.title);
  $('drawerDate').textContent=dateLabel(selected).toUpperCase();
- $('drawerWorkout').textContent=p.title;
- $('drawerFocus').textContent=p.focus;
+ $('drawerWorkout').textContent=actualTitle;
+ $('drawerFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+ $('drawerWorkoutResult').classList.toggle('hidden',!finished);
+ $('drawerPlannedSection').classList.toggle('hidden',finished);
+ $('drawerResultHeading').textContent=actualTitle;
+ $('drawerResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone.length===1?'Y':'IES')+' · '+savedDone.length+' SAVED SESSION'+(savedDone.length===1?'':'S')+' · '+logged.reduce((n,e)=>n+sets(e).length,0)+' LOGGED SETS';
+ $('drawerLoggedHeader').classList.toggle('hidden',!logged.length);
  const plannedDone=p.ex.filter(([ex])=>doneNames.has(ex)).length;
  $('drawerCount').textContent=plannedDone+' OF '+p.ex.length+' PLANNED EXERCISES LOGGED';
  $('drawerMeterFill').style.width=(p.ex.length?plannedDone/p.ex.length*100:0)+'%';
@@ -461,7 +479,7 @@ function renderDayDrawer(){
  renderWhoopDay($('drawerWhoopActivities'),date);
  renderCompletedForDate($('drawerCompletedWorkouts'),date);
  const past=$('drawerLogged');past.replaceChildren();
- if(!logged.length)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
+ if(!logged.length&&!finished)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
  else logged.forEach(e=>{
   const row=el('div','drawer-exercise'),desc=el('div','');
   desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>(x.warmup?'WARMUP ':'')+x.weight+' lb × '+x.reps).join(' · ')));
