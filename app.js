@@ -31,13 +31,14 @@ function presetFor(type,day){
  const candidate=plan.find(p=>p.title===type&&(type!=='LEGS'||day===0?p===plan[0]:p===plan[3]))||plan.find(p=>p.title===type);
  return clonePlan(candidate||plan[day]);
 }
-// Four-week back squat plan adapted to Wednesday and Sunday leg days.
-// Prior RepTrack squat targets were 245 lb heavy, 230 lb volume, and 215 lb heel-elevated.
+// Rebased after user-reported Monday Nov 9 top Back Squat of 265 × 6.
+// Reported performance is a planning baseline, NOT a saved workout log.
+// Nov 11 is a deliberate lighter day, not another heavy workout.
 const squatMonth=[
- {week:1,wednesday:'2026-11-11',sunday:'2026-11-15',heavy:245,volume:230,heel:215},
- {week:2,wednesday:'2026-11-18',sunday:'2026-11-22',heavy:250,volume:235,heel:220},
- {week:3,wednesday:'2026-11-25',sunday:'2026-11-29',heavy:255,volume:240,heel:225},
- {week:4,wednesday:'2026-12-02',sunday:'2026-12-06',heavy:260,volume:245,heel:230}
+ {week:1,wednesday:'2026-11-11',sunday:'2026-11-15',heavy:185,volume:225,heel:185,light:true},
+ {week:2,wednesday:'2026-11-18',sunday:'2026-11-22',heavy:250,volume:230,heel:205},
+ {week:3,wednesday:'2026-11-25',sunday:'2026-11-29',heavy:255,volume:235,heel:210},
+ {week:4,wednesday:'2026-12-02',sunday:'2026-12-06',heavy:260,volume:240,heel:215}
 ];
 function squatMonthWorkout(stamp){
  const w=squatMonth.find(x=>x.wednesday===stamp||x.sunday===stamp);
@@ -46,9 +47,9 @@ function squatMonthWorkout(stamp){
  const p=clonePlan(heavy?plan[3]:plan[0]);
  // Each default working set uses this weight; recorded weights can always be changed.
  p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name)&&!/^Heel-Elevated Squat$/i.test(name));
- p.ex.unshift(['Back Squat',heavy?'3 × 6–8':'3 × 8–10',heavy?w.heavy:w.volume]);
+ p.ex.unshift(['Back Squat',heavy?(w.light?'2 × 6–8':'3 × 6–8'):'3 × 8–10',heavy?w.heavy:w.volume]);
  if(!heavy)p.ex.splice(1,0,['Heel-Elevated Squat','3 × 10–12',w.heel]);
- p.focus+=(heavy?' · Strength':' · Volume')+' · Squat week '+w.week;
+ p.focus+=(w.light?' · Light technique / recovery':heavy?' · Strength':' · Volume')+' · Squat week '+w.week;
  return p;
 }
 window.RepTrackSquatMonth=squatMonth;
@@ -105,7 +106,7 @@ window.addEventListener('reptrack-experiments-changed',updateExperimentState);
 function planFor(d){
  const stamp=iso(d),day=d.getDay();
  // Today (November 9, 2026) was a legs session; only that date changes, not every Monday.
- const fallback=stamp==='2026-11-09'?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
+ const fallback=stamp==='2026-11-09'?(()=>{const p=presetFor('LEGS',0);p.focus='Heavy legs · reported 265 lb × 6 Back Squat (not yet logged)';p.ex[0]=['Back Squat','Top set · 265 × 6 reported',265];return p})():(squatMonthWorkout(stamp)||clonePlan(plan[day]));
  const p=datePlans[stamp]||weeklyPlans[day]||fallback;
  return applySquatExperiment(validPlan(p)?p:fallback,d);
 }
@@ -426,7 +427,8 @@ if(expSquat&&explicit){
  for(let i=0;i<2;i++)addSet(target,repTarget);
 }else if(squatWeek&&explicit&&(exercise==='Back Squat'||exercise==='Heel-Elevated Squat')){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
- for(let i=0;i<3;i++)addSet(target,repTarget);
+ const scheduled=squatMonth.find(w=>w.wednesday===iso(date)||w.sunday===iso(date));
+ for(let i=0;i<scheduled?.light&&exercise==='Back Squat'?2:3;i++)addSet(target,repTarget);
 }else if(prev?.sets?.length){for(const item of prev.sets.slice(0,12))addSet(item.weight,item.reps,!!item.warmup)}
 else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
