@@ -89,7 +89,7 @@ function applySquatExperiment(planObject,date){
  if(!prescription)return p;
  // Replace existing Back Squat instead of adding duplicate squat movements on leg days.
  p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name));
- p.ex.unshift(['Back Squat',prescription.reps,prescription.weight]);
+ p.ex.unshift(['Back Squat','WU 45×4, 135×8 · '+prescription.reps,prescription.weight]);
  p.focus+=' · Squat Every Day '+prescription.percentage+'%';
  return p;
 }
@@ -547,7 +547,7 @@ function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
 const rows=[...$('setsList').children].map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup'}));
-if(!exercise||!date||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Check the exercise, date, weight and reps.');return}
+if(!exercise||!date||!rows.length||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Add at least one valid set and check the exercise, date, weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
 const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.id===editingLogId):-1;
 if(editingLogId&&editedIndex===-1){alert('The original workout entry is no longer available.');return}
