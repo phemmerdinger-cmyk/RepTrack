@@ -65,10 +65,12 @@
 <div class="section">
 <div class="workout-head"><div><div class="micro" id="dayHeading">TODAY</div><div id="dayWorkout" class="workout-title">PUSH</div><div id="dayFocus" class="muted"></div></div><div class="micro" id="selectedRecovery"></div></div>
 <div class="insight"><strong>TRAINING INTELLIGENCE</strong><span id="advice">Loading recovery data.</span></div>
-<div class="section-title"><h3>WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
+<div id="selectedWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="selectedResultHeading">YOUR COMPLETED WORKOUT</h3><p id="selectedResultInfo" class="muted"></p></div>
+<div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" class="logged-day-history"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
+<div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>UPCOMING WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
-<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">VIEW WHOOP SYNC</button></div>
-<div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" style="margin-top:20px"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
+<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">VIEW WHOOP SYNC</button></div></div>
+<div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
 </div>
 <div class="section">
 <h3>RECOVERY GUIDANCE</h3>
@@ -174,11 +176,13 @@
 <div class="action-row"><button class="btn-primary" id="editSavePlan" type="button">SAVE CHANGES</button><button id="editResetPlan" type="button">RESET DAY</button><button id="editCancelPlan" type="button">CANCEL</button></div>
 <div id="editPlanMessage" class="status-msg"></div>
 </div>
-<div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
+<div id="drawerWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="drawerResultHeading">YOUR COMPLETED WORKOUT</h3><p id="drawerResultInfo" class="muted"></p></div>
+<div id="drawerWhoopActivities" class="whoop-day-activities"></div><div id="drawerCompletedWorkouts" class="completed-day-workouts"></div>
+<div class="drawer-log-heading" id="drawerLoggedHeader"><div class="micro">YOUR LOGGED EXERCISES</div><button id="drawerClearDay" class="smallbtn btn-ghost" type="button">DELETE DAY LOGS</button></div><div id="drawerLogged"></div>
+<div id="drawerPlannedSection" class="drawer-planned-section"><div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
-<div id="drawerWhoopActivities" class="whoop-day-activities"></div><div id="drawerCompletedWorkouts" class="completed-day-workouts"></div><div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
-<div class="drawer-log-heading"><div class="micro">LOGGED FOR THIS DAY</div><button id="drawerClearDay" class="smallbtn btn-ghost" type="button">DELETE DAY LOGS</button></div><div id="drawerLogged"></div>
-<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div>
+<div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
+<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div></div>
 <div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ ADD EXERCISE</button><button id="drawerDone" type="button">DONE</button></div>
 </div></div>
 <div id="modalOverlay" class="overlay hidden" role="presentation">
