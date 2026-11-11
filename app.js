@@ -58,6 +58,26 @@ window.RepTrackSquatMonth=squatMonth;
 const EXPERIMENT_KEY='reptrack-experiments-v1';
 function readExperiment(){try{const v=JSON.parse(localStorage.getItem(EXPERIMENT_KEY)||'null');return v&&typeof v==='object'?v:null}catch{return null}}
 let experiment=readExperiment();
+// Guaranteed 30-day daily squat schedule, shared by phone and desktop.
+// Nov 9 & 10 are user-reported benchmarks, not automatically recorded workout logs.
+// Two working sets every day; every day's ordinary workout is otherwise preserved.
+const DAILY_SQUAT_START=new Date(2026,10,9);
+const DAILY_SQUAT_30=[
+ [265,6],[165,15],[135,10],[185,8],[155,12],[115,12],[205,8],
+ [245,6],[170,12],[140,10],[190,8],[160,12],[120,12],[210,8],
+ [250,6],[175,12],[145,10],[195,8],[165,12],[125,12],[215,8],
+ [255,6],[180,12],[150,10],[200,8],[170,12],[130,12],[220,8],
+ [260,6],[185,12]
+];
+function dailySquatTarget(date){
+ const day=date instanceof Date?date:fromISO(date);
+ const idx=Math.round((Date.UTC(day.getFullYear(),day.getMonth(),day.getDate())-Date.UTC(2026,10,9))/86400000);
+ if(idx<0||idx>=DAILY_SQUAT_30.length)return null;
+ const [weight,reps]=DAILY_SQUAT_30[idx];
+ return {day:idx+1,weight,reps,sets:2,percentage:Math.round(weight/325*100),reported:idx<=1};
+}
+window.RepTrackDailySquatTarget=stamp=>dailySquatTarget(stamp);
+
 const EXPERIMENT_PERCENTAGES=[70,50,45,75,40,60,50]; // Sun through Sat
 const experimentDate=(date)=>iso(date instanceof Date?date:fromISO(date));
 const experimentDaysElapsed=(date,exp)=>{
@@ -66,6 +86,8 @@ const experimentDaysElapsed=(date,exp)=>{
  return Math.round((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate())-Date.UTC(a.getFullYear(),a.getMonth(),a.getDate()))/86400000);
 };
 function experimentPrescription(date,exp=experiment){
+ const daily=dailySquatTarget(date);
+ if(daily)return daily;
  const index=experimentDaysElapsed(date,exp);
  if(!exp?.active||index===null||index<0||index>=30)return null;
  const dateObj=date instanceof Date?date:fromISO(date);
@@ -89,8 +111,8 @@ function applySquatExperiment(planObject,date){
  if(!prescription)return p;
  // Replace existing Back Squat instead of adding duplicate squat movements on leg days.
  p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name));
- p.ex.unshift(['Back Squat','WU 45×4, 135×8 · '+prescription.reps,prescription.weight]);
- p.focus+=' · Squat Every Day '+prescription.percentage+'%';
+ p.ex.unshift(['Back Squat','2 working sets × '+(prescription.reps||6)+' reps · WU 45×4, 135×8',prescription.weight]);
+ p.focus+=' · Squat Every Day '+prescription.percentage+'%'+(prescription.reported?' · previously reported':'');
  return p;
 }
 window.RepTrackExperimentPrescription=stamp=>experimentPrescription(stamp);
@@ -547,7 +569,7 @@ if(exercise==='Back Squat'){
  addSet(135,8,true);
  const isReportedDate=iso(date)==='2026-11-09';
  const workingWeight=isReportedDate?265:(explicit?target:'');
- const workingReps=isReportedDate?6:(expSquat?expSquat.percentage>=70?5:expSquat.percentage>=60?6:8:6);
+ const workingReps=expSquat?.reps||(isReportedDate?6:expSquat?expSquat.percentage>=70?5:expSquat.percentage>=60?6:8:6);
  addSet(workingWeight,workingReps,false);
  addSet(workingWeight,workingReps,false);
  $('setEditorHint').textContent='Daily Back Squat: 45 × 4 and 135 × 8 warmups, then 2 working sets. Change any weight or reps as needed.';
