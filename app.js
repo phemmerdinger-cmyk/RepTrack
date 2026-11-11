@@ -195,7 +195,7 @@ const SQUAT_START=new Date(2026,10,9),SQUAT_TOTAL_DAYS=30;
 const isBackSquatLog=e=>/\bback\s+squat\b/i.test(e.exercise||'')&&sets(e).length>0;
 function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date))}
 function renderSquatTracker(){
- const dates=backSquatDates(),today=iso(new Date()),trackerStart=experiment?.start?fromISO(experiment.start):SQUAT_START,start=iso(trackerStart),end=iso(plus(trackerStart,SQUAT_TOTAL_DAYS-1));
+ const dates=backSquatDates(),today=iso(new Date()),trackerStart=SQUAT_START,start=iso(trackerStart),end=iso(plus(trackerStart,SQUAT_TOTAL_DAYS-1));
  $('squatTrackerWindow').textContent=trackerStart.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' – '+plus(trackerStart,29).toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' · 30-DAY SQUAT CHECK-IN';
  const box=$('squatTrackerDays');box.replaceChildren();
  let completed=0,elapsed=0;
@@ -318,6 +318,33 @@ tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.g
 grid.append(tile);
 }
 }
+function renderDailySquatWorkout(host,date){
+ if(!host)return;
+ const target=dailySquatTarget(date),stamp=iso(date instanceof Date?date:fromISO(date));
+ host.replaceChildren();
+ host.classList.toggle('hidden',!target);
+ if(!target)return;
+ const logged=entries.filter(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).flatMap(e=>sets(e));
+ const work=logged.filter(v=>!v.warmup);
+ const heading=el('div','daily-squat-head');
+ const title=el('div','');title.append(el('div','micro','DAILY SQUAT · DAY '+target.day+' / 30'),el('h3','','BACK SQUAT · 2 WORKING SETS'));
+ heading.append(title,el('span','daily-squat-percent',target.percentage+'% 1RM'));
+ host.append(heading);
+ host.append(el('div','daily-squat-warmups','WARMUPS: 45 LB × 4 · 135 LB × 8'));
+ const rows=el('div','daily-squat-working');
+ for(let i=0;i<2;i++){
+  const actual=work[i],row=el('div','daily-squat-set');
+  row.append(el('span','', 'SET '+(i+1)),el('strong','',actual?actual.weight+' LB × '+actual.reps:target.weight+' LB × '+target.reps),el('small','',actual?'✓ LOGGED':target.reported?'REPORTED · NOT SAVED':'TARGET'));
+  rows.append(row);
+ }
+ host.append(rows);
+ const note=el('p','daily-squat-note',logged.length?'Logged sets are shown above when available. Adjust actual weights in your workout log.':target.reported?'You reported this session in chat. It is not marked completed until saved in RepTrack.':'These are targets, not recorded sets. Warmups and weights can be adjusted.');
+ host.append(note);
+ const log=el('button','smallbtn btn-primary',logged.length?'EDIT / ADD SQUAT SETS':'LOG THESE SQUAT SETS');
+ log.type='button';log.onclick=()=>logged.length?openEditLog(entries.find(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).id):openLog(fromISO(stamp),'Back Squat');
+ host.append(log);
+}
+
 function renderSelected(){
 const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key);
 const whoopDone=whoopActivitiesOn(key),savedDone=completedSessions().filter(e=>e.date===key);
@@ -325,6 +352,7 @@ const finished=whoopDone.length>0||savedDone.length>0||done.length>0;
 const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):done.length?p.title+' · LOGGED':p.title);
 $('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=actualTitle;
 $('dayFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+renderDailySquatWorkout($('dailySquatSelected'),selected);
 $('selectedWorkoutResult').classList.toggle('hidden',!finished);
 $('selectedPlannedSection').classList.toggle('hidden',finished);
 $('selectedAdditionalActions').classList.toggle('hidden',!finished);
@@ -477,6 +505,7 @@ function renderDayDrawer(){
  $('drawerDate').textContent=dateLabel(selected).toUpperCase();
  $('drawerWorkout').textContent=actualTitle;
  $('drawerFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+ renderDailySquatWorkout($('dailySquatDrawer'),selected);
  $('drawerWorkoutResult').classList.toggle('hidden',!finished);
  $('drawerPlannedSection').classList.toggle('hidden',finished);
  $('drawerScheduleEditBar').classList.toggle('hidden',finished);
