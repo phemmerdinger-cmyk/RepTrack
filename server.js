@@ -75,7 +75,7 @@ const unseal = s => {
   }catch{return null;}
 };
 async function tokenRequest(params){
-  const response=await fetch(URL_BASE+'/oauth/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(params)});
+  const response=await fetch(URL_BASE+'/oauth/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(params),signal:AbortSignal.timeout(15000)});
   const data=await response.json();
   if(!response.ok)throw Error('WHOOP token exchange failed');
   return data;
@@ -84,7 +84,7 @@ function tokenState(data, previous={}) {
   return {access_token:data.access_token,refresh_token:data.refresh_token||previous.refresh_token,expires_at:Date.now()+Number(data.expires_in||1800)*1000};
 }
 async function apiGet(endpoint, token){
-  const r=await fetch(URL_BASE+'/developer/v2/'+endpoint,{headers:{Authorization:'Bearer '+token}});
+  const r=await fetch(URL_BASE+'/developer/v2/'+endpoint,{headers:{Authorization:'Bearer '+token},signal:AbortSignal.timeout(15000)});
   if(!r.ok)throw Error('WHOOP request failed ('+r.status+')');
   return r.json();
 }
