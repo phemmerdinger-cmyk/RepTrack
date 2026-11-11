@@ -17,11 +17,16 @@ const detail=w=>{
  return minutes+' min · Strain '+metric(score.strain,1)+' · Avg HR '+metric(score.average_heart_rate)+' bpm · Max HR '+metric(score.max_heart_rate)+' bpm';
 };
 function render(){
- const data=window.RepTrackWHOOPData,connected=!!data?.connected,access=data?.workoutAccess===true;
+ const data=window.RepTrackWHOOPData,status=window.RepTrackWHOOPStatus||{},connected=status.state==='connected',access=data?.workoutAccess===true;
  const workouts=connected&&access&&Array.isArray(data.workouts)?data.workouts.filter(x=>x?.id&&dateOf(x)):[];
  list.replaceChildren();
- if(!connected){
-  notice.replaceChildren(el('strong','','WHOOP is not connected. '),el('span','','Connect your WHOOP account to automatically show activities.'));
+ if(status.state==='waking'||status.state==='loading'){
+  notice.textContent=status.state==='waking'?'Waking up server… Render may take a moment to respond.':'Checking WHOOP connection…';
+ }else if(status.state==='error'){
+  notice.replaceChildren(el('strong','','WHOOP unavailable. '),el('span','',status.error||'Please try again.'));
+  const retry=el('button','whoop-reconnect','RETRY');retry.type='button';retry.onclick=()=>window.RepTrackRetryWHOOP?.();notice.append(retry);
+ }else if(!connected){
+  notice.replaceChildren(el('strong','','Connect WHOOP '),el('span','','to see completed workouts, recovery and strain here.'));
   const link=el('a','whoop-reconnect','CONNECT WHOOP');link.href='/api/whoop/login';notice.append(link);
  }else if(!access){
   notice.replaceChildren(el('strong','','One-time permission update needed. '),el('span','','Your existing connection does not yet allow RepTrack to read workouts.'));
@@ -31,8 +36,8 @@ function render(){
   notice.textContent='WHOOP connected · Activities checked '+time+' · Automatically updates while RepTrack is open.';
  }
  count.textContent=access?workouts.length+' ACTIVITIES':'SYNC NOT READY';
- if(!connected||!access){
-  list.append(el('div','whoop-empty','Connect or reauthorize WHOOP above. No completed workout data will be shown until permission is granted.'));
+ if(status.state!=='connected'||!access){
+  list.append(el('div','whoop-empty',status.state==='waking'?'Waiting for WHOOP…':status.state==='error'?'Activity history is temporarily unavailable. Retry above.':status.state==='loading'?'Checking for activity history…':'Your activities will appear after WHOOP is connected and workout access is granted.'));
   return;
  }
  if(!workouts.length){
@@ -59,19 +64,7 @@ function render(){
   head.append(body,view);card.append(head);list.append(card);
  }
 }
-button.addEventListener('click',async()=>{
- button.disabled=true;button.textContent='CHECKING…';
- try{
-  const response=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store'});
-  if(!response.ok)throw Error('WHOOP unavailable');
-  const data=await response.json();window.RepTrackWHOOPData=data;window.RepTrackWHOOPLastSync=Date.now();
-  window.dispatchEvent(new Event('reptrack-whoop-updated'));
-  render();
-  // Refresh calendar from the app's normal periodic WHOOP synchronization.
-  window.dispatchEvent(new Event('reptrack-whoop-manual-refresh'));
- }catch{notice.textContent='WHOOP is temporarily unavailable. Your calendar and manual workout history are unaffected.'}
- finally{button.disabled=false;button.textContent='CHECK FOR FINISHED WORKOUTS'}
-});
+button.addEventListener('click',()=>window.RepTrackRetryWHOOP?.());
 $('startSelectedWorkout')?.addEventListener('click',()=>{document.querySelector('[data-view="workout"]')?.click();render()});
 $('drawerStartWorkout')?.addEventListener('click',()=>{
  $('drawerDone')?.click();document.querySelector('[data-view="workout"]')?.click();render();
