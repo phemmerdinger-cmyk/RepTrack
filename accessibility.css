@@ -159,3 +159,29 @@ h1,h2,h3,.section-title h2,.section-title h3 { text-transform:none; letter-spaci
 .experiment-month-row>span,.experiment-month-row>small { color:#f0f5ff; font-size:13px; line-height:1.5; letter-spacing:0; }
 .experiment-percent-day small,.daily-squat-set small,.daily-squat-warmups,.daily-squat-note,.squat-tracker-note,.chart-sub,.squat-tracker-days button { font-size:12px; }
 .hero-future #heroWorkout { font-size:clamp(30px,4vw,48px); letter-spacing:-.035em; margin:10px 0; text-transform:none; }
+/* A simple daily check-in: four large, stable rows; checking a row saves it. */
+.squat-checklist { display:grid; gap:10px; margin:16px 0; }
+.squat-check-row { display:flex; align-items:center; gap:14px; min-height:76px; padding:14px; border:1px solid #7f91aa; border-radius:10px; background:#121b29; cursor:pointer; }
+.squat-check-row:hover { background:#1d2b40; }
+.squat-check-row.is-checked { border-color:#9de0b8; background:#16372b; }
+.squat-check-row input { appearance:auto; width:28px; height:28px; min-height:28px; flex:0 0 28px; margin:0; accent-color:#b0efc7; cursor:pointer; }
+.squat-check-row:focus-within { outline:3px solid #9bd4ff; outline-offset:3px; }
+.squat-check-copy { display:grid; gap:3px; font-size:16px; color:#eef5ff; }
+.squat-check-copy strong { font-size:14px; }
+.squat-check-target { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; }
+.squat-check-status { color:#d6f5df; font-size:15px; margin:10px 0; }
+.daily-squat-head h3 { margin:0; font-size:22px; letter-spacing:-.025em; }
+#drawerPlannedSection .drawer-exercise { grid-template-columns:26px minmax(0,1fr) auto; gap:10px; }
+#drawerPlannedSection .drawer-exercise small { font-size:13px; color:#c2cede; }
+#drawerPlannedSection .drawer-exercise button { min-height:46px; font-size:14px; }
+#dailySquatDrawer .action-row { align-items:stretch; }
+@media(max-width:600px) {
+ #dailySquatDrawer .action-row { flex-direction:column; }
+ #drawerPlannedSection .drawer-exercise { grid-template-columns:minmax(0,1fr) auto; }
+ #drawerPlannedSection .drawer-exercise-num { display:none; }
+ .daily-squat-workout { padding:16px 12px; }
+}
+/* Keep sticky navigation and WHOOP status behind both workout dialogs. */
+.app { position:relative; isolation:isolate; z-index:0; }
+.drawer-overlay { z-index:100; }
+#modalOverlay.overlay { z-index:120; }

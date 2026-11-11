@@ -88,7 +88,7 @@
 <div class="squat-tracker-top"><div><div class="micro" id="squatTrackerWindow">NOV 9 – DEC 8 · 30-DAY SQUAT CHECK-IN</div><div class="squat-tracker-title">BACK SQUAT CONSISTENCY <span id="squatDayCount">0 / 30 DAYS</span></div></div><span class="squat-tracker-status" id="squatTrackerStatus">TRACKING</span></div>
 <div class="squat-tracker-meter"><div id="squatTrackerFill"></div></div>
 <div class="squat-tracker-days" id="squatTrackerDays"></div>
-<p class="squat-tracker-note" id="squatTrackerNote">✓ appears on calendar days with at least one logged Back Squat set. Planned squats alone do not count.</p>
+<p class="squat-tracker-note" id="squatTrackerNote">✓ appears after both warmups and both working Back Squat sets are saved. Planned squats alone do not count.</p>
 </div>
 </div>
 <div class="main-split" id="selectedDay">
@@ -98,7 +98,7 @@
 <div id="dailySquatSelected" class="daily-squat-workout hidden"></div>
 <div id="selectedWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="selectedResultHeading">YOUR COMPLETED WORKOUT</h3><p id="selectedResultInfo" class="muted"></p></div>
 <div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" class="logged-day-history"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
-<div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>UPCOMING WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
+<div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>2. Regular workout</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
 </div><div class="action-row calendar-primary-action"><button id="dayStart" class="btn-primary" type="button">LOG TODAY'S WORKOUT</button><button id="startSelectedWorkout" class="hidden" type="button">VIEW WHOOP SYNC</button></div>
 <div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost hidden" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
@@ -221,6 +221,7 @@
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
 <div class="drawer-top"><div><div class="micro" id="drawerDate">SELECTED DATE</div><h2 id="drawerWorkout">DAY WORKOUT</h2><p id="drawerFocus" class="muted"></p></div><button type="button" id="drawerClose" aria-label="Close workout panel">✕</button></div>
+<div id="dailySquatDrawer" class="daily-squat-workout hidden"></div>
 <div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan" aria-controls="drawerPlanEditor" aria-expanded="false">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
 <div id="drawerPlanEditor" class="schedule-editor hidden">
 <label class="field">WORKOUT TYPE<select id="editWorkoutType"><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS">LEGS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS + ARMS">SHOULDERS + ARMS</option><option value="REST">REST / RECOVERY</option><option value="CUSTOM">CUSTOM</option></select></label>
@@ -232,15 +233,15 @@
 <div class="action-row"><button class="btn-primary" id="editSavePlan" type="button">SAVE CHANGES</button><button id="editResetPlan" type="button">RESET DAY</button><button id="editCancelPlan" type="button">CANCEL</button></div>
 <div id="editPlanMessage" class="status-msg"></div>
 </div>
-<div id="dailySquatDrawer" class="daily-squat-workout hidden"></div>
+
 <div id="drawerWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="drawerResultHeading">YOUR COMPLETED WORKOUT</h3><p id="drawerResultInfo" class="muted"></p></div>
 <div id="drawerWhoopActivities" class="whoop-day-activities"></div><div id="drawerCompletedWorkouts" class="completed-day-workouts"></div>
 <div class="drawer-log-heading" id="drawerLoggedHeader"><div class="micro">YOUR LOGGED EXERCISES</div><button id="drawerClearDay" class="smallbtn btn-ghost" type="button">DELETE DAY LOGS</button></div><div id="drawerLogged"></div>
 <div id="drawerPlannedSection" class="drawer-planned-section"><div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
-<div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
+<div class="micro" style="margin:20px 0 10px">2. REGULAR WORKOUT</div><div id="drawerExercises"></div>
 <div class="action-row hidden"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div></div>
-<div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">LOG TODAY&#39;S WORKOUT</button><button id="drawerDone" type="button">DONE</button></div>
+<div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ Log another exercise</button><button id="drawerDone" type="button">DONE</button></div>
 </div></div>
 <div id="modalOverlay" class="overlay hidden" role="presentation">
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -252,7 +253,7 @@
 <div id="setsList" class="set-cards"></div>
 <div class="set-quick-actions"><button id="addSet" class="add-set-row" type="button"><span aria-hidden="true">＋</span> ADD SET</button><button id="addSameSet" class="add-set-row" type="button">+ SAME AS LAST SET</button></div><div class="modal-rest-status" id="modalRestStatus" aria-live="polite">REST TIMER · READY</div>
 <label class="field" style="margin-top:14px">NOTES<textarea id="logNotes" maxlength="1000" placeholder="Effort, form, tempo, etc."></textarea></label>
-<div class="action-row"><button class="btn-primary" type="submit">SAVE WORKOUT</button><button id="cancelModal" type="button">CANCEL</button></div>
+<div class="action-row"><button class="btn-primary" type="submit">Save exercise</button><button id="cancelModal" type="button">CANCEL</button></div>
 </form></div></div>
 <script src="/app.js" defer></script>
 <script src="/future.js" defer></script>

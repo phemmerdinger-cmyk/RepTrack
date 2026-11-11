@@ -32,3 +32,9 @@ Mobile-friendly and desktop-friendly workout tracker with a WHOOP OAuth server.
 - **Help, backups & settings**: instructions, training terms, WHOOP account controls, export/import, and privacy. Existing workout storage keys and backup format are unchanged.
 
 Use Tab to move between controls, Enter or Space to activate buttons, and arrow keys to move between calendar dates. Escape closes the workout logger or day panel. Dialogs keep keyboard focus inside and return it when closed. System reduced-motion preferences are respected.
+
+## Daily Back Squat check-in
+
+Open a calendar date to check off **45 lb × 4**, **135 lb × 8**, and **two working sets at that date's prescribed weight and reps**. Each check saves immediately in the existing workout history. Uncheck a row to undo that set. The check-in restores saved sets when you reopen the day and stays stable during WHOOP refreshes.
+
+Use **Next: log regular workout** or **Log sets** beside a planned exercise afterward. Regular exercise logging accepts completed rows and ignores untouched blank rows; changing the exercise name preserves entered weights and reps. A warmup alone no longer marks the whole day complete or hides the remaining workout.

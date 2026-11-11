@@ -276,10 +276,10 @@ async function syncWHOOP(force=false){
 }
 window.RepTrackRetryWHOOP=()=>syncWHOOP(true);
 // 30-day back-squat check-in, November 9–December 8 inclusive.
-// A completed day requires at least one real Back Squat set; a planned set never qualifies.
+// A completed daily check-in requires both warmups and both working sets.
 const SQUAT_START=fromISO(personalPlan.start),SQUAT_TOTAL_DAYS=Number(personalPlan.duration)||30;
 const isBackSquatLog=e=>/\bback\s+squat\b/i.test(e.exercise||'')&&sets(e).length>0;
-function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date))}
+function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date).filter(stamp=>squatStatus(stamp)==='Completed'))}
 function renderSquatTracker(){
  const dates=backSquatDates(),today=iso(new Date()),trackerStart=SQUAT_START,start=iso(trackerStart),end=iso(plus(trackerStart,SQUAT_TOTAL_DAYS-1));
  $('squatTrackerWindow').textContent=trackerStart.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' – '+plus(trackerStart,29).toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' · 30-DAY SQUAT CHECK-IN';
@@ -302,7 +302,7 @@ function renderSquatTracker(){
  $('squatTrackerStatus').textContent=finished?'FINAL REPORT':upcoming?'UPCOMING':'DAY '+Math.min(30,elapsed)+' / 30';
  $('squatTrackerNote').textContent=finished
   ?'30-day result: You logged back squats on '+completed+' out of 30 days ('+Math.round(completed/30*100)+'%). ✓ on calendar days means sets were actually logged.'
-  :completed+' completed back-squat day'+(completed===1?'':'s')+' · '+(upcoming?30:Math.max(0,30-elapsed))+' days remaining. ✓ means a Back Squat set was actually logged, not just planned.';
+  :completed+' completed back-squat day'+(completed===1?'':'s')+' · '+(upcoming?30:Math.max(0,30-elapsed))+' days remaining. ✓ means both warmups and both working sets are saved.';
 }
 
 // Completed workout sessions are separate from plans and in-progress session drafts.
@@ -387,13 +387,16 @@ const intensityBand=percent=>percent>=75?'heavy':percent>=55?'moderate':percent>
 const intensityLabel=percent=>({heavy:'Heavy',moderate:'Moderate',light:'Light',recovery:'Recovery'})[intensityBand(percent)];
 const workoutStatus=date=>{
  const stamp=typeof date==='string'?date:iso(date);
- if(entries.some(e=>e.date===stamp&&sets(e).length)||completedSessions().some(e=>e.date===stamp)||whoopActivitiesOn(stamp).length)return 'Completed';
+ if(completedSessions().some(e=>e.date===stamp)||whoopActivitiesOn(stamp).length)return 'Completed';
+ const logged=entries.filter(e=>e.date===stamp&&sets(e).length);
+ if(logged.length){const planned=planFor(fromISO(stamp)).ex;return planned.length&&planned.every(([name])=>/^Back Squat$/i.test(name)&&squatChecklist(stamp)?squatStatus(stamp)==='Completed':logged.some(e=>e.exercise===name))?'Completed':'In progress'}
  try{const draft=JSON.parse(localStorage.getItem('reptrack-live-session-v1')||'null');if(draft?.date===stamp)return 'In progress'}catch{}
  return 'Planned';
 };
 const squatStatus=date=>{
  const stamp=typeof date==='string'?date:iso(date);
- if(entries.some(e=>e.date===stamp&&/\bback\s+squat\b/i.test(e.exercise)&&sets(e).length))return 'Completed';
+ if(squatChecklist(stamp)){const count=squatChecklistRecords(stamp).size;if(count===4)return 'Completed';if(count)return 'In progress'}
+ else if(entries.some(e=>e.date===stamp&&/\bback\s+squat\b/i.test(e.exercise)&&sets(e).length))return 'Completed';
  try{const draft=JSON.parse(localStorage.getItem('reptrack-live-session-v1')||'null');if(draft?.date===stamp&&draft?.logs?.some(x=>/\bback\s+squat\b/i.test(x.exercise||'')&&x.sets?.length))return 'In progress'}catch{}
  return 'Planned';
 };
@@ -427,49 +430,100 @@ tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.g
 grid.append(tile);
 }
 }
+// Stable checklist rows survive background WHOOP refreshes and save without a modal.
+function squatChecklist(date){
+ const stamp=typeof date==='string'?date:iso(date),target=experimentPrescription(fromISO(stamp));
+ if(!target)return null;
+ const reps=typeof target.reps==='number'?target.reps:parseInt(String(target.reps).split('×').at(-1),10)||6;
+ return {target,stamp,rows:[
+  {slot:'warmup-1',label:'Bar warmup',weight:45,reps:4,warmup:true},
+  {slot:'warmup-2',label:'Second warmup',weight:135,reps:8,warmup:true},
+  {slot:'working-1',label:'Working set 1',weight:target.weight,reps,warmup:false},
+  {slot:'working-2',label:'Working set 2',weight:target.weight,reps,warmup:false}
+ ]};
+}
+function squatChecklistRecords(stamp){
+ const all=entries.filter(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).flatMap(e=>e.sets.map((set,index)=>({entry:e,index,set}))).filter(x=>Number.isFinite(+x.set.weight)&&+x.set.weight>=0&&Number.isInteger(+x.set.reps)&&+x.set.reps>0);
+ const slots=new Map(),used=new Set();
+ for(const row of squatChecklist(stamp)?.rows||[]){const record=all.find(x=>!used.has(x)&&x.set.checklistSlot===row.slot);if(record){slots.set(row.slot,record);used.add(record)}}
+ for(const row of squatChecklist(stamp)?.rows||[]){if(slots.has(row.slot))continue;const record=all.find(x=>!used.has(x)&&!x.set.checklistSlot&&!!x.set.warmup===row.warmup);if(record){slots.set(row.slot,record);used.add(record)}}
+ return slots;
+}
+function checkSquatSet(stamp,slot,checked){
+ const prescription=squatChecklist(stamp),row=prescription?.rows.find(x=>x.slot===slot);if(!row)return;
+ const prior=entries,records=squatChecklistRecords(stamp),current=records.get(slot);
+ // Assign stable slots to historical sets without changing their weights or reps.
+ entries=entries.map(e=>({...e,sets:e.sets.map((set,index)=>{const match=[...records].find(([,record])=>record.entry.id===e.id&&record.index===index);return match?{...set,checklistSlot:match[0]}:set})}));
+ if(checked&&!current){
+  const id='squat-checklist-'+stamp,existing=entries.find(e=>e.id===id);
+  const value={weight:row.weight,reps:row.reps,warmup:row.warmup,checklistSlot:slot};
+  if(existing)existing.sets.push(value);
+  else entries.push({id,created:Date.now(),date:stamp,exercise:'Back Squat',sets:[value],notes:''});
+ }else if(!checked&&current){
+  entries=entries.map(e=>e.id===current.entry.id?{...e,sets:e.sets.filter((_,index)=>index!==current.index)}:e).filter(e=>e.id!==current.entry.id||e.sets.length);
+ }
+ if(!save()){entries=prior;renderDailySquatWorkout($('dailySquatDrawer'),fromISO(stamp));renderDailySquatWorkout($('dailySquatSelected'),fromISO(stamp));return}
+ renderAll();
+}
 function renderDailySquatWorkout(host,date){
  if(!host)return;
- const target=dailySquatTarget(date),stamp=iso(date instanceof Date?date:fromISO(date));
- host.replaceChildren();
- host.classList.toggle('hidden',!target);
- if(!target)return;
- const logged=entries.filter(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).flatMap(e=>sets(e));
- const work=logged.filter(v=>!v.warmup);
- const heading=el('div','daily-squat-head');
- const title=el('div','');title.append(el('div','micro','DAILY SQUAT · DAY '+target.day+' / 30'),el('h3','','BACK SQUAT · 2 WORKING SETS'));
- heading.append(title,el('span','daily-squat-percent intensity-'+intensityBand(target.percentage),intensityLabel(target.percentage)+' · '+target.percentage+'%'));
- host.append(heading);
- host.append(el('div','daily-squat-warmups','WARMUPS: 45 LB × 4 · 135 LB × 8'));
- const rows=el('div','daily-squat-working');
- for(let i=0;i<2;i++){
-  const actual=work[i],row=el('div','daily-squat-set');
-  row.append(el('span','', 'SET '+(i+1)),el('strong','',actual?actual.weight+' LB × '+actual.reps:target.weight+' LB × '+target.reps),el('small','status-'+(actual?'completed':squatStatus(stamp).toLowerCase().replace(/\s/g,'-')),actual?'✓ Completed':squatStatus(stamp)));
-  rows.append(row);
+ const prescription=squatChecklist(date),stamp=typeof date==='string'?date:iso(date);
+ host.classList.toggle('hidden',!prescription);
+ if(!prescription){host.replaceChildren();host.dataset.date='';return}
+ if(host.dataset.date!==stamp){
+  host.replaceChildren();host.dataset.date=stamp;
+  const heading=el('div','daily-squat-head');heading.append(el('h3','','1. Back Squat check-in'));
+  host.append(heading,el('p','daily-squat-note','Check off each set as you finish. Each check saves immediately—no submit button.'));
+  const group=el('div','squat-checklist');group.setAttribute('role','group');group.setAttribute('aria-label','Back Squat sets for '+dateLabel(fromISO(stamp)));
+  for(const row of prescription.rows){
+   const label=el('label','squat-check-row'),input=el('input'),text=el('span','squat-check-copy');
+   input.type='checkbox';input.dataset.squatSlot=row.slot;
+   text.append(el('strong','',row.label),el('span','squat-check-target'));
+   label.append(input,text);group.append(label);
+   input.addEventListener('change',()=>checkSquatSet(stamp,row.slot,input.checked));
+  }
+  const status=el('p','squat-check-status');status.setAttribute('role','status');
+  const adjust=el('button','smallbtn btn-ghost','Adjust weights or reps');adjust.type='button';
+  adjust.addEventListener('click',()=>{
+   const logs=entries.filter(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise));
+   if(logs.length===1)openEditLog(logs[0].id);else openLog(fromISO(stamp),'Back Squat');
+  });
+  const next=el('button','btn-primary','Next: log regular workout');next.type='button';
+  next.addEventListener('click',()=>{
+   if(!drawerOpen)openDayDrawer(fromISO(stamp));
+   const regular=planFor(fromISO(stamp)).ex.find(([name])=>!/^Back Squat$/i.test(name));
+   if(regular)openLog(fromISO(stamp),regular[0]);else $('drawerAddCustom').click();
+  });
+  const actions=el('div','action-row');actions.append(next,adjust);host.append(group,status,actions);
  }
- host.append(rows);
- const note=el('p','daily-squat-note',logged.length?'Saved working sets appear above. You can still edit weights and reps.':'Planned sets do not count as complete. Save actual Back Squat sets to finish the day.');
- host.append(note);
-
+ const records=squatChecklistRecords(stamp);
+ for(const row of prescription.rows){
+  const input=host.querySelector('[data-squat-slot="'+row.slot+'"]'),record=records.get(row.slot),actual=record?.set;
+  input.checked=!!record;
+  input.closest('label').classList.toggle('is-checked',!!record);
+  input.closest('label').querySelector('.squat-check-target').textContent=(actual?.weight??row.weight)+' lb × '+(actual?.reps??row.reps)+' reps';
+ }
+ host.querySelector('.squat-check-status').textContent=records.size===4?'All four squat sets saved. Continue with your regular workout below.':records.size+' of 4 sets saved';
 }
 
 function renderSelected(){
 const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key);
 const whoopDone=whoopActivitiesOn(key),savedDone=completedSessions().filter(e=>e.date===key);
-const finished=whoopDone.length>0||savedDone.length>0||done.length>0;
-const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):done.length?p.title+' · LOGGED':p.title);
+const finished=workoutStatus(key)==='Completed';
+const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):p.title);
 $('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=actualTitle;
 $('dayFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
 renderDailySquatWorkout($('dailySquatSelected'),selected);
 $('selectedWorkoutResult').classList.toggle('hidden',!finished);
-$('selectedPlannedSection').classList.toggle('hidden',finished);
+$('selectedPlannedSection').classList.remove('hidden');
 $('selectedAdditionalActions').classList.toggle('hidden',!finished);
 $('selectedResultHeading').textContent=actualTitle;
 $('selectedResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone.length===1?'Y':'IES')+' · '+savedDone.length+' SAVED SESSION'+(savedDone.length===1?'':'S')+' · '+done.reduce((n,e)=>n+sets(e).length,0)+' LOGGED SETS';
 $('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
 $('exerciseList').replaceChildren();
-for(const [exercise,prescription,targetWeight] of p.ex){
+for(const [exercise,prescription,targetWeight] of p.ex.filter(([name])=>!squatChecklist(key)||!/^Back Squat$/i.test(name))){
 const row=el('div','exercise-row'),left=el('div');
-left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));row.append(left);$('exerciseList').append(row);
+left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));const log=el('button','smallbtn','Log sets');log.type='button';log.setAttribute('aria-label','Log '+exercise+' sets');log.onclick=()=>openLog(selected,exercise);row.append(left,log);$('exerciseList').append(row);
 }
 renderWhoopDay($('whoopSelectedDay'),key);
 renderCompletedForDate($('completedDayWorkouts'),key);
@@ -478,8 +532,8 @@ if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
 done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>(s.warmup?'WARMUP ':'')+s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
 }else if(!finished)$('dayHistory').append(el('div','muted','No exercises logged for this date.'));
-$('dayStart').textContent=iso(selected)===iso(new Date())?"LOG TODAY'S WORKOUT":"LOG THIS DAY'S WORKOUT";
-$('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
+$('dayStart').textContent='Log regular workout';
+$('dayStart').onclick=()=>openLog(selected,p.ex.find(([name])=>!squatChecklist(key)||!/^Back Squat$/i.test(name))?.[0]||'');
 $('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'long'});
 $('addAfterWorkout').onclick=()=>openLog(selected,'');
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
@@ -619,20 +673,19 @@ function renderDayDrawer(){
  if(!drawerOpen)return;
  const p=planFor(selected),date=iso(selected),logged=entries.filter(e=>e.date===date),doneNames=new Set(logged.map(e=>e.exercise));
  const whoopDone=whoopActivitiesOn(date),savedDone=completedSessions().filter(e=>e.date===date);
- const finished=whoopDone.length>0||savedDone.length>0||logged.length>0;
- const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):logged.length?p.title+' · LOGGED':p.title);
+ const finished=workoutStatus(date)==='Completed';
+ const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):p.title);
  $('drawerDate').textContent=dateLabel(selected).toUpperCase();
  $('drawerWorkout').textContent=actualTitle;
- $('drawerFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+ $('drawerFocus').textContent=squatChecklist(date)?'Check off your squat sets, then log your '+p.title.toLowerCase()+' workout.':p.focus;
  renderDailySquatWorkout($('dailySquatDrawer'),selected);
  $('drawerWorkoutResult').classList.toggle('hidden',!finished);
- $('drawerPlannedSection').classList.toggle('hidden',finished);
- $('drawerScheduleEditBar').classList.toggle('hidden',finished);
- if(finished)$('drawerPlanEditor').classList.add('hidden');
+ $('drawerPlannedSection').classList.remove('hidden');
+ $('drawerScheduleEditBar').classList.remove('hidden');
  $('drawerResultHeading').textContent=actualTitle;
  $('drawerResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone.length===1?'Y':'IES')+' · '+savedDone.length+' SAVED SESSION'+(savedDone.length===1?'':'S')+' · '+logged.reduce((n,e)=>n+sets(e).length,0)+' LOGGED SETS';
  $('drawerLoggedHeader').classList.toggle('hidden',!logged.length);
- const plannedDone=p.ex.filter(([ex])=>doneNames.has(ex)).length;
+ const plannedDone=p.ex.filter(([ex])=>/^Back Squat$/i.test(ex)&&squatChecklist(date)?squatStatus(date)==='Completed':doneNames.has(ex)).length;
  $('drawerCount').textContent=plannedDone+' OF '+p.ex.length+' PLANNED EXERCISES LOGGED';
  $('drawerMeterFill').style.width=(p.ex.length?plannedDone/p.ex.length*100:0)+'%';
  const r=recovery();
@@ -640,16 +693,16 @@ function renderDayDrawer(){
  $('drawerClearDay').classList.toggle('hidden',!logged.length);
  $('drawerClearDay').onclick=()=>deleteDayLogs(date);
  const list=$('drawerExercises');list.replaceChildren();
- p.ex.forEach(([exercise,prescription,targetWeight],i)=>{
+ p.ex.filter(([name])=>!squatChecklist(date)||!/^Back Squat$/i.test(name)).forEach(([exercise,prescription,targetWeight],i)=>{
   const row=el('div','drawer-exercise');
   const number=el('span','drawer-exercise-num',String(i+1).padStart(2,'0'));
   const desc=el('div','');desc.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));
-  row.append(number,desc);list.append(row);
+  const log=el('button','smallbtn','Log sets');log.type='button';log.setAttribute('aria-label','Log '+exercise+' sets');log.onclick=()=>openLog(selected,exercise);row.append(number,desc,log);list.append(row);
  });
  renderWhoopDay($('drawerWhoopActivities'),date);
  renderCompletedForDate($('drawerCompletedWorkouts'),date);
  const past=$('drawerLogged');past.replaceChildren();
- if(!logged.length&&!finished)past.append(el('p','muted','No exercises recorded yet. Tap LOG SETS above to add your workout.'));
+ if(!logged.length&&!finished)past.append(el('p','muted','Choose Log sets beside an exercise below, or add another exercise.'));
  else logged.forEach(e=>{
   const row=el('div','drawer-exercise'),desc=el('div','');
   desc.append(el('strong','',e.exercise),el('small','',sets(e).map(x=>(x.warmup?'WARMUP ':'')+x.weight+' lb × '+x.reps).join(' · ')));
@@ -697,7 +750,7 @@ function logIndividualSet(row){
  const recorded=[...$('setsList').children].filter(x=>x.dataset.committed==='true').map(x=>({
   weight:Number(x.querySelector('[data-set-weight]').value),
   reps:Number(x.querySelector('[data-set-reps]').value),
-  warmup:x.querySelector('.set-type').value==='warmup'
+  warmup:x.querySelector('.set-type').value==='warmup',...(x.dataset.checklistSlot?{checklistSlot:x.dataset.checklistSlot}:{})
  }));
  if(recorded.some(x=>!Number.isFinite(x.weight)||x.weight<0||!Number.isInteger(x.reps)||x.reps<1)){alert('Check previously logged set values.');return}
  const item=current?{...current,date,exercise:exercise.slice(0,100),sets:recorded,notes:$('logNotes').value.slice(0,1000)}:{
@@ -726,7 +779,7 @@ function addSet(weight='',reps='',warmup=false){
  top.append(number,type,complete,remove);
  for(const [caption,value,kind] of [['WEIGHT / LB',weight,'weight'],['REPS',reps,'reps']]){
   const label=el('label','set-input-label'),span=el('span','',caption),input=el('input','');
-  input.type='number';input.required=true;input.value=value;input.inputMode=kind==='weight'?'decimal':'numeric';
+  input.type='number';input.value=value;input.inputMode=kind==='weight'?'decimal':'numeric';
   input.min=kind==='weight'?'0':'1';input.step=kind==='weight'?'0.5':'1';
   input.placeholder=kind==='weight'?'Enter lbs':'Enter reps';input.dataset[kind==='weight'?'setWeight':'setReps']='';
   label.append(span,input);fields.append(label);
@@ -745,6 +798,8 @@ const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(N
 const squatWeek=squatMonth.some(x=>x.wednesday===iso(date)||x.sunday===iso(date));
 const expSquat=exercise==='Back Squat'?experimentPrescription(date):null;
 if(exercise==='Back Squat'){
+ const existing=entries.filter(e=>e.date===iso(date)&&/^Back Squat$/i.test(e.exercise));
+ if(existing.length===1){openEditLog(existing[0].id);return}
  // User's daily squat warmups: bar 45 × 4 then 135 × 8, before exactly two working sets.
  addSet(45,4,true);
  addSet(135,8,true);
@@ -774,7 +829,7 @@ function openEditLog(id){
  $('logExercise').value=item.exercise;
  $('logNotes').value=item.notes||'';
  $('setsList').replaceChildren();
- for(const s of item.sets){addSet(s.weight,s.reps,!!s.warmup);const row=$('setsList').lastElementChild;row.dataset.committed='true';row.classList.add('set-completed');row.querySelector('.set-complete-btn').textContent='✓ LOGGED'}
+ for(const s of item.sets){addSet(s.weight,s.reps,!!s.warmup);const row=$('setsList').lastElementChild;if(s.checklistSlot)row.dataset.checklistSlot=s.checklistSlot;row.dataset.committed='true';row.classList.add('set-completed');row.querySelector('.set-complete-btn').textContent='✓ LOGGED'}
  if(!item.sets.length)addSet();
  $('modalTitle').textContent='EDIT LOGGED EXERCISE';
  $('modalOverlay').classList.remove('hidden');
@@ -800,8 +855,12 @@ function deleteDayLogs(date){
 function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow='';$('dayDrawerOverlay').inert=false;document.querySelector('.app').inert=drawerOpen;restoreFocus(logTrigger)}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=window.RepTrackExerciseLibrary.canonical($('logExercise').value.trim()),date=$('logDate').value;
-const rows=[...$('setsList').children].map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup'}));
-if(!exercise||!date||!rows.length||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Add at least one valid set and check the exercise, date, weight and reps.');return}
+const cards=[...$('setsList').children];
+const filled=cards.filter(row=>row.querySelector('[data-set-weight]').value.trim()||row.querySelector('[data-set-reps]').value.trim());
+const incomplete=filled.find(row=>!row.querySelector('[data-set-weight]').value.trim()||!row.querySelector('[data-set-reps]').value.trim());
+if(incomplete){alert('Enter both weight and reps for each set you started, or remove that set.');incomplete.querySelector(!incomplete.querySelector('[data-set-weight]').value.trim()?'[data-set-weight]':'[data-set-reps]').focus();return}
+const rows=filled.map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup',...(row.dataset.checklistSlot?{checklistSlot:row.dataset.checklistSlot}:{})}));
+if(!exercise||!date||!rows.length||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Enter an exercise and at least one set with a valid weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
 const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.id===editingLogId):-1;
 if(editingLogId&&editedIndex===-1){alert('The original workout entry is no longer available.');return}
@@ -811,10 +870,7 @@ if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected
 else entries=previous;
 });
 $('logExercise').addEventListener('change',()=>{
- if(editingLogId||$('modalOverlay').classList.contains('hidden'))return;
- if([...$('setsList').children].some(row=>row.dataset.committed==='true'))return;
- const name=$('logExercise').value.trim(),date=fromISO($('logDate').value||iso(selected));
- if(name)openLog(date,window.RepTrackExerciseLibrary.canonical(name));
+ const name=$('logExercise').value.trim();if(name)$('logExercise').value=window.RepTrackExerciseLibrary.canonical(name);
 });
 $('addSet').onclick=()=>addSet('', '', false);
 $('addSameSet').onclick=()=>{
