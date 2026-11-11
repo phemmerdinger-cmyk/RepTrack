@@ -200,7 +200,7 @@ async function syncWHOOP(force=false){
 window.RepTrackRetryWHOOP=()=>syncWHOOP(true);
 // 30-day back-squat check-in, November 9–December 8 inclusive.
 // A completed day requires at least one real Back Squat set; a planned set never qualifies.
-const SQUAT_START=new Date(2026,10,9),SQUAT_TOTAL_DAYS=30;
+const SQUAT_START=fromISO(personalPlan.start),SQUAT_TOTAL_DAYS=Number(personalPlan.duration)||30;
 const isBackSquatLog=e=>/\bback\s+squat\b/i.test(e.exercise||'')&&sets(e).length>0;
 function backSquatDates(){return new Set(entries.filter(isBackSquatLog).map(e=>e.date))}
 function renderSquatTracker(){
