@@ -146,7 +146,7 @@ const dateLabel=d=>d.toLocaleDateString(undefined,{weekday:'short',month:'short'
 const recovery=()=>{let v=whoop?.recovery?.score?.recovery_score;return v!==null&&v!==undefined&&Number.isFinite(+v)?Math.round(+v):null};
 const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
 const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
-const guidance=r=>r===null?'No recovery score is available. Follow the plan and adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
+const guidance=r=>r===null?'Adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
 let whoopSyncInProgress=false,lastWhoopSyncAttempt=0,lastWhoopSuccess=0,whoopState='loading',whoopError='';
 const whoopStateLabel=()=>whoopState==='connected'?'WHOOP CONNECTED':whoopState==='disconnected'?'CONNECT WHOOP':whoopState==='waking'?'WAKING UP SERVER…':whoopState==='error'?'WHOOP UNAVAILABLE':'CHECKING WHOOP';
 function renderWHOOP(){
@@ -371,9 +371,7 @@ function renderDailySquatWorkout(host,date){
  host.append(rows);
  const note=el('p','daily-squat-note',logged.length?'Saved working sets appear above. You can still edit weights and reps.':'Planned sets do not count as complete. Save actual Back Squat sets to finish the day.');
  host.append(note);
- const log=el('button','smallbtn btn-primary',logged.length?'EDIT / ADD SQUAT SETS':'LOG THESE SQUAT SETS');
- log.type='button';log.onclick=()=>logged.length?openEditLog(entries.find(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).id):openLog(fromISO(stamp),'Back Squat');
- host.append(log);
+
 }
 
 function renderSelected(){
@@ -392,8 +390,8 @@ $('selectedResultInfo').textContent=whoopDone.length+' WHOOP ACTIVIT'+(whoopDone
 $('logCount').textContent=done.length+' EXERCISE'+(done.length===1?'':'S')+' LOGGED';
 $('exerciseList').replaceChildren();
 for(const [exercise,prescription,targetWeight] of p.ex){
-const row=el('div','exercise-row'),left=el('div'),btn=el('button','smallbtn btn-ghost','LOG');
-left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));btn.onclick=()=>openLog(selected,exercise);row.append(left,btn);$('exerciseList').append(row);
+const row=el('div','exercise-row'),left=el('div');
+left.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));row.append(left);$('exerciseList').append(row);
 }
 renderWhoopDay($('whoopSelectedDay'),key);
 renderCompletedForDate($('completedDayWorkouts'),key);
@@ -402,7 +400,9 @@ if(done.length){
 $('dayHistory').append(el('div','micro','LOGGED TODAY'));
 done.forEach(e=>{const line=el('div','perf-row'),detail=el('div'),actions=el('div','log-actions');detail.append(el('strong','',e.exercise),el('div','muted',sets(e).map(s=>(s.warmup?'WARMUP ':'')+s.weight+' × '+s.reps).join('  |  ')));const edit=el('button','smallbtn btn-ghost','EDIT');edit.type='button';edit.onclick=()=>openEditLog(e.id);const del=el('button','smallbtn btn-ghost','DELETE');del.type='button';del.onclick=()=>deleteLoggedExercise(e.id);actions.append(edit,del);line.append(detail,actions);$('dayHistory').append(line)});
 }else if(!finished)$('dayHistory').append(el('div','muted','No exercises logged for this date.'));
+$('dayStart').textContent=iso(selected)===iso(new Date())?"LOG TODAY'S WORKOUT":"LOG THIS DAY'S WORKOUT";
 $('dayStart').onclick=()=>openLog(selected,p.title==='REST'?'Walking':(p.ex[0]?.[0]||'Exercise'));
+$('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'long'});
 $('addAfterWorkout').onclick=()=>openLog(selected,'');
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
 $('clearSelectedDay').onclick=()=>deleteDayLogs(key);
@@ -411,11 +411,11 @@ renderWHOOP();
 function renderAnalytics(){
 const now=new Date(),weekStart=plus(now,-6),monthStart=plus(now,-29);
 const weekly=entries.filter(e=>e.date>=iso(weekStart)&&e.date<=iso(now));
-$('volumeMetric').textContent=fmt(weekly.reduce((n,e)=>n+vol(e),0));
-$('setsMetric').textContent=fmt(weekly.reduce((n,e)=>n+sets(e).length,0));
+$('volumeMetric').textContent=weekly.length?fmt(weekly.reduce((n,e)=>n+vol(e),0)):'Log your first workout';
+$('setsMetric').textContent=weekly.length?fmt(weekly.reduce((n,e)=>n+sets(e).length,0)):'No sets yet';
 const squat=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(sets).filter(s=>+s.weight>0);
-$('squatMetric').textContent=squat.length?fmt(Math.max(...squat.map(oneRM)))+' LB':'—';
-$('sessionMetric').textContent=weekly.length;
+$('squatMetric').textContent=squat.length?fmt(Math.max(...squat.map(oneRM)))+' LB':'Log squats to see your max';
+$('sessionMetric').textContent=weekly.length||'No workouts yet';
 const bars=$('volumeChart');bars.replaceChildren();
 const values=Array.from({length:14},(_,i)=>{const date=iso(plus(now,i-13));return{date,value:entries.filter(e=>e.date===date).reduce((n,e)=>n+vol(e),0)}});
 const high=Math.max(1,...values.map(v=>v.value)),plot=el('div','chart');
@@ -425,7 +425,7 @@ const labels=el('div','chartlabels');labels.append(el('span','',values[0].date.s
 const count=new Map();entries.filter(e=>e.date>=iso(monthStart)).forEach(e=>count.set(e.exercise,(count.get(e.exercise)||0)+sets(e).length));
 const popular=[...count.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6),max=Math.max(1,...popular.map(x=>x[1]));
 $('muscleWork').replaceChildren();
-if(!popular.length)$('muscleWork').append(el('div','muted','Log exercises to view training distribution.'));
+if(!popular.length)$('muscleWork').append(el('div','muted','Log your first workout to see training distribution.'));
 for(const [name,n] of popular){const wrapper=el('div',''),r=el('div','perf-row'),meter=el('div','perf-track'),fill=el('div');fill.style.width=n/max*100+'%';meter.append(fill);r.append(el('strong','',name),el('span','',n+' SETS'));wrapper.append(r,meter);$('muscleWork').append(wrapper)}
 const select=$('exerciseSelect'),chosen=select.value,names=[...new Set(entries.map(e=>e.exercise))].sort();
 select.replaceChildren();for(const name of names.length?names:['No exercises logged']){const o=el('option','',name);o.value=name;select.append(o)}
@@ -548,7 +548,7 @@ function renderDayDrawer(){
  $('drawerCount').textContent=plannedDone+' OF '+p.ex.length+' PLANNED EXERCISES LOGGED';
  $('drawerMeterFill').style.width=(p.ex.length?plannedDone/p.ex.length*100:0)+'%';
  const r=recovery();
- $('drawerGuidance').textContent=r===null?'No WHOOP recovery score available yet. Choose effort based on readiness and form.':guidance(r);
+ $('drawerGuidance').textContent=r===null?'':'See the single recovery guidance card in Calendar.';
  $('drawerClearDay').classList.toggle('hidden',!logged.length);
  $('drawerClearDay').onclick=()=>deleteDayLogs(date);
  const list=$('drawerExercises');list.replaceChildren();
@@ -556,9 +556,7 @@ function renderDayDrawer(){
   const row=el('div','drawer-exercise');
   const number=el('span','drawer-exercise-num',String(i+1).padStart(2,'0'));
   const desc=el('div','');desc.append(el('strong','',exercise),el('small','',prescription+(targetWeight!==undefined&&targetWeight!==''?' · Target '+targetWeight+' lb':'')));
-  const btn=el('button','smallbtn '+(doneNames.has(exercise)?'':'btn-primary'),doneNames.has(exercise)?'LOG ANOTHER':'LOG SETS');
-  btn.type='button';btn.onclick=()=>openLog(selected,exercise);
-  row.append(number,desc,btn);list.append(row);
+  row.append(number,desc);list.append(row);
  });
  renderWhoopDay($('drawerWhoopActivities'),date);
  renderCompletedForDate($('drawerCompletedWorkouts'),date);
@@ -627,9 +625,8 @@ if(exercise==='Back Squat'){
  // User's daily squat warmups: bar 45 × 4 then 135 × 8, before exactly two working sets.
  addSet(45,4,true);
  addSet(135,8,true);
- const isReportedDate=iso(date)==='2026-11-09';
- const workingWeight=isReportedDate?265:(explicit?target:'');
- const workingReps=expSquat?.reps||(isReportedDate?6:expSquat?expSquat.percentage>=70?5:expSquat.percentage>=60?6:8:6);
+ const workingWeight=expSquat?.weight??(explicit?target:'');
+ const workingReps=expSquat?.reps||(expSquat?expSquat.percentage>=70?5:expSquat.percentage>=60?6:8:6);
  addSet(workingWeight,workingReps,false);
  addSet(workingWeight,workingReps,false);
  $('setEditorHint').textContent='Daily Back Squat: 45 × 4 and 135 × 8 warmups, then 2 working sets. Change any weight or reps as needed.';
@@ -774,7 +771,7 @@ function restAlarm(){
 function paintTimer(){
  if(restDeadline){
   remaining=Math.max(0,Math.ceil((restDeadline-Date.now())/1000));
-  if(remaining===0){restDeadline=0;clearInterval(timer);timer=null;restAlarm()}
+  if(remaining===0){restDeadline=0;restPaused=0;clearInterval(timer);timer=null;restAlarm()}
  }else remaining=restPaused;
  $('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);
  $('timerStart').textContent=restDeadline?'PAUSE':'START';
