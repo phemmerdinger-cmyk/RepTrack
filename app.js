@@ -141,6 +141,14 @@ window.RepTrackWorkoutPreset=key=>{
  return presets[key]?clonePlan(presets[key]):null;
 };
 window.RepTrackSelectedDate=()=>iso(selected);
+window.RepTrackOpenCalendarDay=stamp=>{
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(stamp))return;
+ const d=fromISO(stamp);
+ if(Number.isNaN(d.getTime())||iso(d)!==stamp)return;
+ selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);
+ document.querySelector('[data-view="calendar"]')?.click();
+ renderCalendar();renderSelected();openDayDrawer(d);
+};
 
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,editingLogId=null,timer=null,seconds=120,remaining=120;
 function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');entries=Array.isArray(x)?x.filter(valid):[]}catch{entries=[]}}
