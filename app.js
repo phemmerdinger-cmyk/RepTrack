@@ -147,44 +147,57 @@ const recovery=()=>{let v=whoop?.recovery?.score?.recovery_score;return v!==null
 const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
 const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
 const guidance=r=>r===null?'No recovery score is available. Follow the plan and adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
+let whoopSyncInProgress=false,lastWhoopSyncAttempt=0,lastWhoopSuccess=0,whoopState='loading',whoopError='';
+const whoopStateLabel=()=>whoopState==='connected'?'WHOOP CONNECTED':whoopState==='disconnected'?'CONNECT WHOOP':whoopState==='waking'?'WAKING UP SERVER…':whoopState==='error'?'WHOOP UNAVAILABLE':'CHECKING WHOOP';
 function renderWHOOP(){
-window.RepTrackWHOOPData=whoop;
-window.RepTrackWHOOPLastSync=lastWhoopSuccess||0;
-window.dispatchEvent(new Event('reptrack-whoop-updated'));
-
-const r=recovery(),s=whoop?.sleep?.score?.sleep_performance_percentage,t=whoop?.cycle?.score?.strain;
-$('recoveryMetric').textContent=r===null?'—':r+'%';
-$('sleepMetric').textContent=s!==null&&s!==undefined&&Number.isFinite(+s)?Math.round(+s)+'%':'—';
-$('strainMetric').textContent=t!==null&&t!==undefined&&Number.isFinite(+t)?(+t).toFixed(1):'—';
-$('recoveryMetric').className='metric recovery-'+recoveryTone(r);
-$('recoveryCaption').textContent=readiness(r);
-$('whoopBadge').textContent=whoop?.connected?'WHOOP CONNECTED':'WHOOP NOT CONNECTED';
-$('whoopBadge').classList.toggle('connected',!!whoop?.connected);
-$('connDot').classList.toggle('on',!!whoop?.connected);
-$('connText').textContent=whoop?.connected?'WHOOP linked':'WHOOP not linked';
-$('connectLink').classList.toggle('hidden',!!whoop?.connected);
-$('disconnectButton').classList.toggle('hidden',!whoop?.connected);
-$('guidanceText').textContent=guidance(r);
-const day=planFor(selected);
-$('selectedRecovery').textContent=day.title==='RECOVERY'?'RECOVERY / MOBILITY':readiness(r);
-$('selectedRecovery').className='micro recovery-'+recoveryTone(r);
-$('advice').textContent=guidance(r);
+ window.RepTrackWHOOPData=whoop;
+ window.RepTrackWHOOPLastSync=whoopState==='connected'?lastWhoopSuccess:0;
+ window.RepTrackWHOOPStatus={state:whoopState,error:whoopError,lastSync:lastWhoopSuccess,connected:whoopState==='connected'};
+ const connected=whoopState==='connected',r=connected?recovery():null;
+ const score=connected?whoop?.sleep?.score?.sleep_performance_percentage:null;
+ const strain=connected?whoop?.cycle?.score?.strain:null;
+ $('whoopBadge').textContent=whoopStateLabel();
+ $('whoopBadge').classList.toggle('connected',connected);
+ $('connDot').classList.toggle('on',connected);
+ $('connText').textContent=whoopStateLabel();
+ $('connectLink').classList.add('hidden'); // Connect through the single WHOOP tab card.
+ $('disconnectButton').classList.toggle('hidden',!connected);
+ $('recoveryMetric').textContent=r===null?'NO DATA':r+'%';
+ $('sleepMetric').textContent=score==null||!Number.isFinite(+score)?'NO DATA':Math.round(+score)+'%';
+ $('strainMetric').textContent=strain==null||!Number.isFinite(+strain)?'NO DATA':(+strain).toFixed(1);
+ $('recoveryMetric').className='metric recovery-'+recoveryTone(r);
+ $('recoveryCaption').textContent=connected?(r===null?'NOT AVAILABLE':readiness(r)):'WHOOP';
+ $('selectedRecovery').textContent=connected&&r!==null?readiness(r):'';
+ $('selectedRecovery').className='micro recovery-'+recoveryTone(r);
+ const advice=connected&&r!==null?guidance(r):'';
+ $('guidanceText').textContent=advice; // Only one recovery explanation on the calendar.
+ $('advice').textContent=connected&&r!==null?'See recovery guidance for today.':'See WHOOP tab for connection status.';
+ $('syncMessage').textContent=connected?'Connected · Last successful update '+new Date(lastWhoopSuccess).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):whoopStateLabel();
+ window.dispatchEvent(new Event('reptrack-whoop-updated'));
 }
-let whoopSyncInProgress=false,lastWhoopSyncAttempt=0,lastWhoopSuccess=0;
 async function syncWHOOP(force=false){
  if(whoopSyncInProgress||document.hidden||(!force&&Date.now()-lastWhoopSyncAttempt<45000))return;
  whoopSyncInProgress=true;lastWhoopSyncAttempt=Date.now();
+ const controller=new AbortController();
+ let slowTimer=null,abortTimer=null;
+ whoopError='';whoopState=lastWhoopSuccess?'connected':'loading';
+ renderWHOOP();
  try{
-  const res=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store'});
-  if(!res.ok)throw Error('Unable to retrieve WHOOP metrics');
-  whoop=await res.json();
-  lastWhoopSuccess=Date.now();
-  $('syncMessage').textContent=whoop.connected?'WHOOP data checked at '+new Date(lastWhoopSuccess).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})+'. Refreshes automatically.':'WHOOP is not connected in this browser.';
+  slowTimer=setTimeout(()=>{if(whoopSyncInProgress){whoopState='waking';renderWHOOP()}},4000);
+  abortTimer=setTimeout(()=>controller.abort(),28000);
+  const res=await fetch('/api/whoop/summary',{credentials:'same-origin',cache:'no-store',signal:controller.signal});
+  if(!res.ok)throw Error('WHOOP server returned '+res.status);
+  const result=await res.json();
+  whoop=result;lastWhoopSuccess=Date.now();
+  whoopState=result.connected?'connected':'disconnected';
  }catch(e){
-  // Preserve last-known WHOOP data during temporary network failures.
-  $('syncMessage').textContent='WHOOP temporarily unavailable. '+(lastWhoopSuccess?'Showing the last available readings.':'No readings available yet.');
- }finally{whoopSyncInProgress=false;renderWHOOP();renderCalendar();renderSelected();renderDayDrawer();}
+  whoopState='error';whoopError=e?.name==='AbortError'?'Connection timed out. The server may be starting up.':e?.message||'Could not contact WHOOP.';
+ }finally{
+  clearTimeout(slowTimer);clearTimeout(abortTimer);
+  whoopSyncInProgress=false;renderWHOOP();renderCalendar();renderSelected();renderDayDrawer();
+ }
 }
+window.RepTrackRetryWHOOP=()=>syncWHOOP(true);
 // 30-day back-squat check-in, November 9–December 8 inclusive.
 // A completed day requires at least one real Back Squat set; a planned set never qualifies.
 const SQUAT_START=new Date(2026,10,9),SQUAT_TOTAL_DAYS=30;
@@ -659,7 +672,7 @@ $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
 $('exerciseSelect').onchange=renderExerciseTrend;
-$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
+$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};whoopState='disconnected';renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
 $('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
 function paintTimer(){$('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);$('timerStart').textContent=timer?'PAUSE':'START'}
@@ -691,6 +704,7 @@ window.addEventListener('focus',()=>syncWHOOP());
 window.addEventListener('reptrack-whoop-manual-refresh',()=>{
  whoop=window.RepTrackWHOOPData;
  lastWhoopSuccess=window.RepTrackWHOOPLastSync||Date.now();
+ whoopState=whoop?.connected?'connected':'disconnected';
  lastWhoopSyncAttempt=lastWhoopSuccess;
  renderWHOOP();renderCalendar();renderSelected();renderDayDrawer();
 });
