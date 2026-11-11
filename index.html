@@ -15,6 +15,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link rel="stylesheet" href="/app.css">
 <script src="/plan-data.js" defer></script>
+<script src="/exercise-library.js" defer></script>
 <link rel="stylesheet" href="/future.css">
 <link rel="stylesheet" href="/analytics.css">
 <link rel="stylesheet" href="/workout.css">
@@ -33,7 +34,7 @@
 <button class="nav-item" data-view="experiments">EXPERIMENTS</button>
 
 </nav>
-<div class="side-bottom"><div class="conn"><span class="dot" id="connDot"></span><span id="connText">Checking WHOOP</span></div></div>
+
 </aside>
 <nav class="mobile-nav" aria-label="Mobile navigation">
 <button class="mobile-nav-tab active" type="button" data-view="calendar" aria-label="Calendar"><span class="mobile-nav-icon" aria-hidden="true">▦</span><span>CALENDAR</span></button>
@@ -43,7 +44,19 @@
 <button class="mobile-nav-tab" type="button" data-view="experiments" aria-label="Experiments"><span class="mobile-nav-icon" aria-hidden="true">⚗</span><span>EXPERIMENTS</span></button>
 </nav>
 <main class="content">
-<div class="topline"><span class="micro">REPTRACK / PERFORMANCE</span><div class="top-actions"><span id="whoopBadge" class="live-pill" aria-live="polite">SYNCING WHOOP</span></div></div>
+<div class="topline" id="appHeader">
+<button id="whoopGlobalStatus" class="whoop-global-status" type="button" aria-expanded="false" aria-controls="whoopStatusDetails">
+<span id="whoopGlobalDot" class="whoop-global-dot status-lost" aria-hidden="true"></span>
+<span id="whoopGlobalText">WHOOP Disconnected</span>
+</button>
+<div id="whoopStatusDetails" class="whoop-status-details hidden" role="region" aria-label="WHOOP connection details">
+<div class="whoop-status-details-head"><strong id="whoopStatusTitle">WHOOP Disconnected</strong><button id="whoopStatusClose" type="button" aria-label="Close WHOOP details">×</button></div>
+<div class="whoop-detail-row"><span>Last successful sync</span><strong id="whoopStatusLastSync">Not available</strong></div>
+<div class="whoop-detail-row"><span>Latest measurement</span><strong id="whoopStatusLatestData">Not available</strong></div>
+<div class="whoop-detail-row"><span>Reconnect required</span><strong id="whoopStatusReconnect">Checking</strong></div>
+<p id="whoopStatusExplanation" class="whoop-status-explanation">Connection status isn't established yet.</p>
+<div class="whoop-status-actions"><button id="whoopStatusRefresh" type="button">Refresh</button><a id="whoopStatusReconnectLink" href="/api/whoop/login" class="hidden">Reconnect WHOOP</a></div>
+</div></div>
 <section data-page="calendar">
 <div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>CALENDAR</h1></div><p>Training schedule, recovery and performance in one view.</p></div>
 <div class="intel-grid">
@@ -103,7 +116,12 @@
 <div><span class="micro">VOLUME TREND</span><strong id="analysisChange">—</strong><small>VS PREVIOUS PERIOD</small></div></div>
 <section class="section analytics-all-exercises" id="analyticsAllExercises">
 <div class="section-title"><div><div class="micro">EVERY EXERCISE YOU RECORD</div><h3>EXERCISE HISTORY</h3></div><span id="analyticsExerciseTotal" class="future-pill">0 EXERCISES</span></div>
-<p class="muted">Every distinct exercise saved in RepTrack appears here automatically, including new exercises logged today. Choose any exercise to view its strength progression.</p>
+<p class="muted">Browse all available movements, including exercises you haven't logged yet. Historical sets and strength progress appear only when saved records exist in this browser.</p>
+<div class="exercise-library-controls">
+<label class="field">SEARCH EXERCISES<input id="exerciseLibrarySearch" type="search" placeholder="Search exercise or equipment…" autocomplete="off"></label>
+<label class="field">MUSCLE GROUP<select id="exerciseLibraryGroup"><option value="All">ALL MUSCLE GROUPS</option></select></label>
+<label class="field">SORT BY<select id="exerciseLibrarySort"><option value="alpha">ALPHABETICAL</option><option value="recent">MOST RECENTLY PERFORMED</option><option value="frequency">MOST FREQUENTLY PERFORMED</option></select></label>
+</div>
 <div id="analyticsExerciseList" class="analytics-exercise-list"></div>
 </section>
 <section class="section analytics-whoop-history" id="analyticsWhoopHistory">
@@ -121,7 +139,7 @@
 <div class="section" id="dataAndConnection" style="margin-top:20px">
 <p id="backupAge" class="backup-age" aria-live="polite">Last backup: Never · Export recommended</p>
 <details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
-<div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Check the WHOOP tab for connection status.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
+<div class="section"><h2>WHOOP ACCOUNT SETTINGS</h2><p id="syncMessage" class="muted">Use the global indicator to check connection freshness.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
 <div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
 <div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
 </div></details></div></section>
@@ -206,7 +224,7 @@
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
 <div class="modal-head"><div><div class="micro">WORKOUT LOGGER</div><h2 id="modalTitle">LOG WORKOUT</h2></div><button id="closeModal" type="button" aria-label="Close">✕</button></div>
 <form id="logForm">
-<div class="fields"><label class="field">DATE<input id="logDate" type="date" required></label><label class="field">EXERCISE<input id="logExercise" maxlength="100" required></label></div>
+<div class="fields"><label class="field">DATE<input id="logDate" type="date" required></label><label class="field">EXERCISE<input id="logExercise" list="exerciseCatalogOptions" maxlength="100" autocomplete="off" required></label><datalist id="exerciseCatalogOptions"></datalist></div>
 <div class="set-editor-heading"><div><div class="micro">YOUR SETS</div><h3>WEIGHT & REPS</h3></div><span class="set-count-label" id="setCountLabel">0 SETS</span></div>
 <p class="set-editor-hint" id="setEditorHint">Edit each set below. Warmups are kept separate from your working sets.</p>
 <div id="setsList" class="set-cards"></div>
