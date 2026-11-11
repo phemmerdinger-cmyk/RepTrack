@@ -63,3 +63,18 @@
  .finished-workout-result p{font-size:10px}
  .completed-extra-actions button{width:100%;min-height:46px}
 }
+
+/* Always-visible daily squat working sets even after WHOOP sessions are completed. */
+.daily-squat-workout{margin:13px 0 17px;padding:16px 15px;border:1px solid #aebbd173;border-radius:14px;background:linear-gradient(125deg,#293340,#121a25 85%);box-shadow:0 10px 30px #0003}
+.daily-squat-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.daily-squat-head h3{font:750 19px 'Space Grotesk',sans-serif;letter-spacing:-.055em;margin:6px 0 9px}
+.daily-squat-percent{font:800 13px 'Space Grotesk',sans-serif;padding:8px 10px;border:1px solid #65748b;border-radius:8px;white-space:nowrap}
+.daily-squat-warmups{font-size:11px;color:#c2cbd8;padding:11px 0;border-bottom:1px solid #ffffff26}
+.daily-squat-working{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:13px 0}
+.daily-squat-set{display:grid;gap:7px;min-width:0;padding:13px 10px;border:1px solid #ffffff31;border-radius:11px;background:#ffffff0a}
+.daily-squat-set span{font-size:10px;font-weight:750;letter-spacing:.1em;color:#b8c6d8}
+.daily-squat-set strong{font:750 clamp(17px,2.6vw,25px) 'Space Grotesk',sans-serif;letter-spacing:-.04em}
+.daily-squat-set small{font-size:9px;font-weight:750;color:#a8b4c5;letter-spacing:.05em}
+.daily-squat-note{font-size:11px;color:#b0bdce;line-height:1.6;margin:0 0 12px}
+.daily-squat-workout>button{min-height:43px}
+@media(max-width:700px){.daily-squat-workout{padding:13px 10px}.daily-squat-head h3{font-size:17px}.daily-squat-set{padding:12px 8px}.daily-squat-set strong{font-size:18px}.daily-squat-working{gap:7px}}
