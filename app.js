@@ -637,8 +637,10 @@ if(exercise==='Back Squat'){
  const repTarget=exercise==='Heel-Elevated Squat'?10:(date.getDay()===3?6:8);
  const scheduled=squatMonth.find(w=>w.wednesday===iso(date)||w.sunday===iso(date));
  for(let i=0;i<(scheduled?.light&&exercise==='Back Squat'?2:3);i++)addSet(target,repTarget);
-}else if(prev?.sets?.length){for(const item of prev.sets.slice(0,12))addSet(item.weight,item.reps,!!item.warmup)}
-else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
+}else if(prev?.sets?.length){
+ const last=prev.sets.filter(x=>!x.warmup).at(-1)||prev.sets.at(-1);
+ for(let i=0;i<3;i++)addSet(last.weight,last.reps,false);
+}else {const weight=explicit?target:'';addSet(weight);addSet(weight);addSet(weight);}
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function openEditLog(id){
@@ -684,10 +686,19 @@ const previous=entries.slice(),editedIndex=editingLogId?entries.findIndex(e=>e.i
 if(editingLogId&&editedIndex===-1){alert('The original workout entry is no longer available.');return}
 if(editedIndex>=0)entries[editedIndex]={...entries[editedIndex],date:item.date,exercise:item.exercise,sets:item.sets,notes:item.notes};
 else entries.push(item);
-if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll()}
+if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll();startRestTimer()}
 else entries=previous;
 });
-$('addSet').onclick=()=>addSet('', '', false);$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
+$('addSet').onclick=()=>addSet('', '', false);
+$('addSameSet').onclick=()=>{
+ const previous=$('setsList').lastElementChild;
+ if(!previous){addSet();return}
+ const weight=previous.querySelector('[data-set-weight]')?.value||'';
+ const reps=previous.querySelector('[data-set-reps]')?.value||'';
+ const warmup=previous.querySelector('.set-type')?.value==='warmup';
+ addSet(weight,reps,warmup);
+ startRestTimer();
+};$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
@@ -697,10 +708,41 @@ $('exerciseSelect').onchange=renderExerciseTrend;
 $('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};whoopState='disconnected';renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
 $('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
 $('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
-function paintTimer(){$('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);$('timerStart').textContent=timer?'PAUSE':'START'}
-$('timerStart').onclick=()=>{if(timer){clearInterval(timer);timer=null;paintTimer();return}if(remaining<=0)remaining=seconds;timer=setInterval(()=>{remaining=Math.max(0,remaining-1);if(!remaining){clearInterval(timer);timer=null;if(navigator.vibrate)navigator.vibrate(100)}paintTimer()},1000);paintTimer()};
-$('timerReset').onclick=()=>{clearInterval(timer);timer=null;remaining=seconds;paintTimer()};
-document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterval(timer);timer=null;seconds=Number(b.dataset.timer);remaining=seconds;paintTimer()});
+let restDeadline=0,restPaused=seconds,restSounded=false;
+function restAlarm(){
+ if(restSounded)return;restSounded=true;
+ try{if(navigator.vibrate)navigator.vibrate([120,80,120])}catch{}
+ try{
+  const Audio=window.AudioContext||window.webkitAudioContext;
+  if(Audio){const ctx=new Audio(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=750;gain.gain.setValueAtTime(.12,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.24);osc.connect(gain).connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.25);osc.onended=()=>ctx.close()}
+ }catch{}
+}
+function paintTimer(){
+ if(restDeadline){
+  remaining=Math.max(0,Math.ceil((restDeadline-Date.now())/1000));
+  if(remaining===0){restDeadline=0;clearInterval(timer);timer=null;restAlarm()}
+ }else remaining=restPaused;
+ $('clock').textContent=pad(Math.floor(remaining/60))+':'+pad(remaining%60);
+ $('timerStart').textContent=restDeadline?'PAUSE':'START';
+ $('restTimerStatus').textContent=restDeadline?'REST IN PROGRESS':restSounded?'REST COMPLETE':'REST TIMER READY';
+ $('modalRestStatus').textContent=restDeadline?'REST · '+$('clock').textContent:restSounded?'REST COMPLETE · NEXT SET':'REST TIMER · READY';
+}
+function stopTimerInterval(){if(timer){clearInterval(timer);timer=null}}
+function startRestTimer(){
+ stopTimerInterval();restPaused=seconds;remaining=seconds;restSounded=false;
+ restDeadline=Date.now()+seconds*1000;
+ timer=setInterval(paintTimer,250);paintTimer();
+}
+$('timerStart').onclick=()=>{
+ if(restDeadline){restPaused=Math.max(0,Math.ceil((restDeadline-Date.now())/1000));restDeadline=0;stopTimerInterval();paintTimer();return}
+ if(restPaused<=0)restPaused=seconds;
+ stopTimerInterval();restSounded=false;restDeadline=Date.now()+restPaused*1000;
+ timer=setInterval(paintTimer,250);paintTimer();
+};
+$('timerReset').onclick=()=>{stopTimerInterval();restDeadline=0;restPaused=seconds;restSounded=false;paintTimer()};
+document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{const active=!!restDeadline;seconds=Number(b.dataset.timer);restPaused=seconds;if(active)startRestTimer();else paintTimer()});
+document.addEventListener('visibilitychange',paintTimer);
+window.addEventListener('focus',paintTimer);
 const navButtons=[...document.querySelectorAll('[data-view]')];
 const ROUTES=['calendar','analytics','overload','workout','experiments'];
 const normalizeRoute=hash=>{const value=String(hash||'').replace(/^#/,'').toLowerCase();return value==='whoop'?'workout':ROUTES.includes(value)?value:'calendar'};
