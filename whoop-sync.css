@@ -158,3 +158,12 @@
  .whoop-global-status{padding:7px 10px;min-height:44px;font-size:11px}
  .whoop-status-details{left:5px;width:min(355px,calc(100vw - 10px))}
 }
+
+/* Optional connection freshness settings inside the single global detail panel. */
+.whoop-threshold-editor{margin:10px 0 14px;padding:10px;border:1px solid #536172;border-radius:9px;background:#192330}
+.whoop-threshold-editor summary{font-size:12px;color:#e0eaf5;cursor:pointer;min-height:32px;font-weight:750}
+.whoop-threshold-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:7px 0 11px}
+.whoop-threshold-fields label{display:grid;gap:6px;color:#b7c5d6;font-size:9px;font-weight:700}
+.whoop-threshold-fields input{min-width:0;width:100%;min-height:43px;background:#0e1620;border:1px solid #68788b;border-radius:8px;color:#f6f9ff;padding:8px;font-size:13px}
+.whoop-threshold-editor>button{min-height:44px;padding:8px 12px;background:#334455;border:1px solid #8291a4;border-radius:8px;color:white;font-size:11px;font-weight:750}
+@media(max-width:390px){.whoop-status-details{padding:12px}.whoop-detail-row{font-size:11px}.whoop-threshold-fields{gap:6px}}
