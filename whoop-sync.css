@@ -131,3 +131,30 @@
  #logForm .set-delete{width:39px;min-height:44px}
  #logForm .set-position{font-size:10px}
 }
+
+/* One persistent WHOOP indicator in the top-left header, no duplicate badges. */
+#appHeader{position:sticky;top:0;z-index:90;display:flex;align-items:center;justify-content:flex-start;min-height:55px;padding:6px 12px;background:rgba(12,16,23,.95);backdrop-filter:blur(14px);border-bottom:1px solid #ffffff22;overflow:visible}
+.whoop-global-status{display:inline-flex;align-items:center;gap:9px;min-height:44px;min-width:0;max-width:100%;padding:8px 11px;border:1px solid #465263;border-radius:10px;background:#1a212c;color:#edf1f8;letter-spacing:.02em;font-size:12px;font-weight:800;white-space:nowrap}
+.whoop-global-status:hover{border-color:#95a3b9;background:#252e3b}
+.whoop-global-dot{display:inline-block;flex:none;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 3px #ffffff10}
+.whoop-global-dot.status-live{background:#39d98a;box-shadow:0 0 0 3px #39d98a25}
+.whoop-global-dot.status-syncing{background:#f9c84c;box-shadow:0 0 0 3px #f9c84c25}
+.whoop-global-dot.status-delayed{background:#f16a6d;box-shadow:0 0 0 3px #f16a6d25}
+.whoop-global-dot.status-lost{background:#8c96a6;box-shadow:0 0 0 3px #8c96a625}
+.whoop-status-details{position:absolute;top:calc(100% + 4px);left:12px;z-index:100;width:min(360px,calc(100vw - 26px));padding:17px;border-radius:13px;border:1px solid #728093;background:#1a2230;box-shadow:0 16px 55px #0009;color:#e9eff7}
+.whoop-status-details.hidden{display:none!important}
+.whoop-status-details-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}
+.whoop-status-details-head strong{font-size:16px}
+.whoop-status-details-head button{width:44px;min-height:44px;border-radius:8px;border:1px solid #69788a;background:#222c38;color:white;font-size:24px}
+.whoop-detail-row{display:flex;justify-content:space-between;gap:14px;align-items:baseline;border-top:1px solid #ffffff18;padding:11px 0;font-size:12px}
+.whoop-detail-row>span{color:#b4becd}
+.whoop-detail-row>strong{text-align:right;font-size:11px;max-width:195px;overflow-wrap:anywhere}
+.whoop-status-explanation{font-size:11px;line-height:1.6;color:#bfccdb;margin:10px 0}
+.whoop-status-actions{display:flex;align-items:center;gap:9px}
+.whoop-status-actions>*{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:95px;border:1px solid #7e8d9f;border-radius:9px;background:#313e50;color:white;text-decoration:none;padding:8px 13px;font-weight:750;font-size:12px}
+.whoop-status-actions a{background:#d6e4f6;color:#111723}
+@media(max-width:700px){
+ #appHeader{padding:5px 8px;min-height:50px}
+ .whoop-global-status{padding:7px 10px;min-height:44px;font-size:11px}
+ .whoop-status-details{left:5px;width:min(355px,calc(100vw - 10px))}
+}
