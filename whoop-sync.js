@@ -35,7 +35,7 @@ function render(){
   const age=Number(window.RepTrackWHOOPLastSync||0),time=age?new Date(age).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'recently';
   notice.textContent='Recent activities checked '+time+'. Check the top-left dot for connection and measurement freshness.';
  }
- count.textContent=access?workouts.length+' ACTIVITIES':'SYNC NOT READY';
+ count.textContent=access?workouts.length+' ACTIVITIES':'ACTIVITY HISTORY';
  if(status.state!=='connected'||!access){
   list.append(el('div','whoop-empty',status.state==='waking'?'Waiting for WHOOP…':status.state==='error'?'Activity history is temporarily unavailable. Retry above.':status.state==='loading'?'Checking for activity history…':'Your activities will appear after WHOOP is connected and workout access is granted.'));
   return;
