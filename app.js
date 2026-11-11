@@ -593,16 +593,44 @@ function renumberSetCards(){
  cards.forEach((card,i)=>{const label=card.querySelector('.set-position');if(label)label.textContent='SET '+(i+1)});
  $('setCountLabel').textContent=cards.length+' SET'+(cards.length===1?'':'S');
 }
+function logIndividualSet(row){
+ const exercise=$('logExercise').value.trim(),date=$('logDate').value;
+ const weightInput=row.querySelector('[data-set-weight]'),repsInput=row.querySelector('[data-set-reps]');
+ if(!exercise||!date||!weightInput?.value.trim()||!repsInput?.value.trim()){alert('Enter an exercise, date, weight and reps first.');return}
+ const weight=Number(weightInput.value),reps=Number(repsInput.value);
+ if(!Number.isFinite(weight)||weight<0||!Number.isInteger(reps)||reps<1){alert('Enter valid set weights and reps.');return}
+ row.dataset.committed='true';
+ const current=entries.find(x=>x.id===editingLogId);
+ const recorded=[...$('setsList').children].filter(x=>x.dataset.committed==='true').map(x=>({
+  weight:Number(x.querySelector('[data-set-weight]').value),
+  reps:Number(x.querySelector('[data-set-reps]').value),
+  warmup:x.querySelector('.set-type').value==='warmup'
+ }));
+ if(recorded.some(x=>!Number.isFinite(x.weight)||x.weight<0||!Number.isInteger(x.reps)||x.reps<1)){alert('Check previously logged set values.');return}
+ const item=current?{...current,date,exercise:exercise.slice(0,100),sets:recorded,notes:$('logNotes').value.slice(0,1000)}:{
+  id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:recorded,notes:$('logNotes').value.slice(0,1000)
+ };
+ const previous=entries;
+ entries=current?entries.map(e=>e.id===current.id?item:e):entries.concat(item);
+ if(!save()){entries=previous;row.dataset.committed='false';return}
+ editingLogId=item.id;
+ row.classList.add('set-completed');
+ const done=row.querySelector('.set-complete-btn');if(done)done.textContent='✓ LOGGED';
+ selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);
+ renderAll();startRestTimer();
+}
+
 function addSet(weight='',reps='',warmup=false){
  const row=el('div','setline set-card'),top=el('div','set-card-top'),number=el('span','set-position','');
- const type=el('select','set-type'),remove=el('button','set-delete','×'),fields=el('div','set-card-fields');
+ const type=el('select','set-type'),complete=el('button','set-complete-btn','✓ LOG SET'),remove=el('button','set-delete','×'),fields=el('div','set-card-fields');
  for(const [value,label] of [['warmup','WARMUP'],['working','WORKING']]){
   const option=el('option','',label);option.value=value;type.append(option);
  }
  type.value=warmup?'warmup':'working';type.setAttribute('aria-label','Warmup or working set');
  remove.type='button';remove.title='Remove set';remove.setAttribute('aria-label','Remove this set');
  remove.onclick=()=>{row.remove();renumberSetCards()};
- top.append(number,type,remove);
+ complete.type='button';complete.setAttribute('aria-label','Log this set and start the rest timer');complete.onclick=()=>logIndividualSet(row);
+ top.append(number,type,complete,remove);
  for(const [caption,value,kind] of [['WEIGHT / LB',weight,'weight'],['REPS',reps,'reps']]){
   const label=el('label','set-input-label'),span=el('span','',caption),input=el('input','');
   input.type='number';input.required=true;input.value=value;input.inputMode=kind==='weight'?'decimal':'numeric';
@@ -651,7 +679,7 @@ function openEditLog(id){
  $('logExercise').value=item.exercise;
  $('logNotes').value=item.notes||'';
  $('setsList').replaceChildren();
- for(const s of item.sets){addSet(s.weight,s.reps,!!s.warmup)}
+ for(const s of item.sets){addSet(s.weight,s.reps,!!s.warmup);const row=$('setsList').lastElementChild;row.dataset.committed='true';row.classList.add('set-completed');row.querySelector('.set-complete-btn').textContent='✓ LOGGED'}
  if(!item.sets.length)addSet();
  $('modalTitle').textContent='EDIT LOGGED EXERCISE';
  $('modalOverlay').classList.remove('hidden');
@@ -695,7 +723,6 @@ $('addSameSet').onclick=()=>{
  const reps=previous.querySelector('[data-set-reps]')?.value||'';
  const warmup=previous.querySelector('.set-type')?.value==='warmup';
  addSet(weight,reps,warmup);
- startRestTimer();
 };$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
