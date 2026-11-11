@@ -66,14 +66,14 @@ const counts=new Map();entries.forEach(e=>counts.set(e.exercise,(counts.get(e.ex
 function getExerciseRows(ex){return get().filter(e=>sameExercise(e.exercise,ex)).sort((a,b)=>a.date.localeCompare(b.date)||(a.created||0)-(b.created||0))}
 function metricFor(e,m){const ss=sets(e);return m==='volume'?vol(e):m==='weight'?Math.max(0,...ss.map(s=>+s.weight)):m==='reps'?Math.max(0,...ss.map(s=>+s.weight))?Math.max(...ss.filter(s=>+s.weight===Math.max(0,...ss.map(t=>+t.weight))).map(s=>+s.reps)):0:Math.max(0,...ss.map(max))}
 function strength(){
-const ex=$('exerciseSelect').value,rows=getExerciseRows(ex).filter(e=>e.date>=iso(plus(new Date(),-range+1)));
+const ex=$('exerciseSelect').value,rows=getExerciseRows(ex); // Entire saved history, even months outside the chart summary range.
 const values=rows.map(e=>({label:e.date,short:e.date.slice(5),value:metricFor(e,strengthMode)}));
 line($('strengthChart'),values,strengthMode==='volume'?'lb-reps':'lbs');
-$('analysisStrengthNote').textContent=values.length?'Latest: '+fmt(values.at(-1).value)+' · Best: '+fmt(Math.max(...values.map(x=>x.value)))+(strengthMode==='estimate'?' lbs (Epley estimate)':''):'Log your first workout to see strength trends.';
+$('analysisStrengthNote').textContent=values.length?'All-time history · '+values.length+' recorded sessions · Latest: '+fmt(values.at(-1).value)+' · Best: '+fmt(Math.max(...values.map(x=>x.value)))+(strengthMode==='estimate'?' lbs (Epley estimate)':''):'Not yet logged. Save a set to start this exercise’s progression.';
 }
 function overload(){
 const ex=$('overloadExercise').value,all=getExerciseRows(ex).filter(e=>sets(e).some(s=>+s.weight>0)),metric=$('overloadMetric').value;
-const filtered=all.filter(e=>e.date>=iso(plus(new Date(),-range+1)));
+const filtered=all; // Chart all recoverable historic sets, not just the selected summary window.
 line($('overloadChart'),filtered.map(e=>({label:e.date,value:metricFor(e,metric)})),metric==='volume'?'lb-reps':metric==='reps'?'reps':'lbs');
 const last=all.at(-1),prev=all.length>1?all.at(-2):null,lastSet=last?sets(last).filter(s=>+s.weight>0).sort((a,b)=>+b.weight-+a.weight||+b.reps-+a.reps)[0]:null;
 $('overloadLast').textContent=lastSet?lastSet.weight+' × '+lastSet.reps:'Log your first set';
@@ -84,7 +84,7 @@ const bestWeight=lastSet?+lastSet.weight:0,bestReps=lastSet?+lastSet.reps:0;
 const next=lastSet?(bestReps>=10?'TRY '+fmt(bestWeight+5)+' LB':'TRY '+fmt(bestWeight)+' LB × '+(bestReps+1)):'LOG A SET';
 $('overloadNext').textContent=next;
 $('overloadNote').textContent=lastSet?'Optional example target based on your last heaviest set; adjust for recovery, form and exercise. No increase is required.':'Log sets with weights and reps to generate overload insights.';
-const list=$('overloadSessionList');list.replaceChildren();all.slice(-6).reverse().forEach(e=>{const row=dom('div','overload-row'),summary=dom('div');summary.append(dom('strong','',e.date),dom('small','',sets(e).map(s=>s.weight+'×'+s.reps).join(' · ')));row.append(summary,dom('strong','',fmt(metricFor(e,metric))));list.append(row)});
+const list=$('overloadSessionList');list.replaceChildren();[...all].reverse().forEach(e=>{const row=dom('div','overload-row'),summary=dom('div');summary.append(dom('strong','',e.date),dom('small','',sets(e).map(s=>s.weight+'×'+s.reps).join(' · ')));row.append(summary,dom('strong','',fmt(metricFor(e,metric))));list.append(row)});
 }
 
 function renderSquatMonth(){
