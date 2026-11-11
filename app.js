@@ -667,9 +667,21 @@ $('timerStart').onclick=()=>{if(timer){clearInterval(timer);timer=null;paintTime
 $('timerReset').onclick=()=>{clearInterval(timer);timer=null;remaining=seconds;paintTimer()};
 document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{clearInterval(timer);timer=null;seconds=Number(b.dataset.timer);remaining=seconds;paintTimer()});
 const navButtons=[...document.querySelectorAll('[data-view]')];
-function switchView(view){for(const b of navButtons)b.classList.toggle('active',b.dataset.view===view);for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==view);window.scrollTo(0,0)}
+const ROUTES=['calendar','analytics','overload','workout','experiments'];
+const normalizeRoute=hash=>{const value=String(hash||'').replace(/^#/,'').toLowerCase();return value==='whoop'?'workout':ROUTES.includes(value)?value:'calendar'};
+function switchView(view,{history=true,scroll=true}={}){
+ const route=normalizeRoute(view);
+ for(const b of navButtons){b.classList.toggle('active',b.dataset.view===route);if(b.dataset.view===route)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}
+ for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==route);
+ const routeHash=route==='workout'?'#whoop':'#'+route;
+ if(history&&location.hash!==routeHash)window.history.pushState({view:route},'',routeHash);
+ if(scroll)window.scrollTo(0,0);
+}
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-const hash=location.hash.replace('#','');if(['calendar','analytics','overload','workout','experiments'].includes(hash))switchView(hash);
+const syncRouteFromURL=()=>switchView(normalizeRoute(location.hash),{history:false});
+window.addEventListener('hashchange',syncRouteFromURL);
+window.addEventListener('popstate',syncRouteFromURL);
+syncRouteFromURL();
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===COMPLETED_KEY){renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}else if(e.key===EXPERIMENT_KEY){updateExperimentState()}});
 load();renderAll();paintTimer();syncWHOOP(true);
 // Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
