@@ -24,6 +24,25 @@ function renderPreview(){
   item.append(label,percent,pct,weight);dates.append(item);
  });
 }
+function renderMonthPlan(){
+ const grid=$('experimentMonthRows');if(!grid)return;
+ grid.replaceChildren();
+ for(let index=0;index<30;index++){
+  const date=new Date(2026,10,9+index),stamp=iso(date);
+  const prescription=window.RepTrackDailySquatTarget?.(stamp);
+  if(!prescription)continue;
+  const line=el('div','experiment-month-row'),dateEl=el('span','',date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}));
+  const target=el('strong','',prescription.weight+' LB × '+prescription.reps+' · 2 SETS');
+  const flag=el('small','',prescription.reported?'REPORTED':'TARGET');
+  line.append(dateEl,target,flag);
+  line.addEventListener('click',()=>{
+   document.querySelector('[data-view="calendar"]')?.click();
+   window.RepTrackOpenCalendarDay?.(stamp);
+  });
+  grid.append(line);
+ }
+}
+
 function render(){
  const exp=read(),active=!!exp?.active;
  $('experimentState').textContent=active?'ACTIVE':exp?.start?'STOPPED':'NOT STARTED';
@@ -35,13 +54,14 @@ function render(){
   $('experimentMax').value=Number(exp.max)||325;
  }
  renderPreview();
+ renderMonthPlan();
  if(active){
   const end=new Date(exp.start+'T12:00:00');end.setDate(end.getDate()+29);
-  $('experimentMessage').textContent='Active '+exp.start+' through '+iso(end)+'. Every day adds 2 Back Squat sets before your usual workout; lighter days use the selected percentages, and existing Wednesday/Sunday squat targets are preserved.';
+  $('experimentMessage').textContent='Your Nov 9–Dec 8 two-set squat schedule is already visible on every calendar day. This card can still hold your experiment notes. The fixed 30-day targets below take priority over older weekday percentages.';
  }else if(exp?.start){
-  $('experimentMessage').textContent='Experiment stopped. Its workout additions are paused. Already logged sets and progress remain saved.';
+  $('experimentMessage').textContent='The 30-day Nov 9–Dec 8 squat block is still scheduled. This older optional experiment switch does not remove the new daily targets.';
  }else{
-  $('experimentMessage').textContent='Write your squat challenge, review the percentages, then tap Add to My Calendar. Nothing is scheduled until you apply it.';
+  $('experimentMessage').textContent='Your Nov 9–Dec 8 daily squat schedule is already added to the calendar. The button above saves your optional experiment description and percentages for future training.';
  }
 }
 function notify(){window.dispatchEvent(new Event('reptrack-experiments-changed'));window.dispatchEvent(new Event('reptrack-workouts-changed'))}
