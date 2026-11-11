@@ -90,45 +90,46 @@ const list=$('overloadSessionList');list.replaceChildren();all.slice(-6).reverse
 function renderSquatMonth(){
  const target=$('squatMonthRows'),chart=$('squatPlanChart');
  if(!target||!chart)return;
- const plan=window.RepTrackSquatMonth||[];
- const entries=get();target.replaceChildren();
- const widths=plan.map(w=>w.heavy),heights=plan.map(w=>w.volume);
- const width=770,height=205,ns=NS;
- const svg=svgEl('svg',{viewBox:'0 0 770 205',class:'analytics-svg',role:'img','aria-label':'Four-week back squat target weight progression'});
- const x=i=>65+i*210,y=w=>169-(w-175)*1.4;
- [180,220,260].forEach(v=>{svg.append(svgEl('line',{x1:50,y1:y(v),x2:750,y2:y(v),stroke:'#ffffff25','stroke-dasharray':'4 6'}));svg.append(svgEl('text',{x:42,y:y(v)+4,'text-anchor':'end',class:'svg-label'},v+' lb'))});
- const addLine=(values,color,dash)=>{const path=values.map((v,i)=>(i?'L':'M')+x(i)+','+y(v)).join(' ');svg.append(svgEl('path',{d:path,stroke:color,'stroke-width':3,fill:'none',...(dash?{'stroke-dasharray':'7 5'}:{})}));values.forEach((v,i)=>{const dot=svgEl('circle',{cx:x(i),cy:y(v),r:4,fill:color});dot.append(svgEl('title',{},'Week '+(i+1)+' · '+v+' lb'));svg.append(dot)})};
- addLine(widths,'#f7f9fd',false);addLine(heights,'#8995a9',true);
- for(let i=0;i<4;i++)svg.append(svgEl('text',{x:x(i),y:194,'text-anchor':'middle',class:'svg-label'},'WEEK '+(i+1)));
- chart.replaceChildren(svg);
- const legend=dom('div','squat-legend');legend.append(dom('span','', '━ Wednesday: light first, then strength'),dom('span','', '┄ Sunday · Volume'));chart.append(legend);
+ const entries=get(),plan=[];
+ for(let i=0;i<30;i++){
+  const day=new Date(2026,10,9+i),date=iso(day),prescription=window.RepTrackDailySquatTarget?.(date);
+  if(prescription)plan.push({date,weight:prescription.weight,reps:prescription.reps,day:i+1,reported:prescription.reported});
+ }
+ target.replaceChildren();chart.replaceChildren();
+ if(!plan.length)return;
+ const svg=svgEl('svg',{viewBox:'0 0 770 220',class:'analytics-svg',role:'img','aria-label':'30-day daily back squat working weight targets'});
+ const x=i=>55+i*680/29,y=w=>172-(w-100)*.6;
+ [125,175,225,275].forEach(v=>{
+  svg.append(svgEl('line',{x1:48,y1:y(v),x2:745,y2:y(v),stroke:'#ffffff25','stroke-dasharray':'4 6'}));
+  svg.append(svgEl('text',{x:42,y:y(v)+4,'text-anchor':'end',class:'svg-label'},v+' lb'));
+ });
+ svg.append(svgEl('path',{d:plan.map((p,i)=>(i?'L':'M')+x(i)+','+y(p.weight)).join(' '),stroke:'#f7f9fd','stroke-width':2.8,fill:'none'}));
+ plan.forEach((p,i)=>{
+  const circle=svgEl('circle',{cx:x(i),cy:y(p.weight),r:i<2?5:3.5,fill:i<2?'#c0c9d8':'#f7f9fd'});
+  circle.append(svgEl('title',{},p.date+' · 2 × '+p.weight+' lb × '+p.reps+' reps'+(p.reported?' · reported':' · target')));
+  svg.append(circle);
+ });
+ [0,6,13,20,29].forEach(i=>svg.append(svgEl('text',{x:x(i),y:208,'text-anchor':'middle',class:'svg-label'},'DAY '+(i+1))));
+ chart.append(svg);
+ const legend=dom('div','squat-legend');
+ legend.append(dom('span','', 'Nov 9–10 · user-reported benchmarks'),dom('span','', 'Rest · scheduled training targets'));
+ chart.append(legend);
  const today=iso(new Date());
- for(const w of plan){
-  const dates=[w.wednesday,w.sunday];
-  const match=(date,name)=>entries.some(e=>e.date===date&&e.exercise===name&&sets(e).length);
-  const wed=match(w.wednesday,'Back Squat'),sun=match(w.sunday,'Back Squat'),heel=match(w.sunday,'Heel-Elevated Squat');
+ for(const p of plan){
+  const logged=entries.filter(e=>e.date===p.date&&/^Back Squat$/i.test(e.exercise));
+  const working=logged.flatMap(e=>sets(e).filter(v=>!v.warmup));
   const tr=dom('tr');
-  const add=(txt)=>tr.append(dom('td','',txt));
-  add('WEEK '+w.week);
-  const wedCell=dom('td'),wedBtn=dom('button','plan-link',w.heavy+' lb × 6–8 ('+(w.light?2:3)+' sets)');wedBtn.onclick=()=>goToSquatDay(w.wednesday);wedCell.append(wedBtn,dom('small','',w.wednesday));tr.append(wedCell);
-  const sunCell=dom('td'),sunBtn=dom('button','plan-link',w.volume+' lb × 8–10 (3 sets)');sunBtn.onclick=()=>goToSquatDay(w.sunday);sunCell.append(sunBtn,dom('small','',w.sunday));tr.append(sunCell);
-  const heelCell=dom('td');heelCell.append(dom('strong','',w.heel+' lb × 10–12'),dom('small','','3 sets'));tr.append(heelCell);
-  const status=(wed?'✓ WED ':'')+(sun?'✓ SUN ':'')+(heel?'✓ ACCESSORY':'');
-  add(status.trim()||(today>w.sunday?'NOT LOGGED':'PLANNED'));
+  tr.append(dom('td','',String(p.day)),dom('td','',p.date));
+  const cell=dom('td'),button=dom('button','plan-link','2 × '+p.weight+' lb × '+p.reps+' reps');
+  button.onclick=()=>goToSquatDay(p.date);
+  cell.append(button);tr.append(cell);
+  tr.append(dom('td','',working.length?'✓ '+working.length+' WORKING SET'+(working.length===1?'':'S')+' LOGGED':p.reported?'REPORTED · NOT SAVED':today>p.date?'NOT LOGGED':'PLANNED'));
   target.append(tr);
  }
 }
 function goToSquatDay(stamp){
+ if(window.RepTrackOpenCalendarDay){window.RepTrackOpenCalendarDay(stamp);return}
  document.querySelector('[data-view="calendar"]')?.click();
- // The calendar's month controls work across months; open the exact planned date.
- const date=new Date(stamp+'T12:00:00');
- $('todayButton')?.click();
- for(let i=0;i<2;i++){
- const month=$('monthLabel')?.textContent||'';
- if(month.includes(date.toLocaleDateString(undefined,{month:'long',year:'numeric'})))break;
- const thisMonth=new Date(),diff=(date.getFullYear()-thisMonth.getFullYear())*12+date.getMonth()-thisMonth.getMonth();
- if(diff>0)$('nextMonth')?.click();else if(diff<0)$('prevMonth')?.click();
- }
  const tile=[...document.querySelectorAll('#monthGrid .day')].find(b=>b.dataset.date===stamp);
  tile?.click();
 }
