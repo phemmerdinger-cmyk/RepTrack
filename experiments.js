@@ -31,7 +31,8 @@ function renderMonthPlan(){
   const date=new Date(2026,10,9+index),stamp=iso(date);
   const prescription=window.RepTrackDailySquatTarget?.(stamp);
   if(!prescription)continue;
-  const line=el('div','experiment-month-row'),dateEl=el('span','',date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}));
+  const line=el('button','experiment-month-row'),dateEl=el('span','',date.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}));
+  line.type='button';line.setAttribute('aria-label','Open '+stamp+' daily Back Squat plan');
   const target=el('strong','',prescription.weight+' LB × '+prescription.reps+' · 2 SETS');
   const flag=el('small','',prescription.reported?'REPORTED':'TARGET');
   line.append(dateEl,target,flag);
