@@ -100,6 +100,16 @@
 <div><span class="micro">TRAINING SESSIONS</span><strong id="analysisSessions">—</strong><small>UNIQUE LOGGED DAYS</small></div>
 <div><span class="micro">SETS COMPLETED</span><strong id="analysisSets">—</strong><small>WORKING SETS</small></div>
 <div><span class="micro">VOLUME TREND</span><strong id="analysisChange">—</strong><small>VS PREVIOUS PERIOD</small></div></div>
+<section class="section analytics-all-exercises" id="analyticsAllExercises">
+<div class="section-title"><div><div class="micro">EVERY EXERCISE YOU RECORD</div><h3>EXERCISE HISTORY</h3></div><span id="analyticsExerciseTotal" class="future-pill">0 EXERCISES</span></div>
+<p class="muted">Every distinct exercise saved in RepTrack appears here automatically, including new exercises logged today. Choose any exercise to view its strength progression.</p>
+<div id="analyticsExerciseList" class="analytics-exercise-list"></div>
+</section>
+<section class="section analytics-whoop-history" id="analyticsWhoopHistory">
+<div class="section-title"><div><div class="micro">COMPLETED ACTIVITIES FROM WHOOP</div><h3>WHOOP WORKOUTS</h3></div><span id="analyticsWhoopTotal" class="future-pill">—</span></div>
+<p id="analyticsWhoopNote" class="muted">Completed WHOOP workouts are shown separately from weight-and-rep exercise logs.</p>
+<div id="analyticsWhoopList" class="analytics-whoop-list"></div>
+</section>
 <div class="analytics-chart-grid">
 <section class="section analytics-chart-card wide"><div class="section-title"><div><div class="micro">01 / TRAINING LOAD</div><h3>VOLUME OVER TIME</h3></div><div class="analytics-toggle" id="analysisVolumeMode"><button type="button" data-volume-mode="volume" class="active">VOLUME</button><button type="button" data-volume-mode="sets">SETS</button></div></div><div id="analysisVolumeChart" class="chart-host"></div><div class="chart-sub" id="analysisVolumeNote">Based on your logged workouts.</div></section>
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">02 / STRENGTH TRACKING</div><h3>EXERCISE PROGRESSION</h3></div></div><label class="field">EXERCISE<select id="exerciseSelect"></select></label><div class="analytics-toggle" id="analysisStrengthMode"><button type="button" class="active" data-strength-mode="estimate">EST. 1RM</button><button type="button" data-strength-mode="weight">TOP WEIGHT</button><button type="button" data-strength-mode="volume">VOLUME</button></div><div id="strengthChart" class="chart-host"></div><div class="chart-sub" id="analysisStrengthNote">Estimated 1RM is a formula-based trend, not a tested maximum.</div></section>
