@@ -162,32 +162,34 @@ window.RepTrackWHOOPThresholds=whoopThresholds;
 const safeTimestamp=value=>{const t=Date.parse(value||'');return Number.isFinite(t)&&t<=Date.now()+60000&&t>0?t:null};
 function whoopLatestRecord(){
  if(!whoop||!whoop.connected)return null;
- const points=[];
- const add=(v,description)=>{const timestamp=safeTimestamp(v);if(timestamp)points.push({timestamp,description})};
- // Activity/sleep end dates are actual observation periods, unlike request/sync time.
- for(const record of whoop.workouts||[])add(record?.end,'Workout end');
- add(whoop.sleep?.end,'Sleep period end');
- add(whoop.cycle?.end,'Cycle period end');
- // Fallback to record timestamps if no recent observation end exists.
- if(!points.length){
-  add(whoop.cycle?.updated_at,'Cycle record update');
-  add(whoop.cycle?.start,'Cycle start');
-  add(whoop.recovery?.updated_at,'Recovery record update');
-  add(whoop.sleep?.updated_at,'Sleep record update');
- }
- return points.sort((a,b)=>b.timestamp-a.timestamp)[0]||null;
+ const observations=[],updates=[];
+ const add=(into,v,description)=>{const timestamp=safeTimestamp(v);if(timestamp)into.push({timestamp,description,observed:into===observations})};
+ for(const record of whoop.workouts||[])add(observations,record?.end,'Workout end');
+ add(observations,whoop.sleep?.end,'Sleep period end');
+ add(observations,whoop.cycle?.end,'Cycle period end');
+ // These fields date record processing, not necessarily the physical measurement.
+ add(updates,whoop.cycle?.updated_at,'Cycle record updated');
+ add(updates,whoop.recovery?.updated_at,'Recovery record updated');
+ add(updates,whoop.sleep?.updated_at,'Sleep record updated');
+ add(updates,whoop.cycle?.start,'Cycle started');
+ const latestObserved=observations.sort((a,b)=>b.timestamp-a.timestamp)[0];
+ const latestUpdate=updates.sort((a,b)=>b.timestamp-a.timestamp)[0];
+ const windowMs=whoopThresholds().measurementFreshMinutes*60000;
+ if(latestObserved&&Date.now()-latestObserved.timestamp<=windowMs)return latestObserved;
+ if(latestUpdate&&(!latestObserved||latestUpdate.timestamp>=latestObserved.timestamp))return latestUpdate;
+ return latestObserved||latestUpdate||null;
 }
 function whoopIndicatorStatus(){
  const cfg=whoopThresholds(),connection=whoopState==='connected'||(whoopState==='waking'&&whoop?.connected===true);
- const needsReconnect=whoopState==='disconnected'||whoopState==='error'&&!lastWhoopSuccess;
+ const needsReconnect=whoopState==='disconnected'||(whoopState==='error'&&/401|403|unauthoriz|expired|invalid.*auth/i.test(whoopError));
  if(!connection||!lastWhoopSuccess||!whoop?.connected)return{key:'lost',text:'WHOOP Disconnected',needsReconnect,lastSync:lastWhoopSuccess||null,record:whoopLatestRecord(),explanation:whoopState==='waking'?'Waiting for the server to respond.':whoopError||'WHOOP connection has not been confirmed.'};
  const syncMinutes=(Date.now()-lastWhoopSuccess)/60000,record=whoopLatestRecord();
  const recordMinutes=record?(Date.now()-record.timestamp)/60000:null;
  let key='live';
  if(syncMinutes>cfg.syncingMinutes||recordMinutes!==null&&recordMinutes>cfg.measurementDelayedMinutes)key='delayed';
- else if(syncMinutes>cfg.liveMinutes||recordMinutes===null||recordMinutes>cfg.measurementFreshMinutes)key='syncing';
+ else if(syncMinutes>cfg.liveMinutes||recordMinutes===null||recordMinutes>cfg.measurementFreshMinutes||!record.observed)key='syncing';
  const text={live:'WHOOP Live',syncing:'WHOOP Syncing',delayed:'WHOOP Delayed'}[key];
- const explanation=recordMinutes===null?'The WHOOP API responded, but no timestamped physiological record was available. Sync freshness is not proof of measurement freshness.':record.description+' is '+Math.max(0,Math.floor(recordMinutes))+' minutes old. WHOOP may update sleep, recovery and other metrics on different schedules.';
+ const explanation=recordMinutes===null?'The WHOOP API responded, but no timestamped physiological record was available. Sync freshness is not proof of measurement freshness.':record.description+' is '+Math.max(0,Math.floor(recordMinutes))+' minutes old. '+(record.observed?'This represents an observation period.':'This is a record-update time, not proof of a new measurement.')+' Sleep, recovery and other WHOOP metrics refresh on different schedules.';
  return{key,text,needsReconnect:false,lastSync:lastWhoopSuccess,record,explanation};
 }
 const relativeWHOOPTime=ms=>ms?new Date(ms).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not available';
@@ -217,9 +219,9 @@ function renderWHOOP(){
  window.RepTrackWHOOPData=whoop;
  window.RepTrackWHOOPLastSync=lastWhoopSuccess||0;
  paintGlobalWHOOP();
- const connected=whoopState==='connected',r=connected?recovery():null;
- const score=connected?whoop?.sleep?.score?.sleep_performance_percentage:null;
- const strain=connected?whoop?.cycle?.score?.strain:null;
+ const connected=whoopState==='connected',hasLastData=!!whoop?.connected,r=hasLastData?recovery():null;
+ const score=hasLastData?whoop?.sleep?.score?.sleep_performance_percentage:null;
+ const strain=hasLastData?whoop?.cycle?.score?.strain:null;
  // Connection indicator is rendered only in the persistent global header.
  $('connectLink').classList.add('hidden'); // Connect through the single WHOOP tab card.
  $('disconnectButton').classList.toggle('hidden',!connected);
