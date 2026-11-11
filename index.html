@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="RepTrack">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="description" content="RepTrack fitness intelligence: training calendar, WHOOP recovery and strength analytics.">
-<title>RepTrack | Training Command Center</title>
+<title>RepTrack | Workout tracker</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link rel="stylesheet" href="/app.css">
@@ -21,29 +21,34 @@
 <link rel="stylesheet" href="/workout.css">
 <link rel="stylesheet" href="/experiments.css">
 <link rel="stylesheet" href="/whoop-sync.css">
+<link rel="stylesheet" href="/accessibility.css">
 </head>
 <body>
+<a class="skip-link" href="#mainContent">Skip to main content</a>
 <div class="app">
 <aside class="side">
-<div><div class="wordmark"><span class="mark">R</span>REPTRACK</div><div class="brand-sub">FITNESS INTELLIGENCE</div></div>
+<div><div class="wordmark"><span class="mark">R</span>REPTRACK</div><div class="brand-sub">YOUR WORKOUT TRACKER</div></div>
 <nav class="side-nav" aria-label="Main navigation">
-<button class="nav-item active" data-view="calendar">CALENDAR</button>
-<button class="nav-item" data-view="analytics">ANALYTICS</button>
-<button class="nav-item" data-view="overload">PROGRESSIVE OVERLOAD</button>
+<button class="nav-item active" data-view="calendar">Calendar</button>
+<button class="nav-item" data-view="analytics">Analytics</button>
+<button class="nav-item" data-view="overload">Strength progress</button>
 <button class="nav-item" data-view="workout">WHOOP</button>
-<button class="nav-item" data-view="experiments">EXPERIMENTS</button>
+<button class="nav-item" data-view="experiments">Training plans</button>
 
 </nav>
 
 </aside>
 <nav class="mobile-nav" aria-label="Mobile navigation">
-<button class="mobile-nav-tab active" type="button" data-view="calendar" aria-label="Calendar"><span class="mobile-nav-icon" aria-hidden="true">▦</span><span>CALENDAR</span></button>
-<button class="mobile-nav-tab" type="button" data-view="analytics" aria-label="Analytics"><span class="mobile-nav-icon" aria-hidden="true">▥</span><span>ANALYTICS</span></button>
-<button class="mobile-nav-tab" type="button" data-view="overload" aria-label="Progressive Overload"><span class="mobile-nav-icon" aria-hidden="true">↗</span><span>OVERLOAD</span></button>
+<button class="mobile-nav-tab active" type="button" data-view="calendar" aria-label="Calendar"><span class="mobile-nav-icon" aria-hidden="true">▦</span><span>Calendar</span></button>
+<button class="mobile-nav-tab" type="button" data-view="analytics" aria-label="Analytics"><span class="mobile-nav-icon" aria-hidden="true">▥</span><span>Analytics</span></button>
+<button class="mobile-nav-tab" type="button" data-view="overload" aria-label="Strength progress"><span class="mobile-nav-icon" aria-hidden="true">↗</span><span>Progress</span></button>
 <button class="mobile-nav-tab" type="button" data-view="workout" aria-label="WHOOP Sync"><span class="mobile-nav-icon" aria-hidden="true">▶</span><span>WHOOP</span></button>
-<button class="mobile-nav-tab" type="button" data-view="experiments" aria-label="Experiments"><span class="mobile-nav-icon" aria-hidden="true">⚗</span><span>EXPERIMENTS</span></button>
+<button class="mobile-nav-tab" type="button" data-view="experiments" aria-label="Training plans"><span class="mobile-nav-icon" aria-hidden="true">⚗</span><span>Plans</span></button>
 </nav>
-<main class="content">
+<main class="content" id="mainContent" tabindex="-1">
+<div class="utility-bar"><span>Plan. Log. See your progress.</span><a href="#settings">Help, backups &amp; settings</a></div>
+<nav class="page-shortcuts" id="pageShortcuts" aria-label="On this page"></nav>
+<p id="navigationStatus" class="sr-only" role="status"></p>
 <div class="topline" id="appHeader">
 <button id="whoopGlobalStatus" class="whoop-global-status" type="button" aria-expanded="false" aria-controls="whoopStatusDetails">
 <span id="whoopGlobalDot" class="whoop-global-dot status-lost" aria-hidden="true"></span>
@@ -67,16 +72,18 @@
 <div class="whoop-status-actions"><button id="whoopStatusRefresh" type="button">Refresh</button><a id="whoopStatusReconnectLink" href="/api/whoop/login" class="hidden">Reconnect WHOOP</a></div>
 </div></div>
 <section data-page="calendar">
-<div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>CALENDAR</h1></div><p>Training schedule, recovery and performance in one view.</p></div>
+<div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>Workout calendar</h1></div><p>Choose a date to view your plan, log sets, or review a completed workout.</p></div>
 <div class="intel-grid">
 <div class="intel-card"><div class="micro">WHOOP RECOVERY</div><div id="recoveryMetric" class="metric mono">—</div><div id="recoveryCaption" class="caption">SYNCING</div></div>
 <div class="intel-card"><div class="micro">SLEEP PERFORMANCE</div><div id="sleepMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
 <div class="intel-card"><div class="micro">DAY STRAIN</div><div id="strainMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
 </div>
-<div class="section">
-<div class="section-title"><h2>YOUR TRAINING CALENDAR</h2><div class="calendar-controls"><button id="prevMonth" type="button" aria-label="Previous month">‹</button><span class="month" id="monthLabel"></span><button id="nextMonth" type="button" aria-label="Next month">›</button><button id="todayButton" class="smallbtn btn-primary" type="button">TODAY</button></div></div>
-<div class="weekdays"><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div><div class="weekday">SUN</div></div>
-<div id="monthGrid" class="month-grid"></div>
+<div class="section" id="trainingCalendar">
+<div class="calendar-intro"><h2>Your training calendar</h2><p>Choose a day to open its workout. A planned workout is only marked complete after you log it or import it from WHOOP.</p><div class="calendar-tools"><label for="jumpDate">Go to a date<input id="jumpDate" type="date"></label><button id="openChosenDate" type="button">Open date</button><button id="calendarLayout" type="button" aria-pressed="false" aria-controls="monthGrid">List view</button></div></div>
+<div class="section-title"><h3 class="sr-only">Browse dates</h3><div class="calendar-controls"><button id="prevMonth" type="button" aria-label="Previous month">‹</button><span class="month" id="monthLabel" aria-live="polite"></span><button id="nextMonth" type="button" aria-label="Next month">›</button><button id="todayButton" class="smallbtn btn-primary" type="button">TODAY</button></div></div>
+<div class="weekdays" aria-hidden="true"><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div><div class="weekday">SUN</div></div>
+<p class="calendar-key">○ Planned &nbsp; ◐ In progress &nbsp; ✓ Completed</p>
+<div id="monthGrid" class="month-grid" role="group" aria-label="Workout dates"></div>
 <div class="squat-tracker" id="squatTracker" aria-live="polite">
 <div class="squat-tracker-top"><div><div class="micro" id="squatTrackerWindow">NOV 9 – DEC 8 · 30-DAY SQUAT CHECK-IN</div><div class="squat-tracker-title">BACK SQUAT CONSISTENCY <span id="squatDayCount">0 / 30 DAYS</span></div></div><span class="squat-tracker-status" id="squatTrackerStatus">TRACKING</span></div>
 <div class="squat-tracker-meter"><div id="squatTrackerFill"></div></div>
@@ -84,7 +91,7 @@
 <p class="squat-tracker-note" id="squatTrackerNote">✓ appears on calendar days with at least one logged Back Squat set. Planned squats alone do not count.</p>
 </div>
 </div>
-<div class="main-split">
+<div class="main-split" id="selectedDay">
 <div class="section">
 <div class="workout-head"><div><div class="micro" id="dayHeading">TODAY</div><div id="dayWorkout" class="workout-title">PUSH</div><div id="dayFocus" class="muted"></div></div><div class="micro" id="selectedRecovery"></div></div>
 <div class="insight hidden" id="trainingIntel"><strong>TRAINING INTELLIGENCE</strong><span id="advice"></span></div>
@@ -96,7 +103,7 @@
 </div><div class="action-row calendar-primary-action"><button id="dayStart" class="btn-primary" type="button">LOG TODAY'S WORKOUT</button><button id="startSelectedWorkout" class="hidden" type="button">VIEW WHOOP SYNC</button></div>
 <div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost hidden" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
 </div>
-<div class="section">
+<div class="section" id="recoveryAndTimer">
 <h3>RECOVERY GUIDANCE</h3>
 <p class="muted" id="guidanceText">Checking WHOOP recovery.</p>
 <div class="insight"><strong>HOW TO USE THIS</strong><span>Recovery is one input, not a guarantee of performance. Adjust training based on soreness, sleep, effort and form.</span></div>
@@ -110,7 +117,7 @@
 </div>
 </section>
 <section class="hidden" data-page="analytics">
-<div class="page-head"><div><div class="micro">PERFORMANCE</div><h1>ANALYTICS</h1></div><p>Track your training load and estimated strength across logged exercises.</p></div>
+<div class="page-head"><div><div class="micro">PERFORMANCE</div><h1>Training analytics</h1></div><p>Track your training load and estimated strength across logged exercises.</p></div>
 <div class="intel-grid">
 <div class="intel-card"><div class="micro">WORKING SETS / 7D</div><div id="setsMetric" class="metric mono">0</div></div>
 <div class="intel-card"><div class="micro">LOGGED EXERCISES / 7D</div><div id="sessionMetric" class="metric mono">0</div></div>
@@ -145,16 +152,10 @@
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">04 / CONSISTENCY</div><h3>WEEKLY SETS</h3></div></div><div id="analysisWeeklySets" class="chart-host"></div></section>
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">05 / SESSION QUALITY</div><h3>SESSION VOLUME</h3></div></div><div id="analysisSessionsChart" class="chart-host"></div></section>
 </div>
-<div class="section" id="dataAndConnection" style="margin-top:20px">
-<p id="backupAge" class="backup-age" aria-live="polite">Last backup: Never · Export recommended</p>
-<details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
-<div class="section"><h2>WHOOP ACCOUNT SETTINGS</h2><p id="syncMessage" class="muted">Use the global indicator to check connection freshness.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
-<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
-<div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
-</div></details></div></section>
+</section>
 
 <section class="hidden" data-page="overload">
-<div class="page-head"><div><div class="micro">STRENGTH SYSTEM / PROGRESSION</div><h1>PROGRESSIVE OVERLOAD</h1></div><p>Review your actual lift history and choose an exercise to track weight, reps, estimated strength and volume over time.</p></div>
+<div class="page-head"><div><div class="micro">STRENGTH SYSTEM / PROGRESSION</div><h1>Strength progress</h1></div><p>Review your actual lift history and choose an exercise to track weight, reps, estimated strength and volume over time.</p></div>
 <div class="overload-intro"><div class="micro">YOUR STRENGTH, TRACKED</div><h2>Every rep is a data point.</h2><p>Compare your sessions, identify personal bests and set a sensible next target. The graphs are powered by exercises you log in the Calendar.</p></div>
 <section class="section squat-month" id="squatMonthSection">
 <div class="section-title"><div><div class="micro" id="squatBlockDates">30-DAY SQUAT BLOCK</div><h2>TWO SQUAT SETS. EVERY DAY.</h2></div><span class="future-pill">30 SESSIONS</span></div>
@@ -174,7 +175,7 @@
 <div class="section overload-help"><div class="micro">HOW TO TRACK PROGRESS</div><p>Log sets on any calendar day. When you return here, select the exercise and chart metric you want to compare. A heavier weight, an extra rep at the same weight, or more quality work can all indicate progression. Target suggestions are optional and should be adapted to recovery and technique.</p><button type="button" class="btn-primary" id="overloadOpenCalendar">OPEN WORKOUT CALENDAR ↗</button></div>
 </section>
 <section data-page="workout" class="hidden">
-<div class="page-head"><div><div class="micro">CONNECTED ACTIVITY HISTORY</div><h1>WHOOP SYNC</h1></div><p>Record workouts in WHOOP. RepTrack brings completed WHOOP activities into your training calendar automatically whenever the app is open.</p></div>
+<div class="page-head"><div><div class="micro">CONNECTED ACTIVITY HISTORY</div><h1>WHOOP connection</h1></div><p>Record workouts in WHOOP. RepTrack brings completed WHOOP activities into your training calendar automatically whenever the app is open.</p></div>
 <div class="whoop-sync-intro">
 <div class="whoop-sync-mark">W</div>
 <div><div class="micro">ONE WORKOUT APP</div><h2>TRAIN IN WHOOP.<br>REVIEW IN REPTRACK.</h2>
@@ -189,7 +190,7 @@
 <div class="whoop-sync-footnote">WHOOP's public API shares activity details such as strain, heart rate, and duration. It does not provide the individual Strength Trainer weights, sets, and reps. You can still enter those in RepTrack's calendar when you want strength-progress tracking.</div>
 </section>
 <section class="hidden" data-page="experiments">
-<div class="page-head"><div><div class="micro">PERSONAL TRAINING LAB</div><h1>EXPERIMENTS</h1></div><p>Turn a training challenge into scheduled workouts. Only logged sets count toward completion.</p></div>
+<div class="page-head"><div><div class="micro">PERSONAL TRAINING LAB</div><h1>Training plans</h1></div><p>Turn a training challenge into scheduled workouts. Only logged sets count toward completion.</p></div>
 <div class="experiment-card">
 <div class="experiment-heading"><div class="experiment-mark">⚗</div><div><div class="micro">YOUR FIRST EXPERIMENT</div><h2>SQUAT EVERY DAY</h2></div><span id="experimentState" class="experiment-status">PLANNED</span></div>
 <label class="field experiment-description-label" for="experimentDescription">WHAT ARE YOU TESTING?</label>
@@ -204,11 +205,23 @@
 <div id="experimentMonthRows" class="experiment-month-rows"></div><details class="squat-plan-help"><summary>How this plan works</summary><p>The 30-day schedule alternates heavy, moderate, light, and recovery-intensity squat days to vary load. You still have two working sets each day, preceded by your listed warmups. This is a plan, not a requirement to lift through pain or significant fatigue. Only a saved Back Squat set completes a day.</p></details></div>
 </div>
 </section>
+<section class="hidden" data-page="settings">
+<div class="page-head"><div><div class="micro">GET HELP &amp; MANAGE YOUR DATA</div><h1>Help &amp; settings</h1></div><p>Your workouts are saved in this browser. Back them up before switching devices.</p></div>
+<section class="section" id="gettingStarted"><h2>Start here</h2><ol class="getting-started"><li><strong>Log a workout.</strong> Open Calendar, choose a date, then choose an exercise. Enter weight and reps and save.</li><li><strong>Review your progress.</strong> Analytics shows your overall training; Strength progress compares individual lifts.</li><li><strong>Connect WHOOP (optional).</strong> Use the WHOOP page to import activity history and recovery scores. Enter individual weights and reps in Calendar.</li><li><strong>Try a training plan.</strong> Training plans adds the existing squat challenge to your calendar. Planned sets count as completed only after you log them.</li></ol><a href="#calendar">Go to your calendar →</a></section>
+<section class="section" id="trainingTerms"><h2>What do these terms mean?</h2><dl class="term-list"><dt>Training volume</dt><dd>Weight multiplied by reps, added across your working sets. It helps compare how much work you recorded.</dd><dt>Estimated 1RM</dt><dd>An estimate of the most weight you could lift once, calculated from logged sets. It is not a tested maximum.</dd><dt>Progressive overload</dt><dd>Gradually increasing weight, reps, or quality work over time. Track it in Strength progress.</dd><dt>RPE (effort)</dt><dd>A 1–10 effort scale. An RPE of 8 means you estimate you could do about two more reps.</dd><dt>Hypertrophy</dt><dd>Training with a focus on building muscle.</dd><dt>WHOOP recovery and strain</dt><dd>WHOOP's estimates of readiness and activity effort. Use them alongside how you feel, sleep, and technique.</dd><dt>Warmup and working sets</dt><dd>Warmups prepare you for a lift. Working sets are the main training sets used in the progress totals.</dd></dl></section>
+<div class="section" id="dataAndConnection" style="margin-top:20px">
+<p id="backupAge" class="backup-age" aria-live="polite">Last backup: Never · Export recommended</p>
+<details class="utility-details" open><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
+<div class="section"><h2>WHOOP ACCOUNT SETTINGS</h2><p id="syncMessage" class="muted">Use the global indicator to check connection freshness.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
+<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
+<div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
+</div></details></div>
+</section>
 </main></div>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
 <div class="drawer-top"><div><div class="micro" id="drawerDate">SELECTED DATE</div><h2 id="drawerWorkout">DAY WORKOUT</h2><p id="drawerFocus" class="muted"></p></div><button type="button" id="drawerClose" aria-label="Close workout panel">✕</button></div>
-<div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
+<div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan" aria-controls="drawerPlanEditor" aria-expanded="false">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
 <div id="drawerPlanEditor" class="schedule-editor hidden">
 <label class="field">WORKOUT TYPE<select id="editWorkoutType"><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS">LEGS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS + ARMS">SHOULDERS + ARMS</option><option value="REST">REST / RECOVERY</option><option value="CUSTOM">CUSTOM</option></select></label>
 <label class="field" id="customWorkoutWrap" style="margin-top:12px">CUSTOM DAY NAME<input id="editWorkoutName" maxlength="50" placeholder="e.g. Full body"></label>
@@ -246,4 +259,5 @@
 <script src="/analytics.js" defer></script>
 <script src="/whoop-sync.js" defer></script>
 <script src="/experiments.js" defer></script>
+<script src="/accessibility.js" defer></script>
 </body></html>

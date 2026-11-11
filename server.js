@@ -179,7 +179,7 @@ const server=http.createServer(async(req,res)=>{
     res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Service-Worker-Allowed':'/'});
     return fs.createReadStream(path.join(__dirname,asset)).pipe(res);
   }
-  if(req.method==='GET' && (pathname==='/app.css'||pathname==='/app.js'||pathname==='/favicon.svg'||pathname==='/future.css'||pathname==='/future.js'||pathname==='/analytics.css'||pathname==='/analytics.js'||pathname==='/workout.css'||pathname==='/workout.js'||pathname==='/experiments.css'||pathname==='/experiments.js'||pathname==='/plan-data.js'||pathname==='/exercise-library.js'||pathname==='/whoop-sync.css'||pathname==='/whoop-sync.js')){
+  if(req.method==='GET' && (pathname==='/app.css'||pathname==='/app.js'||pathname==='/favicon.svg'||pathname==='/future.css'||pathname==='/future.js'||pathname==='/analytics.css'||pathname==='/analytics.js'||pathname==='/workout.css'||pathname==='/workout.js'||pathname==='/experiments.css'||pathname==='/experiments.js'||pathname==='/plan-data.js'||pathname==='/exercise-library.js'||pathname==='/whoop-sync.css'||pathname==='/whoop-sync.js'||pathname==='/accessibility.css'||pathname==='/accessibility.js')){
     const asset=pathname.slice(1);
     const mime=asset.endsWith('.css')?'text/css; charset=utf-8':asset.endsWith('.js')?'text/javascript; charset=utf-8':'image/svg+xml';
     res.writeHead(200,{'Content-Type':mime,'Cache-Control':'public, max-age=60','X-Content-Type-Options':'nosniff'});

@@ -412,11 +412,12 @@ const workoutName=savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord)
 const tile=el('button','day status-'+status.toLowerCase().replace(/\s/g,'-'));tile.type='button';tile.dataset.date=stamp;
 tile.setAttribute('aria-label',dateLabel(d)+' · '+workoutName+' · '+status+(squatExperiment?' · Squat '+squatExperiment.weight+' lb at '+squatExperiment.percentage+' percent':''));
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
-if(stamp===today)tile.classList.add('today');
+if(stamp===today){tile.classList.add('today');tile.setAttribute('aria-current','date')}
+tile.setAttribute('aria-pressed',String(stamp===iso(selected)));
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
 if(squatDone)tile.classList.add('squat-done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',workoutName),el('span','day-status',status==='Completed'?'✓':status==='In progress'?'◐':'○'));
+tile.append(el('span','day-list-date',dateLabel(d)),el('span','day-no',String(d.getDate())),el('span','day-title',workoutName),el('span','day-status',status==='Completed'?'✓':status==='In progress'?'◐':'○'),el('span','day-list-status',status));
 if(squatExperiment){
  const band=intensityBand(squatExperiment.percentage),badge=el('span','experiment-calendar-tag intensity-'+band,'SQ '+squatExperiment.weight);
  badge.title=intensityLabel(squatExperiment.percentage)+' · '+squatExperiment.percentage+'% 1RM · 2 working sets';
@@ -530,9 +531,11 @@ function buildExerciseEditor(){
   w.type='number';w.step='.5';w.min='0';w.inputMode='decimal';w.value=weight??'';w.placeholder='Weight lb';w.setAttribute('aria-label','Target weight in pounds');
   n.oninput=()=>editorDraft.ex[index][0]=n.value;s.oninput=()=>editorDraft.ex[index][1]=s.value;w.oninput=()=>editorDraft.ex[index][2]=w.value;
   up.type=down.type=del.type='button';up.title='Move exercise up';down.title='Move exercise down';del.title='Remove exercise';up.disabled=index===0;down.disabled=index===editorDraft.ex.length-1;
-  up.onclick=()=>{[editorDraft.ex[index-1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index-1]];buildExerciseEditor()};
-  down.onclick=()=>{[editorDraft.ex[index+1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index+1]];buildExerciseEditor()};
-  del.onclick=()=>{editorDraft.ex.splice(index,1);buildExerciseEditor()};
+  up.setAttribute('aria-label','Move '+(name||'exercise '+(index+1))+' up');down.setAttribute('aria-label','Move '+(name||'exercise '+(index+1))+' down');del.setAttribute('aria-label','Remove '+(name||'exercise '+(index+1)));
+  const focusRow=i=>box.children[i]?.querySelector('input')?.focus();
+  up.onclick=()=>{[editorDraft.ex[index-1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index-1]];buildExerciseEditor();focusRow(index-1)};
+  down.onclick=()=>{[editorDraft.ex[index+1],editorDraft.ex[index]]=[editorDraft.ex[index],editorDraft.ex[index+1]];buildExerciseEditor();focusRow(index+1)};
+  del.onclick=()=>{editorDraft.ex.splice(index,1);buildExerciseEditor();if(box.children.length)focusRow(Math.min(index,box.children.length-1));else $('editAddExercise').focus()};
   row.append(n,s,w,up,down,del);box.append(row);
  });
 }
@@ -547,10 +550,11 @@ function openPlanEditor(){
  $('editPlanMessage').textContent='';
  $('drawerPlanEditor').classList.remove('hidden');
  buildExerciseEditor();toggleCustomName();
- $('drawerEditPlan').textContent='✕ CLOSE EDITOR';
+ $('drawerEditPlan').textContent='✕ CLOSE EDITOR';$('drawerEditPlan').setAttribute('aria-expanded','true');$('editWorkoutType').focus();
 }
 function closePlanEditor(){
- editorOpen=false;editorDraft=null;$('drawerPlanEditor').classList.add('hidden');$('drawerEditPlan').textContent='✎ EDIT DAY PLAN';
+ const wasOpen=editorOpen;
+ editorOpen=false;editorDraft=null;$('drawerEditPlan').setAttribute('aria-expanded','false');if(wasOpen)$('drawerEditPlan').focus();$('drawerPlanEditor').classList.add('hidden');$('drawerEditPlan').textContent='✎ EDIT DAY PLAN';
 }
 function toggleCustomName(){
  const other=$('editWorkoutType').value==='CUSTOM';
@@ -593,15 +597,23 @@ $('editResetPlan').onclick=()=>{
  closePlanEditor();renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'));
 };
 
-let drawerOpen=false;
+let drawerOpen=false,drawerTrigger=null,logTrigger=null;
+function restoreFocus(target){
+ queueMicrotask(()=>{
+ if(target?.isConnected&&target.matches('button,a,input,select,textarea')&&!target.closest('.hidden')){target.focus();return}
+ const day=$('monthGrid').querySelector('[data-date="'+iso(selected)+'"]');
+ (day||document.querySelector('[data-page]:not(.hidden) h1'))?.focus();
+ });
+}
 function openDayDrawer(date){
+ drawerTrigger=document.activeElement;
  selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);drawerOpen=true;
  closePlanEditor();renderDayDrawer();$('dayDrawerOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
  $('drawerClose').focus();
 }
 function closeDayDrawer(){
  drawerOpen=false;closePlanEditor();$('dayDrawerOverlay').classList.add('hidden');
- if($('modalOverlay').classList.contains('hidden'))document.body.style.overflow='';
+ if($('modalOverlay').classList.contains('hidden')){document.body.style.overflow='';document.querySelector('.app').inert=false;restoreFocus(drawerTrigger)}
 }
 function renderDayDrawer(){
  if(!drawerOpen)return;
@@ -665,7 +677,13 @@ window.RepTrackSessionSetCount=(sessionId)=>entries.filter(e=>e.sessionId===sess
 
 function renumberSetCards(){
  const cards=[...$('setsList').children];
- cards.forEach((card,i)=>{const label=card.querySelector('.set-position');if(label)label.textContent='SET '+(i+1)});
+ cards.forEach((card,i)=>{const label=card.querySelector('.set-position');if(label)label.textContent='SET '+(i+1);
+ card.querySelector('[data-set-weight]')?.setAttribute('aria-label','Set '+(i+1)+' weight in pounds');
+ card.querySelector('[data-set-reps]')?.setAttribute('aria-label','Set '+(i+1)+' repetitions');
+ card.querySelector('.set-type')?.setAttribute('aria-label','Set '+(i+1)+' type');
+ card.querySelector('.set-delete')?.setAttribute('aria-label','Remove set '+(i+1));
+ card.querySelector('.set-complete-btn')?.setAttribute('aria-label','Log set '+(i+1)+' and start rest timer');
+ });
  $('setCountLabel').textContent=cards.length+' SET'+(cards.length===1?'':'S');
 }
 function logIndividualSet(row){
@@ -703,7 +721,7 @@ function addSet(weight='',reps='',warmup=false){
  }
  type.value=warmup?'warmup':'working';type.setAttribute('aria-label','Warmup or working set');
  remove.type='button';remove.title='Remove set';remove.setAttribute('aria-label','Remove this set');
- remove.onclick=()=>{row.remove();renumberSetCards()};
+ remove.onclick=()=>{const next=row.nextElementSibling||row.previousElementSibling;row.remove();renumberSetCards();(next?.querySelector('input')||$('addSet')).focus()};
  complete.type='button';complete.setAttribute('aria-label','Log this set and start the rest timer');complete.onclick=()=>logIndividualSet(row);
  top.append(number,type,complete,remove);
  for(const [caption,value,kind] of [['WEIGHT / LB',weight,'weight'],['REPS',reps,'reps']]){
@@ -716,6 +734,7 @@ function addSet(weight='',reps='',warmup=false){
  row.append(top,fields);$('setsList').append(row);renumberSetCards();
 }
 function openLog(date,exercise){
+if($('modalOverlay').classList.contains('hidden'))logTrigger=document.activeElement;
 editingLogId=null;
 $('setEditorHint').textContent='Edit each set below. Warmups are saved separately from working sets.';
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
@@ -745,6 +764,7 @@ if(exercise==='Back Squat'){
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function openEditLog(id){
+ logTrigger=document.activeElement;
  const item=entries.find(e=>e.id===id);
  if(!item)return;
  editingLogId=id;
@@ -777,7 +797,7 @@ function deleteDayLogs(date){
  const previous=entries;entries=entries.filter(e=>e.date!==date);
  if(save())renderAll();else entries=previous;
 }
-function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow=''}
+function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow='';$('dayDrawerOverlay').inert=false;document.querySelector('.app').inert=drawerOpen;restoreFocus(logTrigger)}
 $('logForm').addEventListener('submit',ev=>{
 ev.preventDefault();const exercise=window.RepTrackExerciseLibrary.canonical($('logExercise').value.trim()),date=$('logDate').value;
 const rows=[...$('setsList').children].map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup'}));
@@ -904,18 +924,25 @@ document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{const active
 document.addEventListener('visibilitychange',paintTimer);
 window.addEventListener('focus',paintTimer);
 const navButtons=[...document.querySelectorAll('[data-view]')];
-const ROUTES=['calendar','analytics','overload','workout','experiments'];
+const ROUTES=['calendar','analytics','overload','workout','experiments','settings'];
 const normalizeRoute=hash=>{const value=String(hash||'').replace(/^#/,'').toLowerCase();return value==='whoop'?'workout':ROUTES.includes(value)?value:'calendar'};
-function switchView(view,{history=true,scroll=true}={}){
+function switchView(view,{history=true,scroll=true,focus=true}={}){
  const route=normalizeRoute(view);
  for(const b of navButtons){b.classList.toggle('active',b.dataset.view===route);if(b.dataset.view===route)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}
  for(const e of document.querySelectorAll('[data-page]'))e.classList.toggle('hidden',e.dataset.page!==route);
  const routeHash=route==='workout'?'#whoop':'#'+route;
  if(history&&location.hash!==routeHash)window.history.pushState({view:route},'',routeHash);
  if(scroll)window.scrollTo(0,0);
+ const heading=document.querySelector('[data-page="'+route+'"] h1');
+ if(heading){heading.tabIndex=-1;if(focus)heading.focus({preventScroll:true});document.title=heading.textContent+' | RepTrack'}
+ window.dispatchEvent(new CustomEvent('reptrack-route-changed',{detail:{route}}));
 }
 navButtons.forEach(b=>b.onclick=()=>switchView(b.dataset.view));
-const syncRouteFromURL=()=>switchView(normalizeRoute(location.hash),{history:false});
+const syncRouteFromURL=event=>{
+ const fragment=location.hash.slice(1);
+ if(document.getElementById(fragment)&&!ROUTES.includes(fragment))return;
+ switchView(normalizeRoute(location.hash),{history:false,focus:!!event});
+};
 window.addEventListener('hashchange',syncRouteFromURL);
 window.addEventListener('popstate',syncRouteFromURL);
 syncRouteFromURL();
