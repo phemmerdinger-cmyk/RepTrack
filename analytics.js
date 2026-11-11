@@ -90,9 +90,24 @@ const list=$('overloadSessionList');list.replaceChildren();all.slice(-6).reverse
 function renderSquatMonth(){
  const target=$('squatMonthRows'),chart=$('squatPlanChart');
  if(!target||!chart)return;
- const entries=get(),plan=[];
+ const entries=get(),plan=[],savedPlan=window.RepTrackPersonalPlan;
+ const startDate=new Date((savedPlan?.start||'2026-11-09')+'T12:00:00');
+ const endDate=new Date(startDate);endDate.setDate(endDate.getDate()+29);
+ const startLabel=startDate.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+ const endLabel=endDate.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+ $('squatBlockDates').textContent=startLabel.toUpperCase()+' – '+endLabel.toUpperCase()+' · DAILY SQUAT BLOCK';
+ $('squatPlanDescription').textContent='Your saved program contains two working sets each day. Loads alternate between Heavy, Moderate, Light and Recovery days. Warmups and exact target weights are read from your personal plan, not hardcoded here.';
+ const summaryCards=$('squatSummaryCards');summaryCards.replaceChildren();
+ for(let i=0;i<3;i++){
+  const date=new Date(startDate);date.setDate(date.getDate()+i);
+  const target=window.RepTrackDailySquatTarget?.(iso(date));if(!target)continue;
+  const band=target.percentage>=75?'Heavy':target.percentage>=55?'Moderate':target.percentage>=40?'Light':'Recovery';
+  const box=dom('div'),dateText=dom('span','micro',date.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' · '+band.toUpperCase());
+  box.append(dateText,dom('strong','',target.weight+' LB × '+target.reps),dom('small','','2 working sets · '+(window.RepTrackSquatStatus?.(iso(date))||'Planned')));
+  summaryCards.append(box);
+ }
  for(let i=0;i<30;i++){
-  const day=new Date(2026,10,9+i),date=iso(day),prescription=window.RepTrackDailySquatTarget?.(date);
+  const day=new Date(startDate);day.setDate(day.getDate()+i);const date=iso(day),prescription=window.RepTrackDailySquatTarget?.(date);
   if(prescription)plan.push({date,weight:prescription.weight,reps:prescription.reps,day:i+1});
  }
  target.replaceChildren();chart.replaceChildren();
