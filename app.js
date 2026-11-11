@@ -100,7 +100,7 @@ function applySquatExperiment(planObject,date){
  // Replace existing Back Squat instead of adding duplicate squat movements on leg days.
  p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name));
  p.ex.unshift(['Back Squat','2 working sets × '+(prescription.reps||6)+' reps · WU 45×4, 135×8',prescription.weight]);
- p.focus+=' · Squat Every Day '+prescription.percentage+'%';
+ p.focus+=' · Squat Every Day '+intensityLabel(prescription.percentage)+' · '+prescription.percentage+'%';
  return p;
 }
 window.RepTrackExperimentPrescription=stamp=>experimentPrescription(stamp);
@@ -306,6 +306,22 @@ function renderWhoopDay(host,date){
  }
 }
 
+const intensityBand=percent=>percent>=75?'heavy':percent>=55?'moderate':percent>=40?'light':'recovery';
+const intensityLabel=percent=>({heavy:'Heavy',moderate:'Moderate',light:'Light',recovery:'Recovery'})[intensityBand(percent)];
+const workoutStatus=date=>{
+ const stamp=typeof date==='string'?date:iso(date);
+ if(entries.some(e=>e.date===stamp&&sets(e).length)||completedSessions().some(e=>e.date===stamp)||whoopActivitiesOn(stamp).length)return 'Completed';
+ try{const draft=JSON.parse(localStorage.getItem('reptrack-live-session-v1')||'null');if(draft?.date===stamp)return 'In progress'}catch{}
+ return 'Planned';
+};
+const squatStatus=date=>{
+ const stamp=typeof date==='string'?date:iso(date);
+ if(entries.some(e=>e.date===stamp&&/\bback\s+squat\b/i.test(e.exercise)&&sets(e).length))return 'Completed';
+ try{const draft=JSON.parse(localStorage.getItem('reptrack-live-session-v1')||'null');if(draft?.date===stamp&&draft?.logs?.some(x=>/\bback\s+squat\b/i.test(x.exercise||'')&&x.sets?.length))return 'In progress'}catch{}
+ return 'Planned';
+};
+window.RepTrackSquatStatus=stamp=>squatStatus(stamp);
+
 function renderCalendar(){
 $('monthLabel').textContent=month.toLocaleDateString(undefined,{month:'long',year:'numeric'});
 const grid=$('monthGrid');grid.replaceChildren();
@@ -313,16 +329,22 @@ const first=(month.getDay()+6)%7,days=new Date(month.getFullYear(),month.getMont
 const cells=Math.ceil((first+days)/7)*7;
 for(let n=0;n<cells;n++){
 const d=plus(month,n-first),stamp=iso(d),p=planFor(d);
-const savedRecord=completedSessions().filter(x=>x.date===stamp).at(-1),savedWorkout=!!savedRecord,whoopRecord=whoopActivitiesOn(stamp).at(0),completed=!!whoopRecord||savedWorkout||entries.some(e=>e.date===stamp),squatted=backSquatDates().has(stamp),squatExperiment=experimentPrescription(d);
-const tile=el('button','day',undefined);tile.type='button';tile.setAttribute('aria-label',dateLabel(d)+', '+(savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord):p.title))+(whoopRecord?', WHOOP activity synced':savedWorkout?', completed workout saved':completed?', workout logged':'')+(squatted?', back squat completed':''));tile.dataset.date=stamp;
+const savedRecord=completedSessions().filter(x=>x.date===stamp).at(-1),whoopRecord=whoopActivitiesOn(stamp).at(0),completed=workoutStatus(stamp)==='Completed';
+const squatExperiment=experimentPrescription(d),status=workoutStatus(stamp),squatDone=squatStatus(stamp)==='Completed';
+const workoutName=savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord):p.title);
+const tile=el('button','day status-'+status.toLowerCase().replace(/\s/g,'-'));tile.type='button';tile.dataset.date=stamp;
+tile.setAttribute('aria-label',dateLabel(d)+' · '+workoutName+' · '+status+(squatExperiment?' · Squat '+squatExperiment.weight+' lb at '+squatExperiment.percentage+' percent':''));
 if(d.getMonth()!==month.getMonth())tile.classList.add('out');
 if(stamp===today)tile.classList.add('today');
 if(stamp===iso(selected))tile.classList.add('selected');
 if(completed)tile.classList.add('done');
-if(squatted)tile.classList.add('squat-done');
-tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',savedRecord?.title||(whoopRecord?whoopWorkoutName(whoopRecord):p.title)),el('span','day-sub',savedRecord?'SAVED · '+Number(savedRecord.sets||0)+' SETS':whoopRecord?'WHOOP STRAIN '+(whoopRecord.score?.strain??'—'):p.focus),el('span','day-foot',whoopRecord?'✓ WHOOP':savedWorkout?'✓ SAVED':squatted?'✓ SQUATTED':completed?'● LOGGED':p.title==='REST'?'REST DAY':'PLANNED'));
-if(squatted){const check=el('span','squat-check','✓');check.setAttribute('aria-hidden','true');tile.append(check)};
-if(squatExperiment){tile.classList.add('experiment-planned');const tag=el('span','experiment-calendar-tag','SQ '+squatExperiment.weight+' LB');tag.title='Squat Every Day · 2 sets at '+squatExperiment.weight+' lb ('+squatExperiment.percentage+'% estimated max)';tile.append(tag);tile.setAttribute('aria-label',tile.getAttribute('aria-label')+', squat experiment 2 sets at '+squatExperiment.weight+' lb')}
+if(squatDone)tile.classList.add('squat-done');
+tile.append(el('span','day-no',String(d.getDate())),el('span','day-title',workoutName),el('span','day-status',status==='Completed'?'✓':status==='In progress'?'◐':'○'));
+if(squatExperiment){
+ const band=intensityBand(squatExperiment.percentage),badge=el('span','experiment-calendar-tag intensity-'+band,'SQ '+squatExperiment.weight);
+ badge.title=intensityLabel(squatExperiment.percentage)+' · '+squatExperiment.percentage+'% 1RM · 2 working sets';
+ tile.append(badge);
+}
 tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
 grid.append(tile);
 }
@@ -337,17 +359,17 @@ function renderDailySquatWorkout(host,date){
  const work=logged.filter(v=>!v.warmup);
  const heading=el('div','daily-squat-head');
  const title=el('div','');title.append(el('div','micro','DAILY SQUAT · DAY '+target.day+' / 30'),el('h3','','BACK SQUAT · 2 WORKING SETS'));
- heading.append(title,el('span','daily-squat-percent',target.percentage+'% 1RM'));
+ heading.append(title,el('span','daily-squat-percent intensity-'+intensityBand(target.percentage),intensityLabel(target.percentage)+' · '+target.percentage+'%'));
  host.append(heading);
  host.append(el('div','daily-squat-warmups','WARMUPS: 45 LB × 4 · 135 LB × 8'));
  const rows=el('div','daily-squat-working');
  for(let i=0;i<2;i++){
   const actual=work[i],row=el('div','daily-squat-set');
-  row.append(el('span','', 'SET '+(i+1)),el('strong','',actual?actual.weight+' LB × '+actual.reps:target.weight+' LB × '+target.reps),el('small','',actual?'✓ LOGGED':target.reported?'REPORTED · NOT SAVED':'TARGET'));
+  row.append(el('span','', 'SET '+(i+1)),el('strong','',actual?actual.weight+' LB × '+actual.reps:target.weight+' LB × '+target.reps),el('small','status-'+(actual?'completed':squatStatus(stamp).toLowerCase().replace(/\s/g,'-')),actual?'✓ Completed':squatStatus(stamp)));
   rows.append(row);
  }
  host.append(rows);
- const note=el('p','daily-squat-note',logged.length?'Logged sets are shown above when available. Adjust actual weights in your workout log.':target.reported?'You reported this session in chat. It is not marked completed until saved in RepTrack.':'These are targets, not recorded sets. Warmups and weights can be adjusted.');
+ const note=el('p','daily-squat-note',logged.length?'Saved working sets appear above. You can still edit weights and reps.':'Planned sets do not count as complete. Save actual Back Squat sets to finish the day.');
  host.append(note);
  const log=el('button','smallbtn btn-primary',logged.length?'EDIT / ADD SQUAT SETS':'LOG THESE SQUAT SETS');
  log.type='button';log.onclick=()=>logged.length?openEditLog(entries.find(e=>e.date===stamp&&/^Back Squat$/i.test(e.exercise)).id):openLog(fromISO(stamp),'Back Squat');
