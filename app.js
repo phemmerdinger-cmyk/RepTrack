@@ -31,15 +31,8 @@ function presetFor(type,day){
  const candidate=plan.find(p=>p.title===type&&(type!=='LEGS'||day===0?p===plan[0]:p===plan[3]))||plan.find(p=>p.title===type);
  return clonePlan(candidate||plan[day]);
 }
-// Rebased after user-reported Monday Nov 9 top Back Squat of 265 × 6.
-// Reported performance is a planning baseline, NOT a saved workout log.
-// Nov 11 is a deliberate lighter day, not another heavy workout.
-const squatMonth=[
- {week:1,wednesday:'2026-11-11',sunday:'2026-11-15',heavy:185,volume:225,heel:185,light:true},
- {week:2,wednesday:'2026-11-18',sunday:'2026-11-22',heavy:250,volume:230,heel:205},
- {week:3,wednesday:'2026-11-25',sunday:'2026-11-29',heavy:255,volume:235,heel:210},
- {week:4,wednesday:'2026-12-02',sunday:'2026-12-06',heavy:260,volume:240,heel:215}
-];
+// Historical leg-day variants preserved in seeded personal plan.
+const squatMonth=personalPlan.squatMonth;
 function squatMonthWorkout(stamp){
  const w=squatMonth.find(x=>x.wednesday===stamp||x.sunday===stamp);
  if(!w)return null;
@@ -56,29 +49,24 @@ window.RepTrackSquatMonth=squatMonth;
 
 // Experiments are virtual calendar additions, not destructive edits of the saved base plans.
 const EXPERIMENT_KEY='reptrack-experiments-v1';
+const personalPlan=window.RepTrackPersonalPlan;
 function readExperiment(){try{const v=JSON.parse(localStorage.getItem(EXPERIMENT_KEY)||'null');return v&&typeof v==='object'?v:null}catch{return null}}
 let experiment=readExperiment();
 // Guaranteed 30-day daily squat schedule, shared by phone and desktop.
-// Nov 9 & 10 are user-reported benchmarks, not automatically recorded workout logs.
+// Original 30-day progression is stored as seeded plan data, not logged history.
 // Two working sets every day; every day's ordinary workout is otherwise preserved.
-const DAILY_SQUAT_START=new Date(2026,10,9);
-const DAILY_SQUAT_30=[
- [265,6],[165,15],[135,10],[185,8],[155,12],[115,12],[205,8],
- [245,6],[170,12],[140,10],[190,8],[160,12],[120,12],[210,8],
- [250,6],[175,12],[145,10],[195,8],[165,12],[125,12],[215,8],
- [255,6],[180,12],[150,10],[200,8],[170,12],[130,12],[220,8],
- [260,6],[185,12]
-];
+const DAILY_SQUAT_START=fromISO(personalPlan.start);
+const DAILY_SQUAT_30=personalPlan.dailySquats;
 function dailySquatTarget(date){
  const day=date instanceof Date?date:fromISO(date);
- const idx=Math.round((Date.UTC(day.getFullYear(),day.getMonth(),day.getDate())-Date.UTC(2026,10,9))/86400000);
+ const idx=Math.round((Date.UTC(day.getFullYear(),day.getMonth(),day.getDate())-Date.UTC(DAILY_SQUAT_START.getFullYear(),DAILY_SQUAT_START.getMonth(),DAILY_SQUAT_START.getDate()))/86400000);
  if(idx<0||idx>=DAILY_SQUAT_30.length)return null;
  const [weight,reps]=DAILY_SQUAT_30[idx];
- return {day:idx+1,weight,reps,sets:2,percentage:Math.round(weight/325*100),reported:idx<=1};
+ return {day:idx+1,weight,reps,sets:2,percentage:Math.round(weight/(Number(personalPlan.max)||325)*100),baseline:idx<=1};
 }
 window.RepTrackDailySquatTarget=stamp=>dailySquatTarget(stamp);
 
-const EXPERIMENT_PERCENTAGES=[70,50,45,75,40,60,50]; // Sun through Sat
+const EXPERIMENT_PERCENTAGES=personalPlan.weeklyPercentages; // Sun through Sat
 const experimentDate=(date)=>iso(date instanceof Date?date:fromISO(date));
 const experimentDaysElapsed=(date,exp)=>{
  if(!exp?.start)return null;
@@ -112,7 +100,7 @@ function applySquatExperiment(planObject,date){
  // Replace existing Back Squat instead of adding duplicate squat movements on leg days.
  p.ex=p.ex.filter(([name])=>!/^Back Squat$/i.test(name));
  p.ex.unshift(['Back Squat','2 working sets × '+(prescription.reps||6)+' reps · WU 45×4, 135×8',prescription.weight]);
- p.focus+=' · Squat Every Day '+prescription.percentage+'%'+(prescription.reported?' · previously reported':'');
+ p.focus+=' · Squat Every Day '+prescription.percentage+'%';
  return p;
 }
 window.RepTrackExperimentPrescription=stamp=>experimentPrescription(stamp);
@@ -127,8 +115,8 @@ window.addEventListener('reptrack-experiments-changed',updateExperimentState);
 
 function planFor(d){
  const stamp=iso(d),day=d.getDay();
- // Today (November 9, 2026) was a legs session; only that date changes, not every Monday.
- const fallback=stamp==='2026-11-09'?(()=>{const p=presetFor('LEGS',0);p.focus='Heavy legs · reported 265 lb × 6 Back Squat (not yet logged)';p.ex[0]=['Back Squat','Top set · 265 × 6 reported',265];return p})():(squatMonthWorkout(stamp)||clonePlan(plan[day]));
+ // Day-specific saved overrides always take priority over these initial defaults.
+ const fallback=stamp===personalPlan.baseline?.date?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
  const p=datePlans[stamp]||weeklyPlans[day]||fallback;
  return applySquatExperiment(validPlan(p)?p:fallback,d);
 }
