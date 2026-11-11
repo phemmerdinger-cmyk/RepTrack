@@ -55,6 +55,15 @@
 <div class="whoop-detail-row"><span>Latest measurement</span><strong id="whoopStatusLatestData">Not available</strong></div>
 <div class="whoop-detail-row"><span>Reconnect required</span><strong id="whoopStatusReconnect">Checking</strong></div>
 <p id="whoopStatusExplanation" class="whoop-status-explanation">Connection status isn't established yet.</p>
+<details class="whoop-threshold-editor"><summary>Freshness thresholds</summary>
+<div class="whoop-threshold-fields">
+<label>LIVE SYNC / MIN<input id="whoopLiveMinutes" type="number" min="1" max="10080" step="1"></label>
+<label>DELAYED SYNC / MIN<input id="whoopSyncingMinutes" type="number" min="1" max="10080" step="1"></label>
+<label>FRESH OBSERVATION / MIN<input id="whoopFreshRecordMinutes" type="number" min="1" max="10080" step="1"></label>
+<label>DELAYED RECORD / MIN<input id="whoopDelayedRecordMinutes" type="number" min="1" max="10080" step="1"></label>
+</div>
+<button id="whoopSaveThresholds" type="button">Save thresholds</button>
+</details>
 <div class="whoop-status-actions"><button id="whoopStatusRefresh" type="button">Refresh</button><a id="whoopStatusReconnectLink" href="/api/whoop/login" class="hidden">Reconnect WHOOP</a></div>
 </div></div>
 <section data-page="calendar">
