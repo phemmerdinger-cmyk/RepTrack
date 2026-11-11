@@ -428,9 +428,7 @@ const popular=[...count.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6),max=Math.ma
 $('muscleWork').replaceChildren();
 if(!popular.length)$('muscleWork').append(el('div','muted','Log your first workout to see training distribution.'));
 for(const [name,n] of popular){const wrapper=el('div',''),r=el('div','perf-row'),meter=el('div','perf-track'),fill=el('div');fill.style.width=n/max*100+'%';meter.append(fill);r.append(el('strong','',name),el('span','',n+' SETS'));wrapper.append(r,meter);$('muscleWork').append(wrapper)}
-const select=$('exerciseSelect'),chosen=select.value,names=[...new Set(entries.map(e=>e.exercise))].sort();
-select.replaceChildren();for(const name of names.length?names:['No exercises logged']){const o=el('option','',name);o.value=name;select.append(o)}
-if(names.includes(chosen))select.value=chosen;renderExerciseTrend();
+// Exercise Library owns the analytics selectors so unlogged exercises stay selectable.
 }
 function renderExerciseTrend(){
 const name=$('exerciseSelect').value;
@@ -644,7 +642,7 @@ function openLog(date,exercise){
 editingLogId=null;
 $('setEditorHint').textContent='Edit each set below. Warmups are saved separately from working sets.';
 modalDate=iso(date);$('logDate').value=modalDate;$('logExercise').value=exercise;$('logNotes').value='';$('setsList').replaceChildren();
-let prev=entries.filter(e=>e.exercise===exercise).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
+let prev=entries.filter(e=>window.RepTrackExerciseLibrary?.canonical(e.exercise)===window.RepTrackExerciseLibrary?.canonical(exercise)).sort((a,b)=>a.date.localeCompare(b.date)).at(-1);
 const planned=planFor(date).ex.find(x=>x[0]===exercise);
 const target=planned?.[2];
 const explicit=target!==''&&target!==undefined&&target!==null&&Number.isFinite(Number(target));
@@ -704,7 +702,7 @@ function deleteDayLogs(date){
 }
 function closeLog(){$('modalOverlay').classList.add('hidden');editingLogId=null;if(!drawerOpen)document.body.style.overflow=''}
 $('logForm').addEventListener('submit',ev=>{
-ev.preventDefault();const exercise=$('logExercise').value.trim(),date=$('logDate').value;
+ev.preventDefault();const exercise=window.RepTrackExerciseLibrary.canonical($('logExercise').value.trim()),date=$('logDate').value;
 const rows=[...$('setsList').children].map(row=>({weight:Number(row.querySelector('[data-set-weight]').value),reps:Number(row.querySelector('[data-set-reps]').value),warmup:row.querySelector('.set-type').value==='warmup'}));
 if(!exercise||!date||!rows.length||rows.some(s=>!Number.isFinite(s.weight)||s.weight<0||!Number.isInteger(s.reps)||s.reps<1)){alert('Add at least one valid set and check the exercise, date, weight and reps.');return}
 const item={id:Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:exercise.slice(0,100),sets:rows,notes:$('logNotes').value.slice(0,1000)};
@@ -714,6 +712,12 @@ if(editedIndex>=0)entries[editedIndex]={...entries[editedIndex],date:item.date,e
 else entries.push(item);
 if(save()){selected=fromISO(date);month=new Date(selected.getFullYear(),selected.getMonth(),1);editingLogId=null;closeLog();renderAll();startRestTimer()}
 else entries=previous;
+});
+$('logExercise').addEventListener('change',()=>{
+ if(editingLogId||$('modalOverlay').classList.contains('hidden'))return;
+ if([...$('setsList').children].some(row=>row.dataset.committed==='true'))return;
+ const name=$('logExercise').value.trim(),date=fromISO($('logDate').value||iso(selected));
+ if(name)openLog(date,window.RepTrackExerciseLibrary.canonical(name));
 });
 $('addSet').onclick=()=>addSet('', '', false);
 $('addSameSet').onclick=()=>{
