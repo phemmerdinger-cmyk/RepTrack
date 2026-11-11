@@ -32,6 +32,7 @@ function presetFor(type,day){
  return clonePlan(candidate||plan[day]);
 }
 // Historical leg-day variants preserved in seeded personal plan.
+const personalPlan=window.RepTrackPersonalPlan;
 const squatMonth=personalPlan.squatMonth;
 function squatMonthWorkout(stamp){
  const w=squatMonth.find(x=>x.wednesday===stamp||x.sunday===stamp);
@@ -49,7 +50,6 @@ window.RepTrackSquatMonth=squatMonth;
 
 // Experiments are virtual calendar additions, not destructive edits of the saved base plans.
 const EXPERIMENT_KEY='reptrack-experiments-v1';
-const personalPlan=window.RepTrackPersonalPlan;
 function readExperiment(){try{const v=JSON.parse(localStorage.getItem(EXPERIMENT_KEY)||'null');return v&&typeof v==='object'?v:null}catch{return null}}
 let experiment=readExperiment();
 // Guaranteed 30-day daily squat schedule, shared by phone and desktop.
