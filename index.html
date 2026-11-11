@@ -160,13 +160,16 @@
 <div class="experiment-prescription"><div class="micro">DAILY PERCENTAGE ROTATION</div><div class="experiment-day-grid" id="experimentDaysPreview"></div><p class="chart-sub">Wednesday and Sunday preserve your existing four-week heavy/volume squat progression. Other days are lighter. Percentages are approximate, rounded to the nearest 5 lb.</p></div>
 <div class="experiment-actions"><button class="btn-primary" id="experimentApply" type="button">ADD TO MY CALENDAR</button><button class="smallbtn btn-ghost hidden" id="experimentStop" type="button">STOP EXPERIMENT</button></div>
 <div id="experimentMessage" class="experiment-message" aria-live="polite"></div>
+<div class="experiment-month-plan"><div class="micro">DAILY BACK SQUAT · NOV 9 – DEC 8, 2026</div>
+<p class="muted">Already scheduled automatically on every calendar date: 45 × 4 and 135 × 8 warmups, plus two working sets at the weight and reps shown below. Monday and Tuesday are your reported benchmarks; later dates are suggested targets.</p>
+<div id="experimentMonthRows" class="experiment-month-rows"></div></div>
 </div>
 </section>
 </main></div>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
 <div class="drawer-top"><div><div class="micro" id="drawerDate">SELECTED DATE</div><h2 id="drawerWorkout">DAY WORKOUT</h2><p id="drawerFocus" class="muted"></p></div><button type="button" id="drawerClose" aria-label="Close workout panel">✕</button></div>
-<div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan"✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
+<div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
 <div id="drawerPlanEditor" class="schedule-editor hidden">
 <label class="field">WORKOUT TYPE<select id="editWorkoutType"><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS">LEGS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS + ARMS">SHOULDERS + ARMS</option><option value="REST">REST / RECOVERY</option><option value="CUSTOM">CUSTOM</option></select></label>
 <label class="field" id="customWorkoutWrap" style="margin-top:12px">CUSTOM DAY NAME<input id="editWorkoutName" maxlength="50" placeholder="e.g. Full body"></label>
