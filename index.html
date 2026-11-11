@@ -129,9 +129,9 @@
 <div class="page-head"><div><div class="micro">STRENGTH SYSTEM / PROGRESSION</div><h1>PROGRESSIVE OVERLOAD</h1></div><p>Review your actual lift history and choose an exercise to track weight, reps, estimated strength and volume over time.</p></div>
 <div class="overload-intro"><div class="micro">YOUR STRENGTH, TRACKED</div><h2>Every rep is a data point.</h2><p>Compare your sessions, identify personal bests and set a sensible next target. The graphs are powered by exercises you log in the Calendar.</p></div>
 <section class="section squat-month" id="squatMonthSection">
-<div class="section-title"><div><div class="micro">NOV 9 – DEC 8, 2026 · DAILY SQUAT BLOCK</div><h2>TWO SQUAT SETS. EVERY DAY.</h2></div><span class="future-pill">30 SESSIONS</span></div>
-<p class="muted">Based on the original Monday 265 lb × 6 twice and Tuesday 165 lb × 15 twice targets. Every date includes two Back Squat working sets, plus 45 lb × 4 and 135 lb × 8 warmups. The remaining weights are suggested training targets, not completed logs.</p>
-<div class="squat-summary"><div><span class="micro">NOV 9 · PLANNED</span><strong>265 LB × 6</strong><small>2 working sets</small></div><div><span class="micro">NOV 10 · PLANNED</span><strong>165 LB × 15</strong><small>2 working sets</small></div><div><span class="micro">NOV 11 · LIGHT</span><strong>135 LB × 10</strong><small>2 working sets</small></div></div>
+<div class="section-title"><div><div class="micro" id="squatBlockDates">30-DAY SQUAT BLOCK</div><h2>TWO SQUAT SETS. EVERY DAY.</h2></div><span class="future-pill">30 SESSIONS</span></div>
+<p class="muted" id="squatPlanDescription">Loading your saved squat plan and workout history.</p>
+<div class="squat-summary" id="squatSummaryCards"></div>
 <div class="squat-plan-chart" id="squatPlanChart"></div>
 <div class="squat-scroll"><table class="squat-table"><thead><tr><th>DAY</th><th>DATE</th><th>BACK SQUAT (2 SETS)</th><th>PROGRESS</th></tr></thead><tbody id="squatMonthRows"></tbody></table></div>
 <p class="chart-sub" id="squatPlanHint">Targets vary through the month for recovery. You can edit actual weights when logging. Only saved Back Squat entries count as completed days.</p>
@@ -166,13 +166,13 @@
 <div class="experiment-heading"><div class="experiment-mark">⚗</div><div><div class="micro">YOUR FIRST EXPERIMENT</div><h2>SQUAT EVERY DAY</h2></div><span id="experimentState" class="experiment-status">PLANNED</span></div>
 <label class="field experiment-description-label" for="experimentDescription">WHAT ARE YOU TESTING?</label>
 <textarea id="experimentDescription" maxlength="600" rows="3" placeholder="Describe your experiment...">I am squatting every day for the next month.</textarea>
-<p class="experiment-help">Applying this adds 2 working sets of Back Squat at the start of every workout for 30 days, using weights based on your estimated 325 lb squat max. Your other exercises stay in place.</p>
+<p class="experiment-help" id="experimentHelp">Your saved daily squat rotation is applied to the calendar without changing your other exercises.</p>
 <div class="experiment-controls"><label class="field" for="experimentMax">ESTIMATED SQUAT 1RM / LB<input id="experimentMax" type="number" min="45" max="1000" step="5" value="325"></label><label class="field" for="experimentDays">DURATION<input id="experimentDays" type="number" value="30" disabled></label></div>
 <div class="experiment-prescription"><div class="micro">DAILY PERCENTAGE ROTATION</div><div class="experiment-day-grid" id="experimentDaysPreview"></div><p class="chart-sub">The daily percentages rotate intentionally: Heavy (75%+), Moderate (55–74%), Light (40–54%), and Recovery (below 40%). Actual weights and reps remain unchanged.</p></div>
 <div class="experiment-actions"><button class="btn-primary" id="experimentApply" type="button">ADD TO MY CALENDAR</button><button class="smallbtn btn-ghost hidden" id="experimentStop" type="button">STOP EXPERIMENT</button></div>
 <div id="experimentMessage" class="experiment-message" aria-live="polite"></div>
-<div class="experiment-month-plan"><div class="micro">DAILY BACK SQUAT · NOV 9 – DEC 8, 2026</div>
-<p class="muted">Already scheduled automatically on every calendar date: 45 × 4 and 135 × 8 warmups, plus two working sets at the weight and reps shown below. The first two days establish the original training targets; subsequent days rotate intensity.</p>
+<div class="experiment-month-plan"><div class="micro" id="experimentMonthTitle">DAILY BACK SQUAT · 30 DAYS</div>
+<p class="muted" id="experimentMonthCaption">Your saved warmups and two working-set targets appear on every date. Only logged sets are completed.</p>
 <div id="experimentMonthRows" class="experiment-month-rows"></div><details class="squat-plan-help"><summary>How this plan works</summary><p>The 30-day schedule alternates heavy, moderate, light, and recovery-intensity squat days to vary load. You still have two working sets each day, preceded by your listed warmups. This is a plan, not a requirement to lift through pain or significant fatigue. Only a saved Back Squat set completes a day.</p></details></div>
 </div>
 </section>
