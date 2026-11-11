@@ -102,3 +102,15 @@
  .analytics-whoop-item>span{font-size:10px}
  .analytics-all-exercises,.analytics-whoop-history{padding:14px 12px}
 }
+
+/* Searchable complete exercise library, with real history separate from unlogged movements. */
+.exercise-library-controls{display:grid;grid-template-columns:minmax(190px,2fr) minmax(135px,1fr) minmax(135px,1fr);gap:10px;margin:17px 0 15px}
+.exercise-library-controls .field{min-width:0}
+.exercise-library-controls input,.exercise-library-controls select{width:100%;min-width:0;min-height:46px;border:1px solid #647387;background:#121b26;border-radius:9px;color:#edf4fb;padding:9px 11px;font-size:13px}
+.analytics-exercise-item.has-history{border-color:#648a79;background:linear-gradient(110deg,#22362e,#141e1b)}
+.analytics-exercise-item.no-history{border:1px dashed #556273;background:#171d27}
+.analytics-exercise-item.no-history .analytics-exercise-metric{color:#abb7c8;font-weight:600;font-size:11px}
+.analytics-exercise-item .analytics-exercise-metric{color:#e9f2fa;text-align:right;min-width:0}
+#overloadSessionList{max-height:520px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+@media(max-width:790px){.exercise-library-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.exercise-library-controls .field:first-child{grid-column:1/-1}}
+@media(max-width:390px){.exercise-library-controls{gap:8px}.exercise-library-controls input,.exercise-library-controls select{min-height:46px;font-size:12px;padding:8px 6px}.analytics-exercise-item{gap:7px}.analytics-exercise-item .analytics-exercise-metric{font-size:11px;white-space:normal}}
