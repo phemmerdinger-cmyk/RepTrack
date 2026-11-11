@@ -159,6 +159,19 @@ function whoopThresholds(){
  return c;
 }
 window.RepTrackWHOOPThresholds=whoopThresholds;
+const thresholdInputs={liveMinutes:'whoopLiveMinutes',syncingMinutes:'whoopSyncingMinutes',measurementFreshMinutes:'whoopFreshRecordMinutes',measurementDelayedMinutes:'whoopDelayedRecordMinutes'};
+function populateWHOOPThresholds(){const values=whoopThresholds();for(const [key,id] of Object.entries(thresholdInputs))$(id).value=values[key]}
+populateWHOOPThresholds();
+$('whoopSaveThresholds').addEventListener('click',()=>{
+ const cfg={};
+ for(const [key,id] of Object.entries(thresholdInputs)){
+  const n=Number($(id).value);
+  if(!Number.isInteger(n)||n<1||n>10080){alert('Set threshold minutes between 1 and 10,080.');$(id).focus();return}
+  cfg[key]=n;
+ }
+ if(cfg.syncingMinutes<cfg.liveMinutes||cfg.measurementDelayedMinutes<cfg.measurementFreshMinutes){alert('Delayed thresholds must be greater than or equal to the fresh thresholds.');return}
+ try{localStorage.setItem(WHOOP_FRESHNESS_KEY,JSON.stringify(cfg));paintGlobalWHOOP();$('whoopSaveThresholds').textContent='✓ Saved'}catch{alert('Could not save freshness thresholds on this device.')}
+});
 const safeTimestamp=value=>{const t=Date.parse(value||'');return Number.isFinite(t)&&t<=Date.now()+60000&&t>0?t:null};
 function whoopLatestRecord(){
  if(!whoop||!whoop.connected)return null;
@@ -208,6 +221,7 @@ function paintGlobalWHOOP(){
 }
 $('whoopGlobalStatus').addEventListener('click',()=>{
  const detail=$('whoopStatusDetails'),opening=detail.classList.contains('hidden');
+ if(opening){populateWHOOPThresholds();$('whoopSaveThresholds').textContent='Save thresholds'}
  detail.classList.toggle('hidden',!opening);$('whoopGlobalStatus').setAttribute('aria-expanded',String(opening));
  paintGlobalWHOOP();
 });
