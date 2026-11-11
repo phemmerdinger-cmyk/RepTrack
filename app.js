@@ -148,18 +148,79 @@ const recoveryTone=r=>r===null?'neutral':r>=67?'green':r>=34?'yellow':'red';
 const readiness=r=>r===null?'AWAITING WHOOP DATA':r>=67?'HIGH RECOVERY':r>=34?'MODERATE RECOVERY':'LOW RECOVERY';
 const guidance=r=>r===null?'Adjust effort to your energy and form.':r>=67?'Recovery is high. Normal training intensity is reasonable if you feel ready.':r>=34?'Recovery is moderate. Keep planned work manageable and avoid unnecessary all-out sets.':'Recovery is low. Consider reducing sets or load, prioritizing technique, or taking a rest day. This is a suggestion, not a diagnosis.';
 let whoopSyncInProgress=false,lastWhoopSyncAttempt=0,lastWhoopSuccess=0,whoopState='loading',whoopError='';
-const whoopStateLabel=()=>whoopState==='connected'?'WHOOP CONNECTED':whoopState==='disconnected'?'CONNECT WHOOP':whoopState==='waking'?'WAKING UP SERVER…':whoopState==='error'?'WHOOP UNAVAILABLE':'CHECKING WHOOP';
+const WHOOP_FRESHNESS_KEY='reptrack-whoop-freshness-settings-v1';
+const WHOOP_FRESHNESS_DEFAULTS={liveMinutes:15,syncingMinutes:60,measurementFreshMinutes:180,measurementDelayedMinutes:1440};
+function whoopThresholds(){
+ let saved=null;try{saved=JSON.parse(localStorage.getItem(WHOOP_FRESHNESS_KEY)||'null')}catch{}
+ const c={...WHOOP_FRESHNESS_DEFAULTS};
+ for(const [k,defaultValue] of Object.entries(c)){const value=Number(saved?.[k]);if(Number.isFinite(value)&&value>0&&value<=10080)c[k]=value}
+ c.syncingMinutes=Math.max(c.liveMinutes,c.syncingMinutes);
+ c.measurementDelayedMinutes=Math.max(c.measurementFreshMinutes,c.measurementDelayedMinutes);
+ return c;
+}
+window.RepTrackWHOOPThresholds=whoopThresholds;
+const safeTimestamp=value=>{const t=Date.parse(value||'');return Number.isFinite(t)&&t<=Date.now()+60000&&t>0?t:null};
+function whoopLatestRecord(){
+ if(!whoop||!whoop.connected)return null;
+ const points=[];
+ const add=(v,description)=>{const timestamp=safeTimestamp(v);if(timestamp)points.push({timestamp,description})};
+ // Activity/sleep end dates are actual observation periods, unlike request/sync time.
+ for(const record of whoop.workouts||[])add(record?.end,'Workout end');
+ add(whoop.sleep?.end,'Sleep period end');
+ add(whoop.cycle?.end,'Cycle period end');
+ // Fallback to record timestamps if no recent observation end exists.
+ if(!points.length){
+  add(whoop.cycle?.updated_at,'Cycle record update');
+  add(whoop.cycle?.start,'Cycle start');
+  add(whoop.recovery?.updated_at,'Recovery record update');
+  add(whoop.sleep?.updated_at,'Sleep record update');
+ }
+ return points.sort((a,b)=>b.timestamp-a.timestamp)[0]||null;
+}
+function whoopIndicatorStatus(){
+ const cfg=whoopThresholds(),connection=whoopState==='connected'||(whoopState==='waking'&&whoop?.connected===true);
+ const needsReconnect=whoopState==='disconnected'||whoopState==='error'&&!lastWhoopSuccess;
+ if(!connection||!lastWhoopSuccess||!whoop?.connected)return{key:'lost',text:'WHOOP Disconnected',needsReconnect,lastSync:lastWhoopSuccess||null,record:whoopLatestRecord(),explanation:whoopState==='waking'?'Waiting for the server to respond.':whoopError||'WHOOP connection has not been confirmed.'};
+ const syncMinutes=(Date.now()-lastWhoopSuccess)/60000,record=whoopLatestRecord();
+ const recordMinutes=record?(Date.now()-record.timestamp)/60000:null;
+ let key='live';
+ if(syncMinutes>cfg.syncingMinutes||recordMinutes!==null&&recordMinutes>cfg.measurementDelayedMinutes)key='delayed';
+ else if(syncMinutes>cfg.liveMinutes||recordMinutes===null||recordMinutes>cfg.measurementFreshMinutes)key='syncing';
+ const text={live:'WHOOP Live',syncing:'WHOOP Syncing',delayed:'WHOOP Delayed'}[key];
+ const explanation=recordMinutes===null?'The WHOOP API responded, but no timestamped physiological record was available. Sync freshness is not proof of measurement freshness.':record.description+' is '+Math.max(0,Math.floor(recordMinutes))+' minutes old. WHOOP may update sleep, recovery and other metrics on different schedules.';
+ return{key,text,needsReconnect:false,lastSync:lastWhoopSuccess,record,explanation};
+}
+const relativeWHOOPTime=ms=>ms?new Date(ms).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'Not available';
+function paintGlobalWHOOP(){
+ const status=whoopIndicatorStatus();
+ $('whoopGlobalText').textContent=status.text;
+ $('whoopGlobalDot').className='whoop-global-dot status-'+status.key;
+ $('whoopGlobalStatus').setAttribute('aria-label',status.text+'; tap for connection details');
+ $('whoopStatusTitle').textContent=status.text;
+ $('whoopStatusLastSync').textContent=relativeWHOOPTime(status.lastSync);
+ $('whoopStatusLatestData').textContent=status.record?relativeWHOOPTime(status.record.timestamp)+' · '+status.record.description:'Not available';
+ $('whoopStatusReconnect').textContent=status.needsReconnect?'Yes':'No';
+ $('whoopStatusReconnectLink').classList.toggle('hidden',!status.needsReconnect);
+ $('whoopStatusExplanation').textContent=status.explanation;
+ window.RepTrackWHOOPStatus={state:whoopState,error:whoopError,lastSync:lastWhoopSuccess,connected:!!whoop?.connected&&(whoopState==='connected'||whoopState==='waking'),indicator:status.key,latestData:status.record?.timestamp||null};
+}
+$('whoopGlobalStatus').addEventListener('click',()=>{
+ const detail=$('whoopStatusDetails'),opening=detail.classList.contains('hidden');
+ detail.classList.toggle('hidden',!opening);$('whoopGlobalStatus').setAttribute('aria-expanded',String(opening));
+ paintGlobalWHOOP();
+});
+$('whoopStatusClose').addEventListener('click',()=>{$('whoopStatusDetails').classList.add('hidden');$('whoopGlobalStatus').setAttribute('aria-expanded','false')});
+$('whoopStatusRefresh').addEventListener('click',()=>window.RepTrackRetryWHOOP?.());
+document.addEventListener('click',event=>{if(!event.target.closest('#appHeader')){$('whoopStatusDetails').classList.add('hidden');$('whoopGlobalStatus').setAttribute('aria-expanded','false')}});
+
 function renderWHOOP(){
  window.RepTrackWHOOPData=whoop;
- window.RepTrackWHOOPLastSync=whoopState==='connected'?lastWhoopSuccess:0;
- window.RepTrackWHOOPStatus={state:whoopState,error:whoopError,lastSync:lastWhoopSuccess,connected:whoopState==='connected'};
+ window.RepTrackWHOOPLastSync=lastWhoopSuccess||0;
+ paintGlobalWHOOP();
  const connected=whoopState==='connected',r=connected?recovery():null;
  const score=connected?whoop?.sleep?.score?.sleep_performance_percentage:null;
  const strain=connected?whoop?.cycle?.score?.strain:null;
- $('whoopBadge').textContent=whoopStateLabel();
- $('whoopBadge').classList.toggle('connected',connected);
- $('connDot').classList.toggle('on',connected);
- $('connText').textContent=whoopStateLabel();
+ // Connection indicator is rendered only in the persistent global header.
  $('connectLink').classList.add('hidden'); // Connect through the single WHOOP tab card.
  $('disconnectButton').classList.toggle('hidden',!connected);
  $('recoveryMetric').textContent=r===null?'NO DATA':r+'%';
@@ -172,7 +233,7 @@ function renderWHOOP(){
  const advice=connected&&r!==null?guidance(r):'';
  $('guidanceText').textContent=advice; // Only one recovery explanation on the calendar.
  $('advice').textContent=connected&&r!==null?'See recovery guidance for today.':'See WHOOP tab for connection status.';
- $('syncMessage').textContent=connected?'Connected · Last successful update '+new Date(lastWhoopSuccess).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):whoopStateLabel();
+ $('syncMessage').textContent='Manage your account here. Connection freshness is shown in the global header.';
  window.dispatchEvent(new Event('reptrack-whoop-updated'));
 }
 async function syncWHOOP(force=false){
@@ -846,6 +907,7 @@ window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if
 load();renderAll();paintTimer();syncWHOOP(true);
 // Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
 setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
+setInterval(paintGlobalWHOOP,60000); // Local status age only; no additional API requests.
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncWHOOP()});
 window.addEventListener('focus',()=>syncWHOOP());
 window.addEventListener('reptrack-whoop-manual-refresh',()=>{
