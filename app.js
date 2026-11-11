@@ -15,8 +15,8 @@ const plan=[
 {title:'PULL',focus:'Back · Biceps',ex:[['Lat Pulldown','3 × 8–12'],['Barbell Row','3 × 6–10'],['Seated Cable Row','3 × 10–12'],['Rear Delt Fly','3 × 12–20'],['Biceps Curl','3 × 8–12']]},
 {title:'LEGS',focus:'Lower body · quad',ex:[['Back Squat','3 × 6–8'],['Leg Press','3 × 10–12'],['Leg Extension','3 × 12–15'],['Hip Thrust','3 × 8–12'],['Calf Raise','4 × 12–15']]},
 {title:'CHEST',focus:'Chest · Pressing',ex:[['Bench Press','3 × 6–10'],['Incline Dumbbell Press','3 × 8–12'],['Chest Fly','3 × 10–15'],['Cable Fly','3 × 12–15'],['Push Up','2 × 12–20']]},
-{title:'BACK',focus:'Lats · Upper Back',ex:[['Pull Up','3 × 6–10'],['Chest-Supported Row','3 × 8–12'],['Lat Pulldown','3 × 10–12'],['Seated Cable Row','3 × 8–12'],['Straight-Arm Pulldown','3 × 12–15']]},
-{title:'SHOULDERS + ARMS',focus:'Delts · Biceps · Triceps',ex:[['Shoulder Press','3 × 6–10'],['Lateral Raise','4 × 12–20'],['Rear Delt Fly','3 × 12–15'],['Biceps Curl','3 × 8–12'],['Triceps Extension','3 × 10–15']]}
+{title:'SHOULDERS + ARMS',focus:'Delts · Biceps · Triceps',ex:[['Shoulder Press','3 × 6–10'],['Lateral Raise','4 × 12–20'],['Rear Delt Fly','3 × 12–15'],['Biceps Curl','3 × 8–12'],['Triceps Extension','3 × 10–15']]},
+{title:'BACK',focus:'Lats · Upper Back',ex:[['Pull Up','3 × 6–10'],['Chest-Supported Row','3 × 8–12'],['Lat Pulldown','3 × 10–12'],['Seated Cable Row','3 × 8–12'],['Straight-Arm Pulldown','3 × 12–15']]}
 ];
 
 // Calendar plans are stored separately from logged workouts so changing a plan never edits logged sets.
@@ -123,7 +123,7 @@ function planFor(d){
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
 window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
 window.RepTrackWorkoutPreset=key=>{
- const presets={PUSH:plan[1],PULL:plan[2],LEGS_QUAD:plan[3],LEGS_POSTERIOR:plan[0],CHEST:plan[4],BACK:plan[5],SHOULDERS_ARMS:plan[6]};
+ const presets={PUSH:plan[1],PULL:plan[2],LEGS_QUAD:plan[3],LEGS_POSTERIOR:plan[0],CHEST:plan[4],BACK:plan[6],SHOULDERS_ARMS:plan[5]};
  if(key==='CUSTOM')return{title:'CUSTOM WORKOUT',focus:'Add exercises as you train',ex:[]};
  if(key==='REST')return{title:'RECOVERY',focus:'Walking and mobility',ex:[['Walking','20–30 minutes',''],['Mobility','10–15 minutes','']]};
  return presets[key]?clonePlan(presets[key]):null;
