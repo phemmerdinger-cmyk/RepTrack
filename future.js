@@ -51,7 +51,7 @@ const recent=read().filter(e=>e.date>=iso(plus(new Date(),-6))),weekSets=recent.
 const low=r!=null&&r<34,mid=r!=null&&r<67&&!low;
 const base=model==='auto'?(low?'recovery':mid?'hypertrophy':'strength'):model;
 const targets={strength:{label:'PROGRESSIVE LOAD',sets:isLegs?'12–17':'14–19',intensity:'RPE 7–8',rest:'2–3 MIN'},hypertrophy:{label:'CONTROLLED VOLUME',sets:'13–18',intensity:'RPE 6–8',rest:'90–150 SEC'},recovery:{label:'REDUCED LOAD',sets:'6–10',intensity:'RPE 5–6',rest:'AS NEEDED'}}[base];
-const caution=low?'Low recovery detected: consider rest or lower effort.':mid?'Moderate recovery: leave reps in reserve.':r==null?'No recovery score: use your energy and technique to guide effort.':'High recovery: follow your planned intensity if you feel good.';
+const caution=low?'Low recovery detected: consider rest or lower effort.':mid?'Moderate recovery: leave reps in reserve.':r==null?'Use your energy and technique to guide effort.':'High recovery: follow your planned intensity if you feel good.';
 return{...targets,base,r,name,weekSets,caution};
 }
 function updateTodayHero(){
@@ -78,9 +78,10 @@ el('energyValue').textContent=val;el('energyRingText').textContent=val;el('orbit
 const tones={green:'#38e28a',yellow:'#ffcc53',red:'#ff586a',neutral:'#a1a8b6'};
 const color=tones[tone(r)];
 el('energyValue').style.color=color;el('orbitValue').style.color=color;el('energyRing').style.setProperty('--ring-color',color);el('energyRing').style.setProperty('--ring-percent',r==null?'0%':r+'%');
-el('energyNarrative').textContent=r==null?'No WHOOP recovery score is available yet. Your scheduled workout remains accessible.':rec.caution+' Use sleep, fatigue, form, and personal judgment alongside wearable data.';
-el('heroData').textContent=el('whoopBadge')?.textContent?.includes('CONNECTED')?'WHOOP LIVE':'LOCAL ONLY';
-if(lastSynced)el('lastSync').textContent='SYNCED '+lastSynced.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+el('energyNarrative').textContent=r==null?'Use the WHOOP tab to check your connection.':rec.caution+' Use sleep, fatigue, form, and personal judgment alongside wearable data.';
+el('heroData').textContent=window.RepTrackWHOOPStatus?.state==='connected'?'WHOOP CONNECTED':window.RepTrackWHOOPStatus?.state==='waking'?'WAKING UP SERVER…':'WHOOP UNAVAILABLE';
+const status=window.RepTrackWHOOPStatus;
+ el('lastSync').textContent=status?.state==='connected'&&status.lastSync?'UPDATED '+new Date(status.lastSync).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):status?.state==='waking'?'WAKING UP SERVER…':'NOT SYNCED';
 }
 function svgChart(values){
 const width=760,height=190,left=8,right=752,top=20,bottom=169;
@@ -131,7 +132,7 @@ updateTodayHero();updatePanels();renderSignal();renderHeat();addRecoveryMarker()
 }
 function watch(){
 const calendar=el('monthGrid');if(calendar){const obs=new MutationObserver((changes)=>{if(changes.some(c=>c.target===calendar)){if(calendarMode==='week')showCalendarMode();addRecoveryMarker()}});obs.observe(calendar,{childList:true})}
-const metric=el('recoveryMetric');if(metric){const ob=new MutationObserver(()=>{lastSynced=new Date();updatePanels();addRecoveryMarker()});ob.observe(metric,{childList:true,characterData:true,subtree:true})}
+const metric=el('recoveryMetric');if(metric){const ob=new MutationObserver(()=>{updatePanels();addRecoveryMarker()});ob.observe(metric,{childList:true,characterData:true,subtree:true})}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',refresh));
 el('logForm')?.addEventListener('submit',()=>setTimeout(refresh,80));
 el('restoreInput')?.addEventListener('change',()=>setTimeout(refresh,600));
