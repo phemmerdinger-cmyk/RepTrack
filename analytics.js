@@ -134,11 +134,77 @@ function goToSquatDay(stamp){
  tile?.click();
 }
 
+
+function allExercises(){
+ const host=$('analyticsExerciseList');if(!host)return;
+ host.replaceChildren();
+ const logs=get(),grouped=new Map();
+ for(const entry of logs){
+  const key=entry.exercise.trim().toLocaleLowerCase();
+  if(!key)continue;
+  if(!grouped.has(key))grouped.set(key,{name:entry.exercise,sets:0,days:new Set(),latest:'',top:0,weight:0});
+  const g=grouped.get(key);
+  g.name=entry.exercise;g.sets+=sets(entry).length;g.days.add(entry.date);
+  if(entry.date>=g.latest)g.latest=entry.date;
+  for(const v of sets(entry)){if(+v.weight>g.top){g.top=+v.weight;g.weight=+v.reps}}
+ }
+ const groups=[...grouped.values()].sort((a,b)=>b.latest.localeCompare(a.latest)||a.name.localeCompare(b.name));
+ $('analyticsExerciseTotal').textContent=groups.length+' EXERCISE'+(groups.length===1?'':'S');
+ if(!groups.length){host.append(dom('p','muted','No individual exercises have been saved in this browser yet. Once you record weights and reps in Calendar, every exercise will appear here.'));return}
+ for(const item of groups){
+  const row=dom('button','analytics-exercise-item'),info=dom('div','');
+  row.type='button';
+  info.append(dom('strong','',item.name),dom('small','',item.latest+' · '+item.sets+' SETS · '+item.days.size+' TRAINING DAYS'));
+  const best=dom('span','',item.top?item.top+' LB × '+item.weight:'VIEW PROGRESS');
+  row.append(info,best);row.addEventListener('click',()=>{
+   const select=$('exerciseSelect'),overloadSelect=$('overloadExercise');
+   const selected=[...select.options].find(o=>o.value.toLocaleLowerCase()===item.name.trim().toLocaleLowerCase());
+   if(selected){select.value=selected.value;strength()}
+   const overloadOption=[...overloadSelect.options].find(o=>o.value.toLocaleLowerCase()===item.name.trim().toLocaleLowerCase());
+   if(overloadOption){overloadSelect.value=overloadOption.value;overload()}
+   $('strengthChart')?.scrollIntoView({block:'center',behavior:'smooth'});
+  });
+  host.append(row);
+ }
+}
+function whoopAnalytics(){
+ const host=$('analyticsWhoopList');if(!host)return;
+ host.replaceChildren();
+ const whoop=window.RepTrackWHOOPData,connected=!!whoop?.connected,access=whoop?.workoutAccess===true;
+ const valid=connected&&access&&Array.isArray(whoop.workouts)?whoop.workouts.filter(w=>w&&w.id&&Number.isFinite(Date.parse(w.start))):[];
+ $('analyticsWhoopTotal').textContent=access?valid.length+' ACTIVITIES':'SYNC STATUS';
+ if(!connected){
+  $('analyticsWhoopNote').textContent='Connect WHOOP in the WHOOP tab to import completed activities.';
+  host.append(dom('div','chart-empty','WHOOP is not connected in this browser.'));return;
+ }
+ if(!access){
+  $('analyticsWhoopNote').textContent='Reconnect WHOOP to grant workout-reading permission; recovery and sleep access alone cannot import activities.';
+  const link=dom('a','analytics-whoop-link','RECONNECT WHOOP');link.href='/api/whoop/login';host.append(link);return;
+ }
+ $('analyticsWhoopNote').textContent='Completed WHOOP activities update automatically while RepTrack is open. WHOOP does not expose individual Strength Trainer weights, sets or reps through this connection.';
+ if(!valid.length){host.append(dom('div','chart-empty','No finished WHOOP activities found in the recent sync window.'));return}
+ const uniqueTypes=new Map();
+ for(const w of valid){const type=String(w.sport_name||'WHOOP Activity').replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());uniqueTypes.set(type,(uniqueTypes.get(type)||0)+1)}
+ const types=dom('div','whoop-activity-types');
+ for(const [name,num] of uniqueTypes){types.append(dom('span','',name+' · '+num))}
+ host.append(types);
+ for(const w of [...valid].sort((a,b)=>Date.parse(b.start)-Date.parse(a.start)).slice(0,40)){
+  const row=dom('div','analytics-whoop-item'),info=dom('div','');
+  const duration=Number.isFinite(Date.parse(w.end))?Math.max(0,Math.round((Date.parse(w.end)-Date.parse(w.start))/60000)):null;
+  const sport=String(w.sport_name||'WHOOP Activity').replace(/[_-]/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const strain=w.score?.strain===null||w.score?.strain===undefined?'—':Number(w.score.strain).toFixed(1);
+  info.append(dom('strong','',sport),dom('small','',new Date(w.start).toLocaleDateString()+(duration===null?'':' · '+duration+' MIN')+' · STRAIN '+strain));
+  const heart=w.score?.average_heart_rate;
+  row.append(info,dom('span','',heart==null?'WHOOP SYNC':Math.round(Number(heart))+' AVG BPM'));
+  host.append(row);
+ }
+}
+
 function fillSelect(elm,names){const current=elm.value;elm.replaceChildren();(names.length?names:['No logged exercises']).forEach(n=>{const option=dom('option','',n);option.value=n;elm.append(option)});if(names.includes(current))elm.value=current}
 function render(){
-const names=[...new Set(get().map(e=>e.exercise))].sort();
+const names=[...new Set(get().map(e=>e.exercise.trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
 fillSelect($('exerciseSelect'),names);fillSelect($('overloadExercise'),names);
-summary();strength();overload();renderSquatMonth();
+summary();strength();overload();renderSquatMonth();allExercises();whoopAnalytics();
 }
 $('analyticsRange').addEventListener('change',e=>{range=Number(e.target.value);render()});
 document.querySelectorAll('[data-volume-mode]').forEach(b=>b.addEventListener('click',()=>{volumeMode=b.dataset.volumeMode;document.querySelectorAll('[data-volume-mode]').forEach(x=>x.classList.toggle('active',x===b));summary()}));
@@ -149,5 +215,7 @@ document.querySelectorAll('[data-view="analytics"],[data-view="overload"]').forE
 $('overloadOpenCalendar').addEventListener('click',()=>{document.querySelector('[data-view="calendar"]')?.click()});
 window.addEventListener('storage',e=>{if(e.key===KEY)render()});
 window.addEventListener('reptrack-workouts-changed',render);
+window.addEventListener('reptrack-whoop-updated',whoopAnalytics);
+window.addEventListener('reptrack-whoop-manual-refresh',whoopAnalytics);
 render();
 })();
