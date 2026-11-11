@@ -14,6 +14,7 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
 <link rel="stylesheet" href="/app.css">
+<script src="/plan-data.js" defer></script>
 <link rel="stylesheet" href="/future.css">
 <link rel="stylesheet" href="/analytics.css">
 <link rel="stylesheet" href="/workout.css">
@@ -64,20 +65,20 @@
 <div class="main-split">
 <div class="section">
 <div class="workout-head"><div><div class="micro" id="dayHeading">TODAY</div><div id="dayWorkout" class="workout-title">PUSH</div><div id="dayFocus" class="muted"></div></div><div class="micro" id="selectedRecovery"></div></div>
-<div class="insight"><strong>TRAINING INTELLIGENCE</strong><span id="advice">Loading recovery data.</span></div>
+<div class="insight hidden" id="trainingIntel"><strong>TRAINING INTELLIGENCE</strong><span id="advice"></span></div>
 <div id="dailySquatSelected" class="daily-squat-workout hidden"></div>
 <div id="selectedWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="selectedResultHeading">YOUR COMPLETED WORKOUT</h3><p id="selectedResultInfo" class="muted"></p></div>
 <div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" class="logged-day-history"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
 <div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>UPCOMING WORKOUT PLAN</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
-<div class="action-row"><button id="dayStart" class="btn-primary" type="button">LOG WORKOUT</button><button id="startSelectedWorkout" type="button">VIEW WHOOP SYNC</button></div></div>
-<div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
+</div><div class="action-row calendar-primary-action"><button id="dayStart" class="btn-primary" type="button">LOG TODAY'S WORKOUT</button><button id="startSelectedWorkout" class="hidden" type="button">VIEW WHOOP SYNC</button></div>
+<div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost hidden" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
 </div>
 <div class="section">
 <h3>RECOVERY GUIDANCE</h3>
 <p class="muted" id="guidanceText">Checking WHOOP recovery.</p>
 <div class="insight"><strong>HOW TO USE THIS</strong><span>Recovery is one input, not a guarantee of performance. Adjust training based on soreness, sleep, effort and form.</span></div>
-<h3>REST TIMER</h3><div class="perf-clock" id="clock">02:00</div>
+<h3>REST TIMER</h3><p id="restTimerStatus" class="muted">Ready when you save a set.</p><div class="perf-clock" id="clock">02:00</div>
 <div class="perf-btns"><button data-timer="60" type="button">1 MIN</button><button data-timer="120" type="button">2 MIN</button><button data-timer="180" type="button">3 MIN</button><button id="timerStart" class="btn-primary" type="button">START</button><button id="timerReset" type="button">RESET</button></div>
 </div>
 </div>
@@ -119,8 +120,8 @@
 </div>
 <div class="section" id="dataAndConnection" style="margin-top:20px">
 <details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
-<div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Checking connection.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="btn-primary smallbtn hidden" style="text-decoration:none">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button><button type="button" onclick="location.reload()">RELOAD METRICS</button></div></div>
-<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
+<div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Check the WHOOP tab for connection status.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
+<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><p id="backupAge" class="backup-age" aria-live="polite">Last backup: never</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
 <div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
 </div></details></div></section>
 
@@ -162,17 +163,17 @@
 <section class="hidden" data-page="experiments">
 <div class="page-head"><div><div class="micro">PERSONAL TRAINING LAB</div><h1>EXPERIMENTS</h1></div><p>Turn a training challenge into scheduled workouts. Only logged sets count toward completion.</p></div>
 <div class="experiment-card">
-<div class="experiment-heading"><div class="experiment-mark">⚗</div><div><div class="micro">YOUR FIRST EXPERIMENT</div><h2>SQUAT EVERY DAY</h2></div><span id="experimentState" class="experiment-status">NOT STARTED</span></div>
+<div class="experiment-heading"><div class="experiment-mark">⚗</div><div><div class="micro">YOUR FIRST EXPERIMENT</div><h2>SQUAT EVERY DAY</h2></div><span id="experimentState" class="experiment-status">PLANNED</span></div>
 <label class="field experiment-description-label" for="experimentDescription">WHAT ARE YOU TESTING?</label>
 <textarea id="experimentDescription" maxlength="600" rows="3" placeholder="Describe your experiment...">I am squatting every day for the next month.</textarea>
 <p class="experiment-help">Applying this adds 2 working sets of Back Squat at the start of every workout for 30 days, using weights based on your estimated 325 lb squat max. Your other exercises stay in place.</p>
 <div class="experiment-controls"><label class="field" for="experimentMax">ESTIMATED SQUAT 1RM / LB<input id="experimentMax" type="number" min="45" max="1000" step="5" value="325"></label><label class="field" for="experimentDays">DURATION<input id="experimentDays" type="number" value="30" disabled></label></div>
-<div class="experiment-prescription"><div class="micro">DAILY PERCENTAGE ROTATION</div><div class="experiment-day-grid" id="experimentDaysPreview"></div><p class="chart-sub">Wednesday and Sunday preserve your existing four-week heavy/volume squat progression. Other days are lighter. Percentages are approximate, rounded to the nearest 5 lb.</p></div>
+<div class="experiment-prescription"><div class="micro">DAILY PERCENTAGE ROTATION</div><div class="experiment-day-grid" id="experimentDaysPreview"></div><p class="chart-sub">The daily percentages rotate intentionally: Heavy (75%+), Moderate (55–74%), Light (40–54%), and Recovery (below 40%). Actual weights and reps remain unchanged.</p></div>
 <div class="experiment-actions"><button class="btn-primary" id="experimentApply" type="button">ADD TO MY CALENDAR</button><button class="smallbtn btn-ghost hidden" id="experimentStop" type="button">STOP EXPERIMENT</button></div>
 <div id="experimentMessage" class="experiment-message" aria-live="polite"></div>
 <div class="experiment-month-plan"><div class="micro">DAILY BACK SQUAT · NOV 9 – DEC 8, 2026</div>
-<p class="muted">Already scheduled automatically on every calendar date: 45 × 4 and 135 × 8 warmups, plus two working sets at the weight and reps shown below. Monday and Tuesday are your reported benchmarks; later dates are suggested targets.</p>
-<div id="experimentMonthRows" class="experiment-month-rows"></div></div>
+<p class="muted">Already scheduled automatically on every calendar date: 45 × 4 and 135 × 8 warmups, plus two working sets at the weight and reps shown below. The first two days establish the original training targets; subsequent days rotate intensity.</p>
+<div id="experimentMonthRows" class="experiment-month-rows"></div><details class="squat-plan-help"><summary>How this plan works</summary><p>The 30-day schedule alternates heavy, moderate, light, and recovery-intensity squat days to vary load. You still have two working sets each day, preceded by your listed warmups. This is a plan, not a requirement to lift through pain or significant fatigue. Only a saved Back Squat set completes a day.</p></details></div>
 </div>
 </section>
 </main></div>
@@ -197,8 +198,8 @@
 <div id="drawerPlannedSection" class="drawer-planned-section"><div class="drawer-progress"><div class="micro" id="drawerCount">0 OF 0 EXERCISES LOGGED</div><div class="drawer-meter"><div id="drawerMeterFill"></div></div></div>
 <div class="drawer-note" id="drawerGuidance"></div>
 <div class="micro" style="margin:20px 0 10px">PLANNED EXERCISES</div><div id="drawerExercises"></div>
-<div class="action-row"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div></div>
-<div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">+ ADD EXERCISE</button><button id="drawerDone" type="button">DONE</button></div>
+<div class="action-row hidden"><button class="btn-primary" id="drawerStartWorkout" type="button">VIEW WHOOP ACTIVITIES</button></div></div>
+<div class="action-row"><button class="btn-primary" id="drawerAddCustom" type="button">LOG TODAY&#39;S WORKOUT</button><button id="drawerDone" type="button">DONE</button></div>
 </div></div>
 <div id="modalOverlay" class="overlay hidden" role="presentation">
 <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -208,7 +209,7 @@
 <div class="set-editor-heading"><div><div class="micro">YOUR SETS</div><h3>WEIGHT & REPS</h3></div><span class="set-count-label" id="setCountLabel">0 SETS</span></div>
 <p class="set-editor-hint" id="setEditorHint">Edit each set below. Warmups are kept separate from your working sets.</p>
 <div id="setsList" class="set-cards"></div>
-<button id="addSet" class="add-set-row" type="button"><span aria-hidden="true">＋</span> ADD SET</button>
+<div class="set-quick-actions"><button id="addSet" class="add-set-row" type="button"><span aria-hidden="true">＋</span> ADD SET</button><button id="addSameSet" class="add-set-row" type="button">+ SAME AS LAST SET</button></div>
 <label class="field" style="margin-top:14px">NOTES<textarea id="logNotes" maxlength="1000" placeholder="Effort, form, tempo, etc."></textarea></label>
 <div class="action-row"><button class="btn-primary" type="submit">SAVE WORKOUT</button><button id="cancelModal" type="button">CANCEL</button></div>
 </form></div></div>
