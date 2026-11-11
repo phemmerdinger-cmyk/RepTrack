@@ -119,9 +119,10 @@
 <section class="section analytics-chart-card"><div class="section-title"><div><div class="micro">05 / SESSION QUALITY</div><h3>SESSION VOLUME</h3></div></div><div id="analysisSessionsChart" class="chart-host"></div></section>
 </div>
 <div class="section" id="dataAndConnection" style="margin-top:20px">
+<p id="backupAge" class="backup-age" aria-live="polite">Last backup: Never · Export recommended</p>
 <details class="utility-details"><summary>DATA & CONNECTION <span>Backup, WHOOP account controls, privacy</span></summary><div class="utility-inner">
 <div class="section"><h2>WHOOP CONNECTION</h2><p id="syncMessage" class="muted">Check the WHOOP tab for connection status.</p><div class="action-row"><a href="/api/whoop/login" id="connectLink" class="hidden">CONNECT WHOOP</a><button id="disconnectButton" type="button" class="hidden">DISCONNECT WHOOP</button></div></div>
-<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><p id="backupAge" class="backup-age" aria-live="polite">Last backup: never</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
+<div class="section"><h2>WORKOUT DATA</h2><p class="muted">Workout records are kept in this browser. Export a backup if you change devices or clear browser data.</p><div class="action-row"><button id="backupButton" class="btn-primary" type="button">EXPORT WORKOUTS</button><label class="field" style="max-width:230px">RESTORE JSON BACKUP<input id="restoreInput" type="file" accept=".json,application/json"></label></div></div>
 <div class="section"><h2>ABOUT</h2><p class="muted">RepTrack is an independent workout tracking tool. Recovery-based guidance is informational, not a medical recommendation.</p><a href="/privacy">PRIVACY POLICY</a></div>
 </div></details></div></section>
 
