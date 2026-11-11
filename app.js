@@ -706,8 +706,62 @@ $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
 $('exerciseSelect').onchange=renderExerciseTrend;
 $('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};whoopState='disconnected';renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
-$('backupButton').onclick=()=>{const blob=new Blob([JSON.stringify(entries,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};
-$('restoreInput').addEventListener('change',async ev=>{const file=ev.target.files[0];if(!file)return;try{const d=JSON.parse(await file.text());if(!Array.isArray(d)||!d.every(valid))throw Error();if(!confirm('Merge '+d.length+' workout records into this browser?'))return;const ids=new Set(entries.map(x=>x.id));for(const e of d)if(!ids.has(e.id)){entries.push(e);ids.add(e.id)}if(save())renderAll()}catch{alert('Invalid RepTrack JSON backup.')}finally{ev.target.value=''}});
+const LAST_BACKUP_KEY='reptrack-last-backup-v1';
+function renderBackupAge(){
+ const raw=Number(localStorage.getItem(LAST_BACKUP_KEY)||0),days=raw>0?Math.max(0,Math.floor((Date.now()-raw)/86400000)):null;
+ const label=days===null?'Last backup: Never':days===0?'Last backup: Today':'Last backup: '+days+' day'+(days===1?'':'s')+' ago';
+ $('backupAge').textContent=label+(days===null||days>=7?' · Export recommended':'');
+ $('backupAge').classList.toggle('backup-warning',days===null||days>=7);
+}
+const backupKeys={personalPlan:'reptrack-personal-plan-v1',experiment:EXPERIMENT_KEY,completedSessions:COMPLETED_KEY,dayPlans:PLAN_KEY,weeklyPlans:WEEK_KEY};
+function readBackupValue(key,fallback){try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch{return fallback}}
+function backupRecordValid(e){
+ if(!valid(e)||e.id.length>160||e.exercise.length>100||e.sets.length>200||!e.exercise.trim())return false;
+ if(e.notes!==undefined&&(typeof e.notes!=='string'||e.notes.length>1000))return false;
+ const date=fromISO(e.date);if(Number.isNaN(date.getTime())||iso(date)!==e.date)return false;
+ return e.sets.every(v=>v&&Number.isFinite(Number(v.weight))&&Number(v.weight)>=0&&Number(v.weight)<=100000&&Number.isInteger(Number(v.reps))&&Number(v.reps)>=1&&Number(v.reps)<=1000&&(v.warmup===undefined||typeof v.warmup==='boolean'));
+}
+$('backupButton').onclick=()=>{
+ const payload={format:'reptrack-backup',version:2,exportedAt:new Date().toISOString(),workouts:entries,completedSessions:readBackupValue(COMPLETED_KEY,[]),dayPlans:datePlans,weeklyPlans:weeklyPlans,experiment:readBackupValue(EXPERIMENT_KEY,null),personalPlan:readBackupValue('reptrack-personal-plan-v1',null)};
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=el('a');
+ a.href=url;a.download='reptrack-backup-'+iso(new Date())+'.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ try{localStorage.setItem(LAST_BACKUP_KEY,String(Date.now()))}catch{}
+ renderBackupAge();
+};
+$('restoreInput').addEventListener('change',async ev=>{
+ const file=ev.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>5*1024*1024)throw Error('File is too large (maximum 5 MB).');
+  const parsed=JSON.parse(await file.text());
+  const legacy=Array.isArray(parsed),data=legacy?{workouts:parsed}:parsed;
+  if(!data||typeof data!=='object'||(!legacy&&(data.format!=='reptrack-backup'||data.version!==2)))throw Error('Not a supported RepTrack backup.');
+  if(!Array.isArray(data.workouts)||data.workouts.length>20000||!data.workouts.every(backupRecordValid))throw Error('Invalid exercise records or set weights/reps.');
+  const idsInFile=new Set();for(const log of data.workouts){if(idsInFile.has(log.id))throw Error('Duplicate IDs in backup.');idsInFile.add(log.id)}
+  if(!legacy){
+   if(!Array.isArray(data.completedSessions)||data.completedSessions.length>10000||!data.completedSessions.every(x=>x&&typeof x.id==='string'&&x.id.length<=160&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)&&typeof x.title==='string'&&x.title.length<=100))throw Error('Invalid saved sessions.');
+   if(![data.dayPlans,data.weeklyPlans].every(x=>x&&typeof x==='object'&&!Array.isArray(x)&&Object.values(x).every(validPlan)))throw Error('Invalid calendar plans.');
+   if(data.personalPlan!==null&&data.personalPlan!==undefined&&(!Array.isArray(data.personalPlan.dailySquats)||data.personalPlan.dailySquats.length!==30||!data.personalPlan.dailySquats.every(v=>Array.isArray(v)&&v.length===2&&v.every(Number.isInteger))))throw Error('Invalid personal plan.');
+  }
+  const ids=new Set(entries.map(e=>e.id)),additional=data.workouts.filter(x=>!ids.has(x.id));
+  if(!confirm('Validated backup: '+data.workouts.length+' exercise records. Merge '+additional.length+' new records? Your current data will not be replaced.'))return;
+  const prior=entries;entries=entries.concat(additional);
+  if(!save()){entries=prior;throw Error('Your browser could not save the restored records.')}
+  if(!legacy){
+   const existing=completedSessions(),sessions=new Set(existing.map(x=>x.id));
+   try{localStorage.setItem(COMPLETED_KEY,JSON.stringify([...existing,...data.completedSessions.filter(x=>!sessions.has(x.id))]))}catch{}
+   for(const [field,key] of Object.entries({dayPlans:PLAN_KEY,weeklyPlans:WEEK_KEY,personalPlan:'reptrack-personal-plan-v1',experiment:EXPERIMENT_KEY})){
+    const value=data[field];
+    if(value!=null&&localStorage.getItem(key)===null){try{localStorage.setItem(key,JSON.stringify(value))}catch{}}
+   }
+   datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);
+  }
+  renderAll();
+  window.dispatchEvent(new Event('reptrack-workouts-changed'));
+ }catch(err){alert('Backup not restored: '+(err?.message||'Invalid file'))}
+ finally{ev.target.value=''}
+});
+renderBackupAge();
 let restDeadline=0,restPaused=seconds,restSounded=false;
 function restAlarm(){
  if(restSounded)return;restSounded=true;
