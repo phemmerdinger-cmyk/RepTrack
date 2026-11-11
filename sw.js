@@ -1,4 +1,4 @@
-const VERSION='reptrack-shell-v6';
+const VERSION='reptrack-shell-v7';
 const FILES=['/','/app.css','/future.css','/analytics.css','/workout.css','/app.js','/future.js','/analytics.js','/workout.js','/experiments.css','/experiments.js','/whoop-sync.css','/whoop-sync.js','/favicon.svg','/icon-192.png','/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION).then(async cache=>{await Promise.allSettled(FILES.map(path=>cache.add(path)))}));self.skipWaiting()});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==VERSION).map(key=>caches.delete(key)))));self.clients.claim()});
