@@ -49,7 +49,12 @@ function renderMonthPlan(){
 }
 
 function render(){
- const exp=read(),active=!!exp?.active;
+ const exp=read(),active=!!exp?.active,personal=window.RepTrackPersonalPlan;
+ const origin=new Date(personal.start+'T12:00:00'),finish=new Date(origin);
+ finish.setDate(finish.getDate()+29);
+ $('experimentMonthTitle').textContent='DAILY BACK SQUAT · '+origin.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()+' – '+finish.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase();
+ $('experimentMonthCaption').textContent='Automatically scheduled: '+personal.warmups.map(x=>x.weight+' lb × '+x.reps).join(' and ')+' warmups, then two working sets using each saved daily target. Planned does not count as Completed.';
+ $('experimentHelp').textContent='Your personal plan uses '+personal.max+' lb as its stored estimated 1RM, with two working squat sets each day. The rotating targets do not replace other exercises.';
  const start=new Date((window.RepTrackPersonalPlan?.start||'2026-11-09')+'T12:00:00');
  const today=new Date();const day=Math.floor((Date.UTC(today.getFullYear(),today.getMonth(),today.getDate())-Date.UTC(start.getFullYear(),start.getMonth(),start.getDate()))/86400000)+1;
  const logged=Array.from({length:30},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return window.RepTrackSquatStatus?.(iso(d))==='Completed'}).filter(Boolean).length;
@@ -58,6 +63,7 @@ function render(){
  $('experimentState').classList.toggle('active',day>=1&&day<=30);
  $('experimentApply').textContent=active?'UPDATE EXPERIMENT NOTES':'SAVE EXPERIMENT NOTES';
  $('experimentStop').classList.toggle('hidden',!active);
+ if(!exp)$('experimentMax').value=Number(personal.max)||325;
  if(exp){
   $('experimentDescription').value=exp.description||'I am squatting every day for the next month.';
   $('experimentMax').value=Number(exp.max)||325;
