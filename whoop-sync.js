@@ -23,17 +23,17 @@ function render(){
  if(status.state==='waking'||status.state==='loading'){
   notice.textContent=status.state==='waking'?'Waking up server… Render may take a moment to respond.':'Checking WHOOP connection…';
  }else if(status.state==='error'){
-  notice.replaceChildren(el('strong','','WHOOP unavailable. '),el('span','',status.error||'Please try again.'));
+  notice.replaceChildren(el('strong','','Activity refresh unavailable. '),el('span','',status.error||'Please try again.'));
   const retry=el('button','whoop-reconnect','RETRY');retry.type='button';retry.onclick=()=>window.RepTrackRetryWHOOP?.();notice.append(retry);
  }else if(!connected){
-  notice.replaceChildren(el('strong','','Connect WHOOP '),el('span','','to see completed workouts, recovery and strain here.'));
+  notice.replaceChildren(el('span','','To see completed activity history, authorize the existing WHOOP connection.'));
   const link=el('a','whoop-reconnect','CONNECT WHOOP');link.href='/api/whoop/login';notice.append(link);
  }else if(!access){
   notice.replaceChildren(el('strong','','One-time permission update needed. '),el('span','','Your existing connection does not yet allow RepTrack to read workouts.'));
   const link=el('a','whoop-reconnect','RECONNECT WHOOP');link.href='/api/whoop/login';notice.append(link);
  }else{
   const age=Number(window.RepTrackWHOOPLastSync||0),time=age?new Date(age).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}):'recently';
-  notice.textContent='WHOOP connected · Activities checked '+time+' · Automatically updates while RepTrack is open.';
+  notice.textContent='Recent activities checked '+time+'. Check the top-left dot for connection and measurement freshness.';
  }
  count.textContent=access?workouts.length+' ACTIVITIES':'SYNC NOT READY';
  if(status.state!=='connected'||!access){
