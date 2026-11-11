@@ -146,8 +146,11 @@ const server=http.createServer(async(req,res)=>{
     }
     const since=new Date(Date.now()-45*86400000).toISOString();
     const results=await Promise.allSettled(['recovery?limit=1','activity/sleep?limit=1','cycle?limit=1','activity/workout?limit=25&start='+encodeURIComponent(since)].map(p=>apiGet(p,tokens.access_token)));
-    if(results.every(r=>r.status==='rejected'))
+    if(results.every(r=>r.status==='rejected')){
+      const unauthorized=results.every(r=>/WHOOP request failed \((401|403)\)/.test(String(r.reason?.message||'')));
+      if(unauthorized)return send(res,200,{configured:true,connected:false,reauthorize:true},{'Set-Cookie':clearCookie('reptrack_whoop')});
       return send(res,502,{error:'WHOOP did not return metrics. Check scopes and your account connection.'},newCookie?{'Set-Cookie':newCookie}:{});
+    }
     const records=results.map(r=>r.status==='fulfilled'?latest(r.value):null);
     const workoutsResult=results[3];
     let workouts=workoutsResult.status==='fulfilled'&&Array.isArray(workoutsResult.value.records)?workoutsResult.value.records:[];
