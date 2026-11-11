@@ -11,12 +11,9 @@ const groups={
 };
 const records=Object.entries(groups).flatMap(([group,names])=>names.map(name=>({name,group})));
 const normalize=v=>String(v||'').trim().toLowerCase().replace(/[‐‑‒–—-]/g,' ').replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
-const aliases={
- 'pull ups':'Weighted Pull-Ups', // Do not conflate unweighted Pull Up with weighted!
-};
 // Only orthographic aliases that preserve equipment and variation exactly.
-delete aliases['pull ups'];
-Object.assign(aliases,{
+// In particular, regular pull-ups are NOT the same exercise as weighted pull-ups.
+const aliases={
  'weighted pullups':'Weighted Pull-Ups',
  'weighted pull ups':'Weighted Pull-Ups',
  'weighted pull up':'Weighted Pull-Ups',
@@ -45,8 +42,11 @@ Object.assign(aliases,{
  'leg extension':'Leg Extensions',
  'walking lunge':'Walking Lunges',
  'hamstring curl':'Hamstring Curls',
- 'hip abductor machine':'Hip Abductor'
-});
+ 'hip abductor machine':'Hip Abductor',
+ 'cable row':'Cable Rows',
+ 'wide grip rows':'Wide Grip Row',
+ 'smith machine shoulder presses':'Smith Machine Shoulder Press',
+};
 const canonicalMap=new Map(records.map(item=>[normalize(item.name),item.name]));
 for(const [alias,name] of Object.entries(aliases))if(canonicalMap.has(normalize(name)))canonicalMap.set(normalize(alias),name);
 const canonical=name=>canonicalMap.get(normalize(name))||String(name||'').trim();
