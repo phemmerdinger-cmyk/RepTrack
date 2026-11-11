@@ -417,11 +417,12 @@ const squat=entries.filter(e=>/squat/i.test(e.exercise)).flatMap(sets).filter(s=
 $('squatMetric').textContent=squat.length?fmt(Math.max(...squat.map(oneRM)))+' LB':'Log squats to see your max';
 $('sessionMetric').textContent=weekly.length||'No workouts yet';
 const bars=$('volumeChart');bars.replaceChildren();
+if(!weekly.length)bars.append(el('div','chart-empty','Log your first workout to see trends.'));
 const values=Array.from({length:14},(_,i)=>{const date=iso(plus(now,i-13));return{date,value:entries.filter(e=>e.date===date).reduce((n,e)=>n+vol(e),0)}});
 const high=Math.max(1,...values.map(v=>v.value)),plot=el('div','chart');
-values.forEach(v=>{const b=el('div','chartbar');b.style.height=Math.max(2,v.value/high*100)+'%';b.title=v.date+' — '+fmt(v.value)+' lb-reps';plot.append(b)});
+if(weekly.length){values.forEach(v=>{const b=el('div','chartbar');b.style.height=Math.max(2,v.value/high*100)+'%';b.title=v.date+' — '+fmt(v.value)+' lb-reps';plot.append(b)});
 bars.append(plot);
-const labels=el('div','chartlabels');labels.append(el('span','',values[0].date.slice(5)),el('span','',values.at(-1).date.slice(5)));bars.append(labels);
+const labels=el('div','chartlabels');labels.append(el('span','',values[0].date.slice(5)),el('span','',values.at(-1).date.slice(5)));bars.append(labels)}
 const count=new Map();entries.filter(e=>e.date>=iso(monthStart)).forEach(e=>count.set(e.exercise,(count.get(e.exercise)||0)+sets(e).length));
 const popular=[...count.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6),max=Math.max(1,...popular.map(x=>x[1]));
 $('muscleWork').replaceChildren();
@@ -702,7 +703,7 @@ $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
 $('exerciseSelect').onchange=renderExerciseTrend;
-$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;await fetch('/api/whoop/logout',{method:'POST'});whoop={connected:false};whoopState='disconnected';renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()};
+$('disconnectButton').onclick=async()=>{if(!confirm('Disconnect WHOOP from this browser?'))return;try{const response=await fetch('/api/whoop/logout',{method:'POST',signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('The server could not disconnect WHOOP.');whoop={connected:false};whoopState='disconnected';renderWHOOP();renderCalendar();renderSelected();renderDayDrawer()}catch(e){whoopState='error';whoopError='Disconnect request failed. Try again.';renderWHOOP()}};
 const LAST_BACKUP_KEY='reptrack-last-backup-v1';
 function renderBackupAge(){
  const raw=Number(localStorage.getItem(LAST_BACKUP_KEY)||0),days=raw>0?Math.max(0,Math.floor((Date.now()-raw)/86400000)):null;
