@@ -719,6 +719,7 @@ function renderDayDrawer(){
  });
 }
 $('drawerClose').onclick=closeDayDrawer;$('drawerDone').onclick=closeDayDrawer;
+$('openAdvancedDay').onclick=()=>openDayDrawer(selected);
 $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOverlay'))closeDayDrawer()});
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
@@ -828,6 +829,7 @@ function addSet(weight='',reps='',warmup=false){
  row.append(top,fields);$('setsList').append(row);renumberSetCards();
 }
 function openLog(date,exercise){
+if(drawerOpen)closeDayDrawer();
 if($('modalOverlay').classList.contains('hidden'))logTrigger=document.activeElement;
 editingLogId=null;
 $('setEditorHint').textContent='Edit each set below. Warmups are saved separately from working sets.';
@@ -860,6 +862,7 @@ if(exercise==='Back Squat'){
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function openEditLog(id){
+if(drawerOpen)closeDayDrawer();
  logTrigger=document.activeElement;
  const item=entries.find(e=>e.id===id);
  if(!item)return;
