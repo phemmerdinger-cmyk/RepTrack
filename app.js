@@ -195,13 +195,13 @@ function whoopLatestRecord(){
 function whoopIndicatorStatus(){
  const cfg=whoopThresholds(),connection=whoopState==='connected'||(whoopState==='waking'&&whoop?.connected===true);
  const needsReconnect=whoopState==='disconnected'||(whoopState==='error'&&/401|403|unauthoriz|expired|invalid.*auth/i.test(whoopError));
- if(!connection||!lastWhoopSuccess||!whoop?.connected)return{key:'lost',text:'WHOOP Disconnected',needsReconnect,lastSync:lastWhoopSuccess||null,record:whoopLatestRecord(),explanation:whoopState==='waking'?'Waiting for the server to respond.':whoopError||'WHOOP connection has not been confirmed.'};
+ if(!connection||!lastWhoopSuccess||!whoop?.connected)return{key:'lost',text:'WHOOP Offline',needsReconnect,lastSync:lastWhoopSuccess||null,record:whoopLatestRecord(),explanation:whoopState==='waking'?'Waiting for the server to respond.':whoopError||'WHOOP connection has not been confirmed.'};
  const syncMinutes=(Date.now()-lastWhoopSuccess)/60000,record=whoopLatestRecord();
  const recordMinutes=record?(Date.now()-record.timestamp)/60000:null;
  let key='live';
  if(syncMinutes>cfg.syncingMinutes||recordMinutes!==null&&recordMinutes>cfg.measurementDelayedMinutes)key='delayed';
  else if(syncMinutes>cfg.liveMinutes||recordMinutes===null||recordMinutes>cfg.measurementFreshMinutes||!record.observed)key='syncing';
- const text={live:'WHOOP Live',syncing:'WHOOP Syncing',delayed:'WHOOP Delayed'}[key];
+ const text={live:'WHOOP Connected',syncing:'WHOOP Syncing',delayed:'WHOOP Delayed'}[key];
  const explanation=recordMinutes===null?'The WHOOP API responded, but no timestamped physiological record was available. Sync freshness is not proof of measurement freshness.':record.description+' is '+Math.max(0,Math.floor(recordMinutes))+' minutes old. '+(record.observed?'This represents an observation period.':'This is a record-update time, not proof of a new measurement.')+' Sleep, recovery and other WHOOP metrics refresh on different schedules.';
  return{key,text,needsReconnect:false,lastSync:lastWhoopSuccess,record,explanation};
 }
