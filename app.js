@@ -1003,6 +1003,12 @@ function paintTimer(){
  $('timerStart').textContent=restDeadline?'PAUSE':'START';
  $('restTimerStatus').textContent=restDeadline?'REST IN PROGRESS':restSounded?'REST COMPLETE':'REST TIMER READY';
  $('modalRestStatus').textContent=restDeadline?'REST · '+$('clock').textContent:restSounded?'REST COMPLETE · NEXT SET':'REST TIMER · READY';
+ const bar=$('floatingRest');
+ if(bar){
+  bar.classList.toggle('hidden',!restDeadline&&!restSounded);
+  $('floatingRestTime').textContent=$('clock').textContent;
+  $('floatingRestPause').textContent=restDeadline?'Pause':'Resume';
+ }
 }
 function stopTimerInterval(){if(timer){clearInterval(timer);timer=null}}
 function startRestTimer(){
@@ -1017,6 +1023,9 @@ $('timerStart').onclick=()=>{
  timer=setInterval(paintTimer,250);paintTimer();
 };
 $('timerReset').onclick=()=>{stopTimerInterval();restDeadline=0;restPaused=seconds;restSounded=false;paintTimer()};
+$('floatingRestPause').onclick=()=>{if(restDeadline||remaining>0)$('timerStart').click()};
+$('floatingRestDismiss').onclick=()=>{$('timerReset').click()};
+
 document.querySelectorAll('[data-timer]').forEach(b=>b.onclick=()=>{const active=!!restDeadline;seconds=Number(b.dataset.timer);restPaused=seconds;if(active)startRestTimer();else paintTimer()});
 document.addEventListener('visibilitychange',paintTimer);
 window.addEventListener('focus',paintTimer);
