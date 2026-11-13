@@ -115,3 +115,8 @@ body,.content,button,input,select,textarea{font-family:Inter,ui-sans-serif,syste
 }
 @media(max-width:390px){.inline-sets-header,.inline-set-row{grid-template-columns:21px 37px 37px minmax(76px,1fr) 57px 42px;gap:3px}.inline-sets-header{font-size:7.5px}.inline-set-target,.inline-set-best{font-size:8.5px}.inline-save-set{width:42px;min-width:42px}.week-day{font-size:9px;min-height:68px}.week-day strong{font-size:16px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+/* Inline logger is inside the legacy planned-section container; preserve that container but suppress its old controls. */
+[data-page="calendar"] #selectedPlannedSection{display:block!important;margin:0;padding:0;border:0;background:none}
+[data-page="calendar"] #selectedPlannedSection>.section-title,[data-page="calendar"] #selectedPlannedSection>#exerciseList{display:none!important}
+[data-page="calendar"] #inlineLogger{display:block!important}
