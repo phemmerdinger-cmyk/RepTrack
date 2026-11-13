@@ -187,7 +187,7 @@ $('configureSquatForm').addEventListener('submit',e=>{
 });
 function init(){
  const calendar=$('trainingCalendar'),inspector=$('selectedDay'),page=document.querySelector('[data-page="calendar"]');
- if(calendar&&inspector&&page){const layout=make('div','calendar-command-layout');calendar.before(layout);layout.append(calendar,inspector);inspector.querySelector('.section')?.classList.add('active-inspector')}
+ if(calendar&&inspector&&page){if(!calendar.parentElement?.classList.contains('calendar-command-layout')){const layout=make('div','calendar-command-layout');calendar.before(layout);layout.append(calendar,inspector)}inspector.querySelector('.section')?.classList.add('active-inspector')}
  rebuildOptions(selected());viewDate=selected();drawSets();drawWeek();drawSummary();drawReadiness();
 }
 init();
