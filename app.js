@@ -307,7 +307,17 @@ function renderSquatTracker(){
 
 // Completed workout sessions are separate from plans and in-progress session drafts.
 const COMPLETED_KEY='reptrack-sessions-v1';
-function completedSessions(){try{const v=JSON.parse(localStorage.getItem(COMPLETED_KEY)||'[]');return Array.isArray(v)?v.filter(x=>x&&typeof x.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)):[]}catch{return []}}
+let completedCacheKey=null,completedCache=[];
+function completedSessions(){
+ try{
+  const source=localStorage.getItem(COMPLETED_KEY)||'[]';
+  if(source===completedCacheKey)return completedCache;
+  const parsed=JSON.parse(source);
+  completedCacheKey=source;
+  completedCache=Array.isArray(parsed)?parsed.filter(x=>x&&typeof x.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x.date)):[];
+  return completedCache;
+ }catch{return []}
+}
 function renderCompletedForDate(host,date){
  host.replaceChildren();
  const completed=completedSessions().filter(x=>x.date===date);
@@ -544,7 +554,7 @@ $('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'lon
 $('addAfterWorkout').onclick=()=>openLog(selected,'');
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
 $('clearSelectedDay').onclick=()=>deleteDayLogs(key);
-renderWHOOP();window.RepTrackInlineRefresh?.();
+window.RepTrackInlineRefresh?.();
 }
 function renderAnalytics(){
 const now=new Date(),weekStart=plus(now,-6),monthStart=plus(now,-29);
@@ -1061,7 +1071,7 @@ window.addEventListener('hashchange',syncRouteFromURL);
 window.addEventListener('popstate',syncRouteFromURL);
 syncRouteFromURL();
 window.addEventListener('storage',e=>{if(e.key===KEY){load();renderAll()}else if(e.key===COMPLETED_KEY){renderAll()}else if(e.key===PLAN_KEY||e.key===WEEK_KEY){datePlans=readPlanStore(PLAN_KEY);weeklyPlans=readPlanStore(WEEK_KEY);renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'))}else if(e.key===EXPERIMENT_KEY){updateExperimentState()}});
-load();renderAll();paintTimer();syncWHOOP(true);
+load();renderWHOOP();renderAll();paintTimer();syncWHOOP(true);
 // Poll whenever the app is in the foreground. WHOOP's API may not update every minute.
 setInterval(()=>{if(!document.hidden)syncWHOOP()},60*1000);
 setInterval(paintGlobalWHOOP,60000); // Local status age only; no additional API requests.
