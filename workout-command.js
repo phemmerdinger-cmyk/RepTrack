@@ -117,7 +117,7 @@ $('inlineNewExercise').addEventListener('change',e=>{
 $('inlineLoadLast').addEventListener('click',()=>{
  const prior=previous(active,selected());
  if(!prior){$('inlineLogStatus').textContent='No earlier logged session';return}
- const last=prior.sets.filter(x=>!x.warmup),rows=[...$('inlineSetRows').children].filter(x=>!x.dataset.entryId);
+ const last=prior.sets.filter(x=>!x.warmup),rows=[...$('inlineSetRows').children].filter(x=>!x.dataset.entryId&&x.dataset.warmup!=='true');
  rows.forEach((row,i)=>{const set=last[i]||last.at(-1);if(set){row.querySelector('.inline-weight').value=set.weight;row.querySelector('.inline-reps').value=set.reps}});
  $('inlineLogStatus').textContent='Last session loaded';
 });
