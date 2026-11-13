@@ -16,6 +16,20 @@ const initial={version:1,start:'2026-11-09',max:325,duration:30,warmups:[{weight
 let saved;
 try{const raw=localStorage.getItem(KEY);if(raw===null){localStorage.setItem(KEY,JSON.stringify(initial));saved=initial}else saved=JSON.parse(raw)}catch{saved=null}
 const good=saved&&typeof saved==='object'&&Array.isArray(saved.dailySquats)&&saved.dailySquats.length===30&&Array.isArray(saved.squatMonth);
-window.RepTrackPersonalPlan=good?saved:initial;
+const original=good?saved:initial;
+let config=null;
+try{const next=JSON.parse(localStorage.getItem('reptrack-squat-block-config-v1')||'null');
+ if(next&&Number.isFinite(Number(next.max))&&Number(next.max)>=45&&Number(next.max)<=1000&&/^\\d{4}-\\d{2}-\\d{2}$/.test(next.start))config=next;
+}catch{}
+const baseMax=Number(original.max)||325;
+const customMax=Number(config?.max)||baseMax;
+const scale=customMax/baseMax;
+const effective=config?{
+ ...original,start:config.start,max:customMax,
+ dailySquats:original.dailySquats.map(([weight,reps])=>[scale===1?weight:Math.max(5,Math.round(weight*scale/5)*5),reps])
+}:original;
+// Explicit configuration changes calculated future targets only; historical set records never change.
+window.RepTrackPersonalPlan=effective;
+window.RepTrackOriginalPlan=original;
 window.RepTrackPersonalPlanKey=KEY;
 })();
