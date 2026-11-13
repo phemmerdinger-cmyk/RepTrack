@@ -135,7 +135,7 @@ window.RepTrackOpenCalendarDay=stamp=>{
  if(Number.isNaN(d.getTime())||iso(d)!==stamp)return;
  selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);
  document.querySelector('[data-view="calendar"]')?.click();
- renderCalendar();renderSelected();openDayDrawer(d);
+ renderCalendar();renderSelected();window.RepTrackInlineRefresh?.();
 };
 
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,editingLogId=null,timer=null,seconds=120,remaining=120;
@@ -426,10 +426,16 @@ if(squatExperiment){
  badge.title=intensityLabel(squatExperiment.percentage)+' · '+squatExperiment.percentage+'% 1RM · 2 working sets';
  tile.append(badge);
 }
-tile.addEventListener('click',()=>{selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();renderSelected();openDayDrawer(d);});
+// Single delegated calendar handler below avoids dozens of per-cell listeners.
 grid.append(tile);
 }
 }
+$('monthGrid').addEventListener('click',event=>{
+ const tile=event.target.closest('button.day[data-date]');if(!tile)return;
+ const date=fromISO(tile.dataset.date);if(Number.isNaN(date.getTime()))return;
+ selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);
+ renderCalendar();renderSelected();window.RepTrackInlineRefresh?.();
+});
 // Stable checklist rows survive background WHOOP refreshes and save without a modal.
 function squatChecklist(date){
  const stamp=typeof date==='string'?date:iso(date),target=experimentPrescription(fromISO(stamp));
@@ -538,7 +544,7 @@ $('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'lon
 $('addAfterWorkout').onclick=()=>openLog(selected,'');
 $('clearSelectedDay').classList.toggle('hidden',!done.length);
 $('clearSelectedDay').onclick=()=>deleteDayLogs(key);
-renderWHOOP();
+renderWHOOP();window.RepTrackInlineRefresh?.();
 }
 function renderAnalytics(){
 const now=new Date(),weekStart=plus(now,-6),monthStart=plus(now,-29);
@@ -717,6 +723,41 @@ $('dayDrawerOverlay').addEventListener('click',e=>{if(e.target===$('dayDrawerOve
 $('drawerAddCustom').onclick=()=>openLog(selected,'');
 
 function renderAll(){renderCalendar();renderSquatTracker();renderSelected();renderAnalytics();renderDayDrawer();window.dispatchEvent(new Event('reptrack-workouts-changed'))}
+let inlineRenderScheduled=false;
+function queueInlineRerender(){
+ if(inlineRenderScheduled)return;inlineRenderScheduled=true;
+ requestAnimationFrame(()=>{
+  inlineRenderScheduled=false;renderAll();
+ });
+}
+window.RepTrackInlineHistory=(date)=>entries.filter(e=>e.date===date);
+window.RepTrackInlineWhoop=(date)=>whoopActivitiesOn(date);
+window.RepTrackInlineCompleted=(date)=>completedSessions().filter(e=>e.date===date);
+window.RepTrackInlineSaveSet=({date,exercise,weight,reps,warmup=false,checklistSlot=null,entryId=null,setIndex=null})=>{
+ const name=window.RepTrackExerciseLibrary?.canonical(exercise)||String(exercise||'').trim();
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!name||name.length>100||!Number.isFinite(weight)||weight<0||weight>100000||!Number.isInteger(reps)||reps<1||reps>1000)return {ok:false,error:'Enter a valid exercise, weight and reps.'};
+ const canonical=v=>window.RepTrackExerciseLibrary?.canonical(v)||v;
+ const prior=entries.map(e=>({...e,sets:e.sets.map(x=>({...x}))}));
+ let target=entryId?entries.find(e=>e.id===entryId&&e.date===date&&canonical(e.exercise)===name):null;
+ let index=Number.isInteger(setIndex)&&setIndex>=0?setIndex:null;
+ if(checklistSlot&&name==='Back Squat'){
+  const current=squatChecklistRecords(date).get(checklistSlot);
+  if(current){target=entries.find(e=>e.id===current.entry.id);index=current.index}
+ }
+ if(!target){
+  target=entries.filter(e=>e.date===date&&canonical(e.exercise)===name).at(-1);
+  index=null;
+ }
+ if(!target){target={id:'inline-'+Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:name,sets:[],notes:''};entries.push(target)}
+ const set={weight,reps,warmup:!!warmup,...(checklistSlot?{checklistSlot}:{})};
+ if(index!==null&&target.sets[index])target.sets[index]={...target.sets[index],...set};
+ else{index=target.sets.length;target.sets.push(set)}
+ if(!save()){entries=prior;return {ok:false,error:'Unable to save this set on this device.'}}
+ queueInlineRerender();
+ return {ok:true,id:target.id,index};
+};
+window.RepTrackInlineStartRest=()=>startRestTimer();
+
 window.RepTrackLogSessionSet=(date,exercise,weight,reps,sessionId,warmup=false)=>{
  if(!/^\d{4}-\d\d-\d\d$/.test(date)||!exercise||!Number.isFinite(+weight)||+weight<0||!Number.isInteger(+reps)||+reps<1)return false;
  const id=String(sessionId||'').slice(0,80),existing=entries.find(e=>e.date===date&&e.exercise===exercise&&e.sessionId===id);
