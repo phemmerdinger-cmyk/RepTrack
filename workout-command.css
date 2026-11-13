@@ -120,3 +120,7 @@ body,.content,button,input,select,textarea{font-family:Inter,ui-sans-serif,syste
 [data-page="calendar"] #selectedPlannedSection{display:block!important;margin:0;padding:0;border:0;background:none}
 [data-page="calendar"] #selectedPlannedSection>.section-title,[data-page="calendar"] #selectedPlannedSection>#exerciseList{display:none!important}
 [data-page="calendar"] #inlineLogger{display:block!important}
+
+.day-tools{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
+.day-tools button{font-size:10px;min-height:42px;white-space:nowrap;padding:7px 10px}
+@media(max-width:390px){.day-tools button{max-width:118px;white-space:normal;font-size:9px;line-height:1.2}}
