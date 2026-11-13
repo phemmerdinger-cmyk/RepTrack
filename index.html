@@ -74,21 +74,21 @@
 <section data-page="calendar">
 <div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>Workout calendar</h1></div><p>Choose a date to view your plan, log sets, or review a completed workout.</p></div>
 <div class="intel-grid">
-<div class="intel-card"><div class="micro">WHOOP RECOVERY</div><div id="recoveryMetric" class="metric mono">—</div><div id="recoveryCaption" class="caption">SYNCING</div></div>
-<div class="intel-card"><div class="micro">SLEEP PERFORMANCE</div><div id="sleepMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
-<div class="intel-card"><div class="micro">DAY STRAIN</div><div id="strainMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
+<div class="intel-card" data-readiness-card="true" tabindex="0" role="button" aria-label="Enter manual readiness check-in"><div class="micro">WHOOP RECOVERY</div><div id="recoveryMetric" class="metric mono">—</div><div id="recoveryCaption" class="caption">SYNCING</div></div>
+<div class="intel-card" data-readiness-card="true" tabindex="0" role="button" aria-label="Enter manual readiness check-in"><div class="micro">SLEEP PERFORMANCE</div><div id="sleepMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
+<div class="intel-card" data-readiness-card="true" tabindex="0" role="button" aria-label="Enter manual readiness check-in"><div class="micro">DAY STRAIN</div><div id="strainMetric" class="metric mono">—</div><div class="caption">WHOOP</div></div>
 </div>
 <div class="section" id="trainingCalendar">
 <div class="calendar-intro"><h2>Your training calendar</h2><p>Choose a day to open its workout. A planned workout is only marked complete after you log it or import it from WHOOP.</p><div class="calendar-tools"><label for="jumpDate">Go to a date<input id="jumpDate" type="date"></label><button id="openChosenDate" type="button">Open date</button><button id="calendarLayout" type="button" aria-pressed="false" aria-controls="monthGrid">List view</button></div></div>
 <div class="section-title"><h3 class="sr-only">Browse dates</h3><div class="calendar-controls"><button id="prevMonth" type="button" aria-label="Previous month">‹</button><span class="month" id="monthLabel" aria-live="polite"></span><button id="nextMonth" type="button" aria-label="Next month">›</button><button id="todayButton" class="smallbtn btn-primary" type="button">TODAY</button></div></div>
 <div class="weekdays" aria-hidden="true"><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div><div class="weekday">SUN</div></div>
-<p class="calendar-key">○ Planned &nbsp; ◐ In progress &nbsp; ✓ Completed</p>
-<div id="monthGrid" class="month-grid" role="group" aria-label="Workout dates"></div>
+<details class="help-disclosure"><summary>?</summary><p>○ Planned · ◐ In progress · ✓ Completed. Tap a date to log sets.</p></details>
+<div id="monthGrid" class="month-grid" role="group" aria-label="Workout dates"></div><div id="weekStrip" class="week-strip" aria-label="Swipe to change training week"></div>
 <div class="squat-tracker" id="squatTracker" aria-live="polite">
 <div class="squat-tracker-top"><div><div class="micro" id="squatTrackerWindow">NOV 9 – DEC 8 · 30-DAY SQUAT CHECK-IN</div><div class="squat-tracker-title">BACK SQUAT CONSISTENCY <span id="squatDayCount">0 / 30 DAYS</span></div></div><span class="squat-tracker-status" id="squatTrackerStatus">TRACKING</span></div>
-<div class="squat-tracker-meter"><div id="squatTrackerFill"></div></div>
+<div class="squat-tracker-actions"><button id="configureSquatBlock" type="button" class="smallbtn">Configure block</button></div><div class="squat-tracker-meter"><div id="squatTrackerFill"></div></div>
 <div class="squat-tracker-days" id="squatTrackerDays"></div>
-<p class="squat-tracker-note" id="squatTrackerNote">✓ appears after both warmups and both working Back Squat sets are saved. Planned squats alone do not count.</p>
+<p class="squat-tracker-note sr-only" id="squatTrackerNote"></p>
 </div>
 </div>
 <div class="main-split" id="selectedDay">
@@ -97,16 +97,27 @@
 <div class="insight hidden" id="trainingIntel"><strong>TRAINING INTELLIGENCE</strong><span id="advice"></span></div>
 <div id="dailySquatSelected" class="daily-squat-workout hidden"></div>
 <div id="selectedWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="selectedResultHeading">YOUR COMPLETED WORKOUT</h3><p id="selectedResultInfo" class="muted"></p></div>
-<div id="whoopSelectedDay" class="whoop-day-activities"></div><div id="completedDayWorkouts" class="completed-day-workouts"></div><div id="dayHistory" class="logged-day-history"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
+<div id="unifiedSessionSummary" class="unified-session-summary"></div><div id="whoopSelectedDay" class="whoop-day-activities hidden"></div><div id="completedDayWorkouts" class="completed-day-workouts hidden"></div><div id="dayHistory" class="logged-day-history hidden"></div><button id="clearSelectedDay" class="smallbtn btn-ghost day-clear" type="button">DELETE ALL LOGS FOR THIS DAY</button>
 <div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>2. Regular workout</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
+<section id="inlineLogger" class="inline-logger" aria-label="Log workout sets">
+<div class="inline-logger-toolbar"><h3>Log sets</h3><button id="inlineLoadLast" type="button" class="smallbtn">Load last session</button></div>
+<div class="inline-logger-grid">
+<label>EXERCISE<select id="inlineExercise"></select></label>
+<label>NEW EXERCISE<input id="inlineNewExercise" list="exerciseCatalogOptions" placeholder="Or type an exercise" maxlength="100"></label>
+</div>
+<div class="inline-sets-header"><span>SET</span><span>TARGET</span><span>PREVIOUS</span><span>WEIGHT / LB</span><span>REPS</span><span>SAVE</span></div>
+<div id="inlineSetRows" class="inline-set-rows"></div>
+<button id="inlineAddSet" class="smallbtn" type="button">+ Add set</button>
+<p id="inlineLogStatus" class="sr-only" role="status"></p>
+</section>
 </div><div class="action-row calendar-primary-action"><button id="dayStart" class="btn-primary" type="button">LOG TODAY'S WORKOUT</button><button id="startSelectedWorkout" class="hidden" type="button">VIEW WHOOP SYNC</button></div>
 <div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost hidden" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
 </div>
 <div class="section" id="recoveryAndTimer">
 <h3>RECOVERY GUIDANCE</h3>
 <p class="muted" id="guidanceText">Checking WHOOP recovery.</p>
-<div class="insight"><strong>HOW TO USE THIS</strong><span>Recovery is one input, not a guarantee of performance. Adjust training based on soreness, sleep, effort and form.</span></div>
+
 <h3>REST TIMER</h3><p id="restTimerStatus" class="muted">Ready when you save a set.</p><div class="perf-clock" id="clock">02:00</div>
 <div class="perf-btns"><button data-timer="60" type="button">1 MIN</button><button data-timer="120" type="button">2 MIN</button><button data-timer="180" type="button">3 MIN</button><button id="timerStart" class="btn-primary" type="button">START</button><button id="timerReset" type="button">RESET</button></div>
 </div>
@@ -218,6 +229,9 @@
 </div></details></div>
 </section>
 </main></div>
+<div id="floatingRest" class="floating-rest hidden" aria-live="polite"><span>REST</span><strong id="floatingRestTime">02:00</strong><button id="floatingRestPause" type="button">Pause</button><button id="floatingRestDismiss" type="button" aria-label="Dismiss rest timer">×</button></div>
+<dialog id="readinessDialog" class="quick-dialog"><form method="dialog" id="readinessForm"><h2>Daily readiness</h2><label>Sleep quality %<input id="manualSleep" type="number" min="0" max="100" required value="75"></label><label>Soreness / 10<input id="manualSoreness" type="number" min="0" max="10" required value="4"></label><label>Energy / 10<input id="manualEnergy" type="number" min="0" max="10" required value="7"></label><div class="action-row"><button id="saveReadiness" type="submit" value="save">Save check-in</button><button type="submit" value="cancel">Cancel</button></div></form></dialog>
+<dialog id="configureSquatDialog" class="quick-dialog"><form method="dialog" id="configureSquatForm"><h2>Squat block</h2><label>Estimated 1RM / LB<input id="configureSquatMax" type="number" min="45" max="1000" step="5" required></label><label>Start date<input id="configureSquatStart" type="date" required></label><p>Updates scheduled targets only; never changes recorded sets.</p><div class="action-row"><button type="submit" value="save">Save block</button><button type="submit" value="cancel">Cancel</button></div></form></dialog>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">
 <div class="day-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerWorkout">
 <div class="drawer-top"><div><div class="micro" id="drawerDate">SELECTED DATE</div><h2 id="drawerWorkout">DAY WORKOUT</h2><p id="drawerFocus" class="muted"></p></div><button type="button" id="drawerClose" aria-label="Close workout panel">✕</button></div>
