@@ -19,7 +19,7 @@ const good=saved&&typeof saved==='object'&&Array.isArray(saved.dailySquats)&&sav
 const original=good?saved:initial;
 let config=null;
 try{const next=JSON.parse(localStorage.getItem('reptrack-squat-block-config-v1')||'null');
- if(next&&Number.isFinite(Number(next.max))&&Number(next.max)>=45&&Number(next.max)<=1000&&/^\\d{4}-\\d{2}-\\d{2}$/.test(next.start))config=next;
+ if(next&&Number.isFinite(Number(next.max))&&Number(next.max)>=45&&Number(next.max)<=1000&&/^\d{4}-\d{2}-\d{2}$/.test(next.start))config=next;
 }catch{}
 const baseMax=Number(original.max)||325;
 const customMax=Number(config?.max)||baseMax;
