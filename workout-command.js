@@ -70,16 +70,56 @@ function drawSets(){
  $('inlineSetRows').replaceChildren(fragment);
  $('inlineAddSet').classList.toggle('hidden',active==='Back Squat'&&!!window.RepTrackDailySquatTarget?.(date));
 }
+let outlookSignature='',prescriptionSignature='';
+const squatSummary=date=>{
+ const target=window.RepTrackDailySquatTarget?.(date);
+ if(!target)return 'No daily squat target on this date';
+ const intensity=target.percentage>=75?'Heavy':target.percentage>=55?'Moderate':target.percentage>=40?'Light':'Recovery';
+ return 'Daily squat: '+target.sets+' × '+target.reps+' at '+target.weight+' lb · '+intensity;
+};
+function drawOutlook(){
+ const today=new Date(),tomorrow=new Date(today);tomorrow.setDate(tomorrow.getDate()+1);
+ const days=[today,tomorrow].map((date,i)=>({date:dayKey(date),label:i?'Tomorrow':'Today',plan:window.RepTrackPlanForDate?.(dayKey(date))}));
+ const sig=JSON.stringify(days.map(x=>[x.date,x.plan,squatSummary(x.date)]));if(sig===outlookSignature)return;outlookSignature=sig;
+ const host=$('trainingOutlook');host.replaceChildren();
+ for(const day of days){
+  const card=make('article','outlook-card'),heading=make('h2','',day.label+' · '+dayDate(day.date).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}));
+  const name=make('strong','outlook-workout',day.plan?.title||'No workout planned');
+  const muscles=day.plan?.ex.filter(([name])=>!/^Back Squat$/i.test(name)).map(([name])=>name).join(' · ');
+  const squat=make('p','outlook-squat',squatSummary(day.date));
+  const button=make('button','smallbtn',day.label==='Today'?'Open today’s workout':'Preview tomorrow');button.type='button';button.addEventListener('click',()=>{window.RepTrackOpenCalendarDay?.(day.date);requestAnimationFrame(()=>{$('selectedDay').scrollIntoView({block:'start',behavior:'instant'});$('dayWorkout').tabIndex=-1;$('dayWorkout').focus({preventScroll:true})})});
+  card.append(heading,name,make('p','outlook-focus',day.plan?.focus.split(' · Squat')[0]||'Your planned training'),make('p','outlook-exercises',muscles||'Rest and recovery'),squat,button);host.append(card);
+ }
+ const note=make('p','outlook-reason','The default rotation puts Push on Sunday and Legs on Monday with the heavier squat. The daily squat check-in is separate from your regular workout.');host.append(note);
+}
+function drawPrescription(){
+ const date=selected(),plan=window.RepTrackPlanForDate?.(date);if(!plan)return;
+ const sig=JSON.stringify([date,plan]);if(sig===prescriptionSignature)return;prescriptionSignature=sig;
+ const host=$('workoutPrescription');host.replaceChildren();
+ host.append(make('h3','','What to train: '+plan.title),make('p','prescription-squat',squatSummary(date)+' · Warmups: 45 lb × 4, 135 lb × 8'));
+ const list=make('ol','prescription-exercises');
+ for(const [name,sets,weight] of plan.ex.filter(([name])=>!/^Back Squat$/i.test(name))){
+  const row=make('li'),button=make('button','prescription-exercise');button.type='button';
+  button.append(make('strong','',name),make('span','',sets+(weight!==undefined&&weight!==''?' · '+weight+' lb':'')));
+  button.addEventListener('click',()=>{
+   active=canon(name);$('inlineExercise').value=active;signature='';drawSets();
+   $('inlineLogger').scrollIntoView({block:'nearest',behavior:'instant'});$('inlineSetRows').querySelector('input')?.focus();
+  });row.append(button);list.append(row);
+ }
+ host.append(make('p','prescription-help','Your regular workout is below. Select an exercise to load its sets into the logger.'),list);
+}
 function drawWeek(){
  const date=dayDate(selected()),monday=new Date(date);monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
  const days=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return d});
- const stamps=days.map(dayKey),last=stamps.join('|')+':'+selected()+':'+logs().length;
+ const stamps=days.map(dayKey),last=stamps.join('|')+':'+selected()+':'+logs().length+':'+stamps.map(stamp=>window.RepTrackPlanForDate?.(stamp)?.title).join('|');
  if(last===weekSignature)return;weekSignature=last;
  const strip=$('weekStrip');strip.replaceChildren();
  for(const date of days){
   const stamp=dayKey(date),recorded=logs().some(e=>e.date===stamp&&e.sets.length)||!!window.RepTrackInlineWhoop?.(stamp)?.length;
   const btn=make('button','week-day'+(stamp===selected()?' is-current':''));btn.type='button';btn.dataset.date=stamp;
-  btn.append(make('span','',date.toLocaleDateString(undefined,{weekday:'short'})),make('strong','',String(date.getDate())),make('small','',recorded?'✓':'○'));strip.append(btn);
+  const title=window.RepTrackPlanForDate?.(stamp)?.title||'Rest';
+  btn.setAttribute('aria-label',date.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+' · '+title+(recorded?' · Logged sets':''));
+  btn.append(make('span','',date.toLocaleDateString(undefined,{weekday:'short'})),make('strong','',String(date.getDate())),make('small','week-workout-name',title),make('span','week-log-state',recorded?'✓':'○'));strip.append(btn);
  }
 }
 function drawSummary(){
@@ -104,9 +144,11 @@ function drawSummary(){
  host.append(card);
 }
 function refresh(){
- if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;drawSets();drawWeek();drawSummary();drawReadiness()});
+ if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;drawOutlook();drawPrescription();drawSets();drawWeek();drawSummary();drawReadiness()});
 }
 window.RepTrackInlineRefresh=refresh;
+window.addEventListener('reptrack-plan-changed',()=>{prescriptionSignature='';outlookSignature='';weekSignature='';rebuildOptions(selected());signature='';refresh()});
+window.addEventListener('focus',refresh);
 $('inlineExercise').addEventListener('change',e=>{active=e.target.value;signature='';drawSets()});
 $('inlineNewExercise').addEventListener('change',e=>{
  const name=canon(e.target.value);if(!name)return;
@@ -188,7 +230,7 @@ $('configureSquatForm').addEventListener('submit',e=>{
 function init(){
  const calendar=$('trainingCalendar'),inspector=$('selectedDay'),page=document.querySelector('[data-page="calendar"]');
  if(calendar&&inspector&&page){if(!calendar.parentElement?.classList.contains('calendar-command-layout')){const layout=make('div','calendar-command-layout');calendar.before(layout);layout.append(calendar,inspector)}inspector.querySelector('.section')?.classList.add('active-inspector')}
- rebuildOptions(selected());viewDate=selected();drawSets();drawWeek();drawSummary();drawReadiness();
+ rebuildOptions(selected());viewDate=selected();drawOutlook();drawPrescription();drawSets();drawWeek();drawSummary();drawReadiness();
 }
 init();
 })();

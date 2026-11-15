@@ -38,3 +38,9 @@ Use Tab to move between controls, Enter or Space to activate buttons, and arrow 
 Open a calendar date to check off **45 lb × 4**, **135 lb × 8**, and **two working sets at that date's prescribed weight and reps**. Each check saves immediately in the existing workout history. Uncheck a row to undo that set. The check-in restores saved sets when you reopen the day and stays stable during WHOOP refreshes.
 
 Use **Next: log regular workout** or **Log sets** beside a planned exercise afterward. Regular exercise logging accepts completed rows and ignores untouched blank rows; changing the exercise name preserves entered weights and reps. A warmup alone no longer marks the whole day complete or hides the remaining workout.
+
+## Planned workout and squat-day alignment
+
+The Calendar shows **Today** and **Tomorrow** with the regular workout, muscle focus, and the separate daily squat target. The selected day's exercise list opens each movement directly in the inline set logger. Logged WHOOP activity names stay in history and do not replace the planned session heading.
+
+Starting November 15, 2026, the default Sunday/Monday rotation is **Sunday: Push, Monday: Legs**, so the full leg session falls on the existing heavier Monday squat. Existing daily squat weights and reps are preserved. An initial correction moves saved Sunday leg plans to Monday; subsequent date-specific edits remain available through Edit plan / history. Actual workout records are never rewritten by this schedule correction.

@@ -124,3 +124,59 @@ body,.content,button,input,select,textarea{font-family:Inter,ui-sans-serif,syste
 .day-tools{display:flex;flex-direction:column;align-items:flex-end;gap:9px}
 .day-tools button{font-size:10px;min-height:42px;white-space:nowrap;padding:7px 10px}
 @media(max-width:390px){.day-tools button{max-width:118px;white-space:normal;font-size:9px;line-height:1.2}}
+/* Make the prescribed session explicit, separately from the exercise being logged. */
+.training-outlook{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.outlook-card{min-width:0;padding:18px;border:1px solid #687c94;border-radius:14px;background:#142033}
+.outlook-card h2{font-size:15px;color:#c9d7e8;margin:0 0 8px;letter-spacing:0;text-transform:none}
+.outlook-workout{display:block;font-size:28px;line-height:1.2;color:#f4f8ff}
+.outlook-card p{font-size:14px;line-height:1.6;color:#d2deeb;margin:10px 0}
+.outlook-card .outlook-squat{color:#c1f1d8;font-weight:650}
+.outlook-card button{min-height:44px;font-size:14px;margin-top:4px}
+.outlook-reason{grid-column:1/-1;margin:0;color:#b9c9dd;font-size:14px;line-height:1.5}
+.workout-prescription{margin:16px 0;padding:16px 0;border-top:1px solid #506079;border-bottom:1px solid #506079}
+.workout-prescription h3{font-size:20px;margin:0 0 10px;text-transform:none}
+.prescription-squat{color:#c1f1d8;font-size:14px;line-height:1.6}
+.prescription-help{color:#c5d2e3;font-size:14px;line-height:1.6}
+.prescription-exercises{padding:0;list-style:none;display:grid;gap:8px;margin:12px 0 0}
+.prescription-exercise{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;min-height:52px;padding:10px 12px;font-size:14px;border-color:#677c98;background:#172338}
+.prescription-exercise strong{font-size:14px;color:#f1f6ff}
+.prescription-exercise span{color:#c3d4e8;flex-shrink:0;font-size:13px}
+#weekStrip .week-workout-name{font-size:11px;color:#d8e7f6;white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+#weekStrip .week-log-state{font-size:12px;color:#b9d8c8}
+#weekStrip .week-day{min-height:96px}
+@media(max-width:700px){
+ .training-outlook{gap:10px;margin-bottom:16px;grid-template-columns:1fr}
+ .outlook-card{padding:14px}
+ .outlook-workout{font-size:25px}
+ .outlook-exercises{display:none}
+ .prescription-exercise{flex-direction:column;align-items:flex-start;gap:4px}
+ #weekStrip .week-workout-name{font-size:10px}
+}
+/* Keep the selected workout beside the calendar; guidance spans the row below. */
+@media(min-width:701px){
+ .calendar-command-layout>#trainingCalendar{grid-column:1;grid-row:1}
+ .calendar-command-layout>#selectedDay{grid-column:2;grid-row:1}
+ .calendar-command-layout>.future-grid{grid-column:1/-1;min-width:0}
+ .calendar-command-layout>.future-grid>.section{min-width:0}
+}
+@media(min-width:701px) and (max-width:1050px){
+ .calendar-command-layout{display:flex;flex-direction:column}
+ .calendar-command-layout>#trainingCalendar,.calendar-command-layout>#selectedDay,.calendar-command-layout>.future-grid{width:100%}
+ .calendar-command-layout>#selectedDay{position:static;max-height:none;overflow:visible}
+}
+@media(max-width:390px){
+ .inline-sets-header{display:none}
+ .inline-set-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 44px;gap:8px;align-items:start;padding:12px 0}
+ .inline-set-number{grid-column:1;grid-row:1;text-align:left;font-size:12px}
+ .inline-set-target{grid-column:2;grid-row:1;font-size:11px}
+ .inline-set-best{grid-column:1/3;grid-row:2;text-align:left;font-size:11px}
+ .inline-set-target:before{content:'Target: '}
+ .inline-set-best:before{content:'Previous: '}
+ .inline-input-cell:has(.inline-weight){grid-column:1;grid-row:3}
+ .inline-input-cell:has(.inline-reps){grid-column:2;grid-row:3}
+ .inline-input-cell{grid-template-rows:auto 44px 30px}
+ .inline-input-cell:has(.inline-weight):before{content:'Weight / lb';font-size:12px;color:#c5d8ed}
+ .inline-input-cell:has(.inline-reps):before{content:'Reps';font-size:12px;color:#c5d8ed}
+ .inline-input-cell input{font-size:16px}
+ .inline-save-set{grid-column:3;grid-row:3;align-self:center;width:44px;min-width:44px}
+}

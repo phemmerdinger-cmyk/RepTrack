@@ -113,11 +113,54 @@ function updateExperimentState(){
 }
 window.addEventListener('reptrack-experiments-changed',updateExperimentState);
 
+// Align full leg sessions with the Monday heavy squat, starting with this correction.
+const SCHEDULE_EFFECTIVE_FROM='2026-11-15';
+const SCHEDULE_FIX_KEY='reptrack-leg-schedule-v1';
+function alignLegSchedule(){
+ try{
+  if(localStorage.getItem(SCHEDULE_FIX_KEY))return;
+  const nextDays={...datePlans},nextWeek={...weeklyPlans};
+  const oldSunday=nextWeek[0],oldMonday=nextWeek[1];
+  if(oldSunday?.title==='LEGS'){
+   nextWeek[0]=oldMonday?.title==='PUSH'?clonePlan(oldMonday):clonePlan(plan[1]);
+   if(!oldMonday||oldMonday.title==='PUSH')nextWeek[1]=clonePlan(oldSunday);
+  }else if(oldMonday?.title==='PUSH')nextWeek[1]=clonePlan(plan[0]);
+  // Move an already-saved Sunday leg plan rather than losing its exercises.
+  const sunday=nextDays[SCHEDULE_EFFECTIVE_FROM],monday=nextDays['2026-11-16'];
+  if(sunday?.title==='LEGS'){
+   if(nextDays['2026-11-16']?.title!=='LEGS')nextDays['2026-11-16']=clonePlan(sunday);
+   nextDays[SCHEDULE_EFFECTIVE_FROM]=clonePlan(monday?.title==='PUSH'?monday:oldMonday?.title==='PUSH'?oldMonday:plan[1]);
+  }
+  if(nextDays['2026-11-16']?.title!=='LEGS')nextDays['2026-11-16']=clonePlan(nextWeek[1]?.title==='LEGS'?nextWeek[1]:plan[0]);
+  const oldDays=localStorage.getItem(PLAN_KEY),oldWeek=localStorage.getItem(WEEK_KEY);
+  try{
+   localStorage.setItem(PLAN_KEY,JSON.stringify(nextDays));localStorage.setItem(WEEK_KEY,JSON.stringify(nextWeek));
+   localStorage.setItem(SCHEDULE_FIX_KEY,JSON.stringify({effectiveFrom:SCHEDULE_EFFECTIVE_FROM,previousWeek:{0:oldSunday??null,1:oldMonday??null}}));
+  }catch(error){
+   for(const [key,value] of [[PLAN_KEY,oldDays],[WEEK_KEY,oldWeek]])try{value===null?localStorage.removeItem(key):localStorage.setItem(key,value)}catch{}
+   return;
+  }
+  datePlans=nextDays;weeklyPlans=nextWeek;
+ }catch{}
+}
+alignLegSchedule();
+function defaultPlanFor(d){
+ const stamp=iso(d),day=d.getDay();
+ if(stamp>=SCHEDULE_EFFECTIVE_FROM){
+  if(day===0)return clonePlan(plan[1]); // Push before Monday's heavier squat.
+  if(day===1)return clonePlan(plan[0]); // Full leg session shares the heavy-squat day.
+ }
+ return stamp===personalPlan.baseline?.date?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
+}
 function planFor(d){
  const stamp=iso(d),day=d.getDay();
  // Day-specific saved overrides always take priority over these initial defaults.
- const fallback=stamp===personalPlan.baseline?.date?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
- const p=datePlans[stamp]||weeklyPlans[day]||fallback;
+ const fallback=defaultPlanFor(d);
+ let weekly=weeklyPlans[day];
+ if(stamp<SCHEDULE_EFFECTIVE_FROM&&(day===0||day===1)){
+  try{const fix=JSON.parse(localStorage.getItem(SCHEDULE_FIX_KEY)||'null');if(fix?.previousWeek)weekly=fix.previousWeek[day]}catch{}
+ }
+ const p=datePlans[stamp]||weekly||fallback;
  return applySquatExperiment(validPlan(p)?p:fallback,d);
 }
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
@@ -527,8 +570,8 @@ const p=planFor(selected),key=iso(selected),done=entries.filter(e=>e.date===key)
 const whoopDone=whoopActivitiesOn(key),savedDone=completedSessions().filter(e=>e.date===key);
 const finished=workoutStatus(key)==='Completed';
 const actualTitle=savedDone.at(-1)?.title||(whoopDone.length?whoopWorkoutName(whoopDone.at(-1)):p.title);
-$('dayHeading').textContent=dateLabel(selected).toUpperCase();$('dayWorkout').textContent=actualTitle;
-$('dayFocus').textContent=finished?'COMPLETED WORKOUT · ACTUAL TRAINING HISTORY':p.focus;
+$('dayHeading').textContent=(key===iso(new Date())?'TODAY · ':'PLANNED WORKOUT · ')+dateLabel(selected).toUpperCase();$('dayWorkout').textContent=p.title;
+$('dayFocus').textContent=p.focus;
 renderDailySquatWorkout($('dailySquatSelected'),selected);
 $('selectedWorkoutResult').classList.toggle('hidden',!finished);
 $('selectedPlannedSection').classList.remove('hidden');
