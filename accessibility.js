@@ -55,6 +55,7 @@ function syncDialogs(){
 new MutationObserver(syncDialogs).observe(drawer,{attributes:true,attributeFilter:['class']});
 new MutationObserver(syncDialogs).observe(modal,{attributes:true,attributeFilter:['class']});syncDialogs();
 document.addEventListener('keydown',event=>{
+ if(document.querySelector('dialog[open]'))return;
  const active=!modal.classList.contains('hidden')?modal:!drawer.classList.contains('hidden')?drawer:null;
  if(!active||event.key!=='Tab')return;
  const items=[...active.querySelectorAll('a[href],button,input,select,textarea,summary,[tabindex="0"]')].filter(node=>!node.disabled&&node.getClientRects().length&&!node.closest('[inert]'));
@@ -85,5 +86,5 @@ const groups=document.querySelectorAll('.analytics-toggle,.future-model-switch,.
 function updatePressed(group){group.querySelectorAll('button').forEach(button=>button.setAttribute('aria-pressed',String(button.classList.contains('active'))))}
 for(const group of groups){updatePressed(group);new MutationObserver(()=>updatePressed(group)).observe(group,{subtree:true,attributes:true,attributeFilter:['class']})}
 $('whoopStatusClose').addEventListener('click',()=>$('whoopGlobalStatus').focus());
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!$('whoopStatusDetails').classList.contains('hidden')){$('whoopStatusClose').click()}});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.querySelector('dialog[open]')&&!$('whoopStatusDetails').classList.contains('hidden')){$('whoopStatusClose').click()}});
 })();

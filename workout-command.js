@@ -24,9 +24,67 @@ function rememberRow(row){
 }
 function clearDraft(row){const rows=draftRows().slice(),index=[...$('inlineSetRows').children].indexOf(row);rows[index]=null;while(rows.length&&!rows.at(-1))rows.pop();drafts[draftKey()]=rows;persistDrafts();row.dataset.dirty='false'}
 
+const MODE_KEY='reptrack-workout-modes-v1';
+let workoutModes={};try{const value=JSON.parse(sessionStorage.getItem(MODE_KEY)||'{}');if(value&&typeof value==='object'&&!Array.isArray(value))workoutModes=value}catch{}
+let pendingMode=null;
+const modeFor=date=>workoutModes[date]==='live'?(date===dayKey(new Date())?'live':'past'):workoutModes[date]==='past'?'past':null;
+window.RepTrackWorkoutMode=(date=selected())=>modeFor(date);
+window.RepTrackHasWorkoutMode=date=>!!modeFor(date);
+window.RepTrackShouldStartRest=(date=selected())=>date===dayKey(new Date())&&modeFor(date)==='live';
+function showMode(){
+ const mode=modeFor(selected()),live=window.RepTrackShouldStartRest();
+ $('workoutModeLabel').textContent=mode?(live?'Live workout · rest timers on':'Past workout · rest timers off'):'Choose live or past workout';
+ $('changeWorkoutMode').textContent=mode?'Change mode':'Choose mode';
+ document.body.dataset.workoutMode=live?'live':'past';
+ if(!live)window.RepTrackStopRest?.();
+}
+function setMode(date,mode){
+ workoutModes[date]=mode==='live'&&date===dayKey(new Date())?'live':'past';
+ try{sessionStorage.setItem(MODE_KEY,JSON.stringify(workoutModes))}catch{}
+ showMode();
+}
+function requestMode(date,callback=()=>{},force=false){
+ if(modeFor(date)&&!force){callback();return}
+ pendingMode={date,callback};
+ $('workoutModeDate').textContent=dayDate(date).toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+ $('chooseLiveWorkout').disabled=date!==dayKey(new Date());
+ $('workoutModeDialog').showModal();
+}
+window.RepTrackRequestWorkoutMode=requestMode;
+function chooseMode(mode){
+ const pending=pendingMode;if(!pending)return;
+ pendingMode=null;setMode(pending.date,mode);$('workoutModeDialog').close();pending.callback();
+}
+$('chooseLiveWorkout').addEventListener('click',()=>chooseMode('live'));
+$('choosePastWorkout').addEventListener('click',()=>chooseMode('past'));
+$('cancelWorkoutMode').addEventListener('click',()=>{pendingMode=null;$('workoutModeDialog').close()});
+$('workoutModeDialog').addEventListener('cancel',()=>{pendingMode=null});
+$('changeWorkoutMode').addEventListener('click',()=>requestMode(selected(),()=>{},true));
+window.addEventListener('reptrack-day-opened',event=>requestMode(event.detail.date));
+function openAddWorkout(){
+ const input=$('addWorkoutDate');input.max=dayKey(new Date());input.value=selected()>input.max?input.max:selected();
+ $('addWorkoutName').value='';updateAddWorkoutType();$('addWorkoutDialog').showModal();
+}
+function updateAddWorkoutType(){
+ const date=$('addWorkoutDate').value,today=date===dayKey(new Date());
+ $('addWorkoutLive').disabled=!today;
+ const mode=modeFor(date)||(today?'live':'past');$('addWorkoutLive').checked=today&&mode==='live';$('addWorkoutPast').checked=!$('addWorkoutLive').checked;
+}
+$('addWorkoutButton').addEventListener('click',openAddWorkout);$('inlineAddWorkout').addEventListener('click',openAddWorkout);
+$('addWorkoutDate').addEventListener('change',updateAddWorkoutType);
+$('cancelAddWorkout').addEventListener('click',()=>$('addWorkoutDialog').close());
+$('addWorkoutForm').addEventListener('submit',event=>{
+ event.preventDefault();const date=$('addWorkoutDate').value,name=canon($('addWorkoutName').value);
+ if(!date||dayKey(dayDate(date))!==date||!name){$('addWorkoutName').focus();return}
+ setMode(date,$('addWorkoutLive').checked?'live':'past');$('addWorkoutDialog').close();
+ window.RepTrackOpenCalendarDay?.(date);
+ active=name;viewDate=date;drafts[date+'|'+name]=drafts[date+'|'+name]||[];persistDrafts();rebuildOptions(date);$('inlineExercise').value=name;signature='';drawSets();
+ $('inlineLogger').scrollIntoView({block:'start',behavior:'instant'});$('inlineSetRows').querySelector('input')?.focus();
+});
 function rebuildOptions(date){
  const suggested=window.RepTrackPlanForDate?.(date)?.ex.map(e=>canon(e[0]))||[];
- const names=[...new Set([...suggested,...(catalog?.all(logs())||[]).map(x=>x.name)])].filter(Boolean);
+ const pendingNames=Object.keys(drafts).filter(key=>key.startsWith(date+'|')).map(key=>key.slice(11));
+ const names=[...new Set([...suggested,...pendingNames,...(catalog?.all(logs())||[]).map(x=>x.name)])].filter(Boolean);
  const picker=$('inlineExercise');picker.replaceChildren();
  for(const [label,items] of [['Planned for this workout',suggested],['Other exercises',names.filter(name=>!suggested.includes(name)).sort((a,b)=>a.localeCompare(b))]]){const group=make('optgroup');group.label=label;for(const name of [...new Set(items)]){const option=make('option','',name);option.value=name;group.append(option)}if(group.children.length)picker.append(group)}
  active=names.includes(active)?active:(suggested.includes('Back Squat')?'Back Squat':suggested[0]||names[0]||'');
@@ -44,11 +102,13 @@ function rowsFor(date,name){
    ['working-2','WORK 2',target.weight,target.reps,false]
   ];
   const used=new Set();
-  return specs.map(([slot,label,weight,reps,warmup])=>{
+  const fixed=specs.map(([slot,label,weight,reps,warmup])=>{
    const existing=all.find(x=>!used.has(x)&&x.set.checklistSlot===slot)||all.find(x=>!used.has(x)&&!x.set.checklistSlot&&!!x.set.warmup===warmup);
    if(existing)used.add(existing);
    return{slot,label,weight,reps,warmup,existing};
   });
+  const extra=all.filter(record=>!used.has(record)),count=Math.max(extra.length,draftRows().length-4,0);
+  return fixed.concat(Array.from({length:count},(_,index)=>({slot:'extra-'+(index+1),label:'EXTRA '+(index+1),weight:target.weight,reps:target.reps,warmup:false,existing:extra[index]})));
  }
  const last=previous(name,date)?.sets.filter(x=>!x.warmup).at(-1);
  const planned=window.RepTrackPlanForDate?.(date)?.ex.find(e=>canon(e[0])===name);
@@ -57,6 +117,7 @@ function rowsFor(date,name){
 }
 function drawSets(){
  const date=selected();
+ showMode();
  if(viewDate!==date){viewDate=date;active='';rebuildOptions(date)}
  else if(!$('inlineExercise').options.length)rebuildOptions(date);
  if(!active)return;
@@ -95,7 +156,7 @@ function drawSets(){
   row.append(weightWrap,repWrap,save);host.append(row);
  }
 
- $('inlineAddSet').classList.toggle('hidden',active==='Back Squat'&&!!window.RepTrackDailySquatTarget?.(date));
+ $('inlineAddSet').classList.remove('hidden');
 }
 let outlookSignature='',prescriptionSignature='';
 const squatSummary=date=>{
@@ -191,6 +252,7 @@ $('inlineLoadLast').addEventListener('click',()=>{
  $('inlineLogStatus').textContent='Last session loaded';
 });
 $('inlineSetRows').addEventListener('input',event=>{const row=event.target.closest('.inline-set-row');if(row)rememberRow(row)});
+$('inlineAddSetTop').addEventListener('click',()=>$('inlineAddSet').click());
 $('inlineAddSet').addEventListener('click',()=>{
  const rows=draftRows().slice(),index=$('inlineSetRows').children.length,last=$('inlineSetRows').lastElementChild;
  rows[index]={weight:last?.querySelector('.inline-weight').value||'',reps:last?.querySelector('.inline-reps').value||'8'};drafts[draftKey()]=rows;persistDrafts();signature='';drawSets();
@@ -203,7 +265,7 @@ function validateRow(row){
  return true;
 }
 function saveRow(row){
- const response=window.RepTrackInlineSaveSet?.({date:selected(),exercise:active,weight:Number(row.querySelector('.inline-weight').value),reps:Number(row.querySelector('.inline-reps').value),warmup:row.dataset.warmup==='true',checklistSlot:row.dataset.slot||null,entryId:row.dataset.entryId||null,setIndex:row.dataset.setIndex===''?null:Number(row.dataset.setIndex)});
+ const response=window.RepTrackInlineSaveSet?.({date:selected(),exercise:active,weight:Number(row.querySelector('.inline-weight').value),reps:Number(row.querySelector('.inline-reps').value),loggingMode:modeFor(selected()),warmup:row.dataset.warmup==='true',checklistSlot:row.dataset.slot||null,entryId:row.dataset.entryId||null,setIndex:row.dataset.setIndex===''?null:Number(row.dataset.setIndex)});
  if(!response?.ok){$('inlineLogStatus').textContent=response?.error||'Unable to save set. Your entries are still here.';return false}
  row.dataset.entryId=response.id;row.dataset.setIndex=response.index;clearDraft(row);row.classList.add('completed');
  const button=row.querySelector('[data-save]');button.classList.add('is-saved');button.textContent='Saved ✓';return true;
@@ -213,14 +275,16 @@ $('inlineSetRows').addEventListener('click',event=>{
  const step=event.target.closest('[data-step]');
  if(step){const input=row.querySelector(step.dataset.field==='weight'?'.inline-weight':'.inline-reps');input.value=String(Math.max(step.dataset.field==='weight'?0:1,Number(input.value||0)+Number(step.dataset.step)));rememberRow(row);return}
  if(!event.target.closest('[data-save]')||!validateRow(row))return;
- if(saveRow(row)){window.RepTrackInlineStartRest?.();$('inlineLogStatus').textContent='Set saved. Keep going or choose the next exercise.'}
+ requestMode(selected(),()=>{if(saveRow(row)){window.RepTrackInlineStartRest?.();$('inlineLogStatus').textContent='Set saved.'+(window.RepTrackShouldStartRest()?' Rest timer started.':' No rest timer for this workout.')}});
 });
 $('inlineSaveAll').addEventListener('click',()=>{
  const rows=[...$('inlineSetRows').children].filter(row=>row.dataset.dirty==='true'||(!row.dataset.entryId&&row.querySelector('.inline-weight').value.trim()));
  if(!rows.length){$('inlineLogStatus').textContent='Enter a weight and reps in a set, or choose your next exercise.';return}
  if(rows.some(row=>!validateRow(row)))return;
+ requestMode(selected(),()=>{
  let saved=0;for(const row of rows){if(!saveRow(row)){$('inlineLogStatus').textContent=saved+' sets saved. The remaining entries are still here; try saving again.';return}saved++}
- window.RepTrackInlineStartRest?.();$('inlineLogStatus').textContent=saved+' set'+(saved===1?'':'s')+' saved for '+active+'.';
+ window.RepTrackInlineStartRest?.();$('inlineLogStatus').textContent=saved+' set'+(saved===1?'':'s')+' saved for '+active+'.'+(window.RepTrackShouldStartRest()?' Rest timer started.':' No rest timers.');
+ });
 });
 $('inlineNextExercise').addEventListener('click',()=>{
  const names=window.RepTrackPlanForDate?.(selected())?.ex.map(([name])=>canon(name))||[],next=names[names.indexOf(active)+1];

@@ -210,3 +210,18 @@ body,.content,button,input,select,textarea{font-family:Inter,ui-sans-serif,syste
  .floating-rest{bottom:calc(90px + env(safe-area-inset-bottom,0px))}
  body:has(#inlineLogger input:focus) .floating-rest{display:none}
 }
+.workout-add-toolbar{display:flex;justify-content:flex-end;margin:0 0 16px}
+.workout-add-toolbar button{min-height:50px;font-size:16px;padding:12px 20px}
+.workout-mode-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;padding:12px;border:1px solid #7189a8;border-radius:10px;background:#16253a;margin-bottom:14px}
+#workoutModeLabel{font-size:14px;font-weight:700;color:#d5e6fa}
+.workout-mode-bar button,#inlineAddWorkout,#inlineAddSet{min-height:46px;font-size:15px}
+#workoutModeDialog,#addWorkoutDialog{max-height:calc(100dvh - 32px);overflow:auto}
+.mode-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.mode-dialog-actions button{min-height:94px;font-size:16px;font-weight:750}
+.mode-dialog-actions small{display:block;font-size:13px;margin-top:8px;color:#d2e1f3}
+.mode-dialog-actions button:disabled{opacity:.5;cursor:not-allowed}
+.workout-type-options{display:grid;gap:12px;padding:14px;border:1px solid #7185a0;border-radius:10px}
+.workout-type-options legend{font-size:14px;padding:0 6px}
+.quick-dialog .workout-type-options label{display:flex;align-items:center;gap:10px;font-size:14px;min-height:48px;color:#e5eef9}
+.quick-dialog .workout-type-options input{width:22px;min-width:22px;height:22px;min-height:22px;accent-color:#a7e9c5;padding:0}
+body[data-workout-mode="past"] #floatingRest,body[data-workout-mode="past"] #modalRestStatus{display:none!important}

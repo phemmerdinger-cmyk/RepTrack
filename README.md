@@ -50,3 +50,11 @@ Starting November 15, 2026, the default Sunday/Monday rotation is **Sunday: Push
 Select a planned exercise, enter weight and reps in the large set cards, and choose **Save set** or **Save all entered sets**. Use **Next exercise** to move through the planned workout. Planned exercises appear first in the exercise picker.
 
 Saving one set keeps other entered values and input focus intact. Pending entries survive switching exercises and reloading the same browser tab, using session storage; they become workout history only when saved. Saved sets show a visible confirmation, repeated saves update the same record, and saving the final set does not add another blank row automatically. Use **+ Add set** when needed.
+
+## Adding live or past workouts
+
+Use **+ Add workout** to choose a date, enter an exercise or workout name, and choose **Live workout** or **Past workout**. Planned workouts also ask for this choice the first time you open a date in the current tab. The mode is shown above the set logger and can be changed there.
+
+Live logging for today's date starts the rest timer after saving. Past logging (including a completed workout earlier today) never starts rest timers; switching to Past also stops an active timer and its alarm. Historical dates always use Past mode. The same timer rule applies in the advanced workout popup.
+
+**+ Add set** is available for every exercise, including extra Back Squat sets beyond the two warmups and two working sets. Drafts remain separate from recorded workout history until saved.

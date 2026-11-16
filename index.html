@@ -74,6 +74,7 @@
 </div></div>
 <section data-page="calendar">
 <div class="page-head"><div><div class="micro">TRAINING SCHEDULE</div><h1>Workout calendar</h1></div><p>Choose a date to view your plan, log sets, or review a completed workout.</p></div>
+<div class="workout-add-toolbar"><button id="addWorkoutButton" class="btn-primary" type="button">+ Add workout</button></div>
 <section id="trainingOutlook" class="training-outlook" aria-label="Today and tomorrow’s planned workouts"></section>
 <div class="intel-grid">
 <div class="intel-card" data-readiness-card="true" tabindex="0" role="button" aria-label="Enter manual readiness check-in"><div class="micro">WHOOP RECOVERY</div><div id="recoveryMetric" class="metric mono">—</div><div id="recoveryCaption" class="caption">SYNCING</div></div>
@@ -105,9 +106,11 @@
 <div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>2. Regular workout</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
 <section id="inlineLogger" class="inline-logger" aria-label="Log workout sets">
-<div class="inline-logger-toolbar"><h3 id="inlineActiveExercise">Log sets</h3><button id="inlineLoadLast" type="button" class="smallbtn">Load last session</button></div>
+<div class="workout-mode-bar"><span id="workoutModeLabel">Choose live or past workout</span><button id="changeWorkoutMode" type="button">Choose mode</button></div>
+<div class="inline-logger-toolbar"><h3 id="inlineActiveExercise">Log sets</h3><button id="inlineLoadLast" type="button" class="smallbtn">Load last session</button><button id="inlineAddSetTop" type="button" class="smallbtn">+ Add set</button></div>
 <div class="inline-logger-grid">
 <label>EXERCISE<select id="inlineExercise"></select></label>
+<button id="inlineAddWorkout" class="smallbtn" type="button">+ Add workout / exercise</button>
 <label>NEW EXERCISE<input id="inlineNewExercise" list="exerciseCatalogOptions" placeholder="Or type an exercise" maxlength="100"></label>
 </div>
 <div class="inline-sets-header"><span>SET</span><span>TARGET</span><span>PREVIOUS</span><span>WEIGHT / LB</span><span>REPS</span><span>SAVE</span></div>
@@ -236,6 +239,16 @@
 </section>
 </main></div>
 <div id="floatingRest" class="floating-rest hidden" aria-live="polite"><span>REST</span><strong id="floatingRestTime">02:00</strong><button id="floatingRestPause" type="button">Pause</button><button id="floatingRestDismiss" type="button" aria-label="Dismiss rest timer">×</button></div>
+<dialog id="workoutModeDialog" class="quick-dialog" aria-labelledby="workoutModeTitle">
+<h2 id="workoutModeTitle">Live or past workout?</h2><p id="workoutModeDate"></p><p>Live workouts start a rest timer when you save a set. Past workouts only record your sets.</p>
+<div class="mode-dialog-actions"><button id="chooseLiveWorkout" type="button">Live workout<br><small>I am training now</small></button><button id="choosePastWorkout" type="button">Past workout<br><small>No rest timers</small></button></div><button id="cancelWorkoutMode" type="button">Cancel</button></dialog>
+<dialog id="addWorkoutDialog" class="quick-dialog" aria-labelledby="addWorkoutTitle"><form id="addWorkoutForm">
+<h2 id="addWorkoutTitle">Add a workout</h2><label>Date<input id="addWorkoutDate" type="date" required></label>
+<label>Exercise or workout name<input id="addWorkoutName" autofocus list="exerciseCatalogOptions" maxlength="100" placeholder="e.g. Bench Press" required></label>
+<fieldset class="workout-type-options"><legend>Are you training now or logging a past workout?</legend><label><input type="radio" name="workoutType" value="live" id="addWorkoutLive" required> Live workout — start rest timers</label><label><input type="radio" name="workoutType" value="past" id="addWorkoutPast" required> Past workout — no rest timers</label></fieldset>
+<p id="addWorkoutHint">Choose a workout, then add your sets. Nothing is recorded until you save a set.</p>
+<div class="action-row"><button class="btn-primary" type="submit">+ Add workout</button><button id="cancelAddWorkout" type="button">Cancel</button></div>
+</form></dialog>
 <dialog id="readinessDialog" class="quick-dialog"><form method="dialog" id="readinessForm"><h2>Daily readiness</h2><label>Sleep quality %<input id="manualSleep" type="number" min="0" max="100" required value="75"></label><label>Soreness / 10<input id="manualSoreness" type="number" min="0" max="10" required value="4"></label><label>Energy / 10<input id="manualEnergy" type="number" min="0" max="10" required value="7"></label><div class="action-row"><button id="saveReadiness" type="submit" value="save">Save check-in</button><button type="submit" value="cancel">Cancel</button></div></form></dialog>
 <dialog id="configureSquatDialog" class="quick-dialog"><form method="dialog" id="configureSquatForm"><h2>Squat block</h2><label>Estimated 1RM / LB<input id="configureSquatMax" type="number" min="45" max="1000" step="5" required></label><label>Start date<input id="configureSquatStart" type="date" required></label><p>Updates scheduled targets only; never changes recorded sets.</p><div class="action-row"><button type="submit" value="save">Save block</button><button type="submit" value="cancel">Cancel</button></div></form></dialog>
 <div id="dayDrawerOverlay" class="drawer-overlay hidden" role="presentation">

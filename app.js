@@ -179,6 +179,7 @@ window.RepTrackOpenCalendarDay=stamp=>{
  selected=d;month=new Date(d.getFullYear(),d.getMonth(),1);
  document.querySelector('[data-view="calendar"]')?.click();
  renderCalendar();renderSelected();window.RepTrackInlineRefresh?.();
+ window.dispatchEvent(new CustomEvent('reptrack-day-opened',{detail:{date:stamp}}));
 };
 
 let entries=[],selected=new Date(),month=new Date(selected.getFullYear(),selected.getMonth(),1),whoop=null,modalDate=null,editingLogId=null,timer=null,seconds=120,remaining=120;
@@ -488,6 +489,7 @@ $('monthGrid').addEventListener('click',event=>{
  const date=fromISO(tile.dataset.date);if(Number.isNaN(date.getTime()))return;
  selected=date;month=new Date(date.getFullYear(),date.getMonth(),1);
  renderCalendar();renderSelected();window.RepTrackInlineRefresh?.();
+ window.dispatchEvent(new CustomEvent('reptrack-day-opened',{detail:{date:iso(date)}}));
 });
 // Stable checklist rows survive background WHOOP refreshes and save without a modal.
 function squatChecklist(date){
@@ -787,7 +789,7 @@ function queueInlineRerender(){
 window.RepTrackInlineHistory=(date)=>entries.filter(e=>e.date===date);
 window.RepTrackInlineWhoop=(date)=>whoopActivitiesOn(date);
 window.RepTrackInlineCompleted=(date)=>completedSessions().filter(e=>e.date===date);
-window.RepTrackInlineSaveSet=({date,exercise,weight,reps,warmup=false,checklistSlot=null,entryId=null,setIndex=null})=>{
+window.RepTrackInlineSaveSet=({date,exercise,weight,reps,warmup=false,checklistSlot=null,entryId=null,setIndex=null,loggingMode=null})=>{
  const name=window.RepTrackExerciseLibrary?.canonical(exercise)||String(exercise||'').trim();
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!name||name.length>100||!Number.isFinite(weight)||weight<0||weight>100000||!Number.isInteger(reps)||reps<1||reps>1000)return {ok:false,error:'Enter a valid exercise, weight and reps.'};
  const canonical=v=>window.RepTrackExerciseLibrary?.canonical(v)||v;
@@ -803,7 +805,7 @@ window.RepTrackInlineSaveSet=({date,exercise,weight,reps,warmup=false,checklistS
   index=null;
  }
  if(!target){target={id:'inline-'+Date.now()+'-'+Math.random().toString(36).slice(2),created:Date.now(),date,exercise:name,sets:[],notes:''};entries.push(target)}
- const set={weight,reps,warmup:!!warmup,...(checklistSlot?{checklistSlot}:{})};
+ const set={weight,reps,warmup:!!warmup,...(['live','past'].includes(loggingMode)?{loggingMode}:{}),...(checklistSlot?{checklistSlot}:{})};
  if(index!==null&&target.sets[index])target.sets[index]={...target.sets[index],...set};
  else{index=target.sets.length;target.sets.push(set)}
  if(!save()){entries=prior;return {ok:false,error:'Unable to save this set on this device.'}}
@@ -882,6 +884,7 @@ function addSet(weight='',reps='',warmup=false){
  row.append(top,fields);$('setsList').append(row);renumberSetCards();
 }
 function openLog(date,exercise){
+ if(window.RepTrackRequestWorkoutMode&&!window.RepTrackHasWorkoutMode?.(iso(date))){window.RepTrackRequestWorkoutMode(iso(date),()=>openLog(date,exercise));return}
 if(drawerOpen)closeDayDrawer();
 if($('modalOverlay').classList.contains('hidden'))logTrigger=document.activeElement;
 editingLogId=null;
@@ -915,10 +918,11 @@ if(exercise==='Back Squat'){
 $('modalTitle').textContent='LOG WORKOUT';$('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';$('logExercise').focus();
 }
 function openEditLog(id){
-if(drawerOpen)closeDayDrawer();
- logTrigger=document.activeElement;
  const item=entries.find(e=>e.id===id);
  if(!item)return;
+ if(window.RepTrackRequestWorkoutMode&&!window.RepTrackHasWorkoutMode?.(item.date)){window.RepTrackRequestWorkoutMode(item.date,()=>openEditLog(id));return}
+ if(drawerOpen)closeDayDrawer();
+ logTrigger=document.activeElement;
  editingLogId=id;
  $('setEditorHint').textContent='Adjust individual weights, reps or set type. Use + Add Set to insert another.';
  modalDate=item.date;
@@ -979,7 +983,7 @@ $('addSameSet').onclick=()=>{
  addSet(weight,reps,warmup);
 };$('closeModal').onclick=closeLog;$('cancelModal').onclick=closeLog;
 $('modalOverlay').addEventListener('click',e=>{if(e.target===$('modalOverlay'))closeLog()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.querySelector('dialog[open]')){if(!$('modalOverlay').classList.contains('hidden'))closeLog();else if(drawerOpen)closeDayDrawer()}});
 $('prevMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);renderCalendar()};
 $('nextMonth').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);renderCalendar()};
 $('todayButton').onclick=()=>{selected=new Date();month=new Date(selected.getFullYear(),selected.getMonth(),1);renderAll()};
@@ -1056,6 +1060,7 @@ function restAlarm(){
  }catch{}
 }
 function paintTimer(){
+ if(restDeadline&&window.RepTrackShouldStartRest&&!window.RepTrackShouldStartRest()){stopTimerInterval();restDeadline=0;restSounded=false;restPaused=seconds}
  if(restDeadline){
   remaining=Math.max(0,Math.ceil((restDeadline-Date.now())/1000));
   if(remaining===0){restDeadline=0;restPaused=0;clearInterval(timer);timer=null;restAlarm()}
@@ -1073,17 +1078,20 @@ function paintTimer(){
 }
 function stopTimerInterval(){if(timer){clearInterval(timer);timer=null}}
 function startRestTimer(){
+ if(window.RepTrackShouldStartRest&&!window.RepTrackShouldStartRest())return;
  stopTimerInterval();restPaused=seconds;remaining=seconds;restSounded=false;
  restDeadline=Date.now()+seconds*1000;
  timer=setInterval(paintTimer,250);paintTimer();
 }
 $('timerStart').onclick=()=>{
+ if(window.RepTrackShouldStartRest&&!window.RepTrackShouldStartRest())return;
  if(restDeadline){restPaused=Math.max(0,Math.ceil((restDeadline-Date.now())/1000));restDeadline=0;stopTimerInterval();paintTimer();return}
  if(restPaused<=0)restPaused=seconds;
  stopTimerInterval();restSounded=false;restDeadline=Date.now()+restPaused*1000;
  timer=setInterval(paintTimer,250);paintTimer();
 };
 $('timerReset').onclick=()=>{stopTimerInterval();restDeadline=0;restPaused=seconds;restSounded=false;paintTimer()};
+window.RepTrackStopRest=()=>$('timerReset').click();
 $('floatingRestPause').onclick=()=>{if(restDeadline||remaining>0)$('timerStart').click()};
 $('floatingRestDismiss').onclick=()=>{$('timerReset').click()};
 
