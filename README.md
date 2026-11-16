@@ -44,3 +44,9 @@ Use **Next: log regular workout** or **Log sets** beside a planned exercise afte
 The Calendar shows **Today** and **Tomorrow** with the regular workout, muscle focus, and the separate daily squat target. The selected day's exercise list opens each movement directly in the inline set logger. Logged WHOOP activity names stay in history and do not replace the planned session heading.
 
 Starting November 15, 2026, the default Sunday/Monday rotation is **Sunday: Push, Monday: Legs**, so the full leg session falls on the existing heavier Monday squat. Existing daily squat weights and reps are preserved. An initial correction moves saved Sunday leg plans to Monday; subsequent date-specific edits remain available through Edit plan / history. Actual workout records are never rewritten by this schedule correction.
+
+## Entering workout sets
+
+Select a planned exercise, enter weight and reps in the large set cards, and choose **Save set** or **Save all entered sets**. Use **Next exercise** to move through the planned workout. Planned exercises appear first in the exercise picker.
+
+Saving one set keeps other entered values and input focus intact. Pending entries survive switching exercises and reloading the same browser tab, using session storage; they become workout history only when saved. Saved sets show a visible confirmation, repeated saves update the same record, and saving the final set does not add another blank row automatically. Use **+ Add set** when needed.

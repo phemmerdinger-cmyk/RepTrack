@@ -105,7 +105,7 @@
 <div id="selectedPlannedSection" class="calendar-planned-section"><div class="section-title"><h3>2. Regular workout</h3><span id="logCount" class="micro">0 LOGGED</span></div>
 <div id="exerciseList"></div>
 <section id="inlineLogger" class="inline-logger" aria-label="Log workout sets">
-<div class="inline-logger-toolbar"><h3>Log sets</h3><button id="inlineLoadLast" type="button" class="smallbtn">Load last session</button></div>
+<div class="inline-logger-toolbar"><h3 id="inlineActiveExercise">Log sets</h3><button id="inlineLoadLast" type="button" class="smallbtn">Load last session</button></div>
 <div class="inline-logger-grid">
 <label>EXERCISE<select id="inlineExercise"></select></label>
 <label>NEW EXERCISE<input id="inlineNewExercise" list="exerciseCatalogOptions" placeholder="Or type an exercise" maxlength="100"></label>
@@ -113,7 +113,8 @@
 <div class="inline-sets-header"><span>SET</span><span>TARGET</span><span>PREVIOUS</span><span>WEIGHT / LB</span><span>REPS</span><span>SAVE</span></div>
 <div id="inlineSetRows" class="inline-set-rows"></div>
 <button id="inlineAddSet" class="smallbtn" type="button">+ Add set</button>
-<p id="inlineLogStatus" class="sr-only" role="status"></p>
+<div class="inline-finish-actions"><button id="inlineSaveAll" class="btn-primary" type="button">Save all entered sets</button><button id="inlineNextExercise" type="button">Next exercise →</button></div>
+<p id="inlineLogStatus" role="status">Enter your weight and reps, then save each set or save them together.</p>
 </section>
 </div><div class="action-row calendar-primary-action"><button id="dayStart" class="btn-primary" type="button">LOG TODAY'S WORKOUT</button><button id="startSelectedWorkout" class="hidden" type="button">VIEW WHOOP SYNC</button></div>
 <div id="selectedAdditionalActions" class="completed-extra-actions hidden"><button id="addAfterWorkout" class="smallbtn btn-ghost hidden" type="button">+ ADD EXERCISE TO THIS DAY</button></div>
