@@ -257,6 +257,8 @@
 <div id="dailySquatDrawer" class="daily-squat-workout hidden"></div>
 <div class="schedule-edit-bar" id="drawerScheduleEditBar"><button type="button" class="smallbtn btn-ghost" id="drawerEditPlan" aria-controls="drawerPlanEditor" aria-expanded="false">✎ EDIT DAY PLAN</button><span class="micro" id="drawerPlanScope">THIS DATE</span></div>
 <div id="drawerPlanEditor" class="schedule-editor hidden">
+<div class="action-row"><label class="field">MOVE WORKOUT TO<input id="editMoveDate" type="date" required aria-describedby="editMoveHelp"></label><button id="editMovePlan" type="button">Move and shift month</button></div>
+<p id="editMoveHelp" class="muted">Move this workout to another date in this month. Later workouts shift through month-end around days with recorded workouts.</p>
 <label class="field">WORKOUT TYPE<select id="editWorkoutType"><option value="PUSH">PUSH</option><option value="PULL">PULL</option><option value="LEGS">LEGS</option><option value="CHEST">CHEST</option><option value="BACK">BACK</option><option value="SHOULDERS + ARMS">SHOULDERS + ARMS</option><option value="REST">REST / RECOVERY</option><option value="CUSTOM">CUSTOM</option></select></label>
 <label class="field" id="customWorkoutWrap" style="margin-top:12px">CUSTOM DAY NAME<input id="editWorkoutName" maxlength="50" placeholder="e.g. Full body"></label>
 <label class="field" style="margin-top:12px">FOCUS / NOTES<input id="editWorkoutFocus" maxlength="120" placeholder="Muscle groups / emphasis"></label>
@@ -264,7 +266,7 @@
 <button type="button" class="smallbtn" id="editAddExercise" style="margin-top:8px">+ ADD PLANNED EXERCISE</button>
 <label class="edit-scope"><input id="editRepeatWeekly" type="checkbox"> Make this the default every <span id="editWeekday"></span> (otherwise only this date)</label>
 <div class="action-row"><button class="btn-primary" id="editSavePlan" type="button">SAVE CHANGES</button><button id="editResetPlan" type="button">RESET DAY</button><button id="editCancelPlan" type="button">CANCEL</button></div>
-<div id="editPlanMessage" class="status-msg"></div>
+<div id="editPlanMessage" class="status-msg" role="status"></div>
 </div>
 
 <div id="drawerWorkoutResult" class="finished-workout-result hidden"><div class="micro">COMPLETED TRAINING</div><h3 id="drawerResultHeading">YOUR COMPLETED WORKOUT</h3><p id="drawerResultInfo" class="muted"></p></div>

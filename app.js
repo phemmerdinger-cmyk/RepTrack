@@ -115,6 +115,7 @@ window.addEventListener('reptrack-experiments-changed',updateExperimentState);
 
 // Align full leg sessions with the Monday heavy squat, starting with this correction.
 const SCHEDULE_EFFECTIVE_FROM='2026-11-15';
+const CHEST_WEDNESDAY_FROM='2026-11-18';
 const SCHEDULE_FIX_KEY='reptrack-leg-schedule-v1';
 function alignLegSchedule(){
  try{
@@ -146,13 +147,17 @@ function alignLegSchedule(){
 alignLegSchedule();
 function defaultPlanFor(d){
  const stamp=iso(d),day=d.getDay();
+ if(stamp>=CHEST_WEDNESDAY_FROM){
+  if(day===3)return clonePlan(plan[4]);
+  if(day===4)return squatMonthWorkout(iso(plus(d,-1)))||clonePlan(plan[3]);
+ }
  if(stamp>=SCHEDULE_EFFECTIVE_FROM){
   if(day===0)return clonePlan(plan[1]); // Push before Monday's heavier squat.
   if(day===1)return clonePlan(plan[0]); // Full leg session shares the heavy-squat day.
  }
  return stamp===personalPlan.baseline?.date?presetFor('LEGS',0):(squatMonthWorkout(stamp)||clonePlan(plan[day]));
 }
-function planFor(d){
+function basePlanFor(d){
  const stamp=iso(d),day=d.getDay();
  // Day-specific saved overrides always take priority over these initial defaults.
  const fallback=defaultPlanFor(d);
@@ -161,8 +166,9 @@ function planFor(d){
   try{const fix=JSON.parse(localStorage.getItem(SCHEDULE_FIX_KEY)||'null');if(fix?.previousWeek)weekly=fix.previousWeek[day]}catch{}
  }
  const p=datePlans[stamp]||weekly||fallback;
- return applySquatExperiment(validPlan(p)?p:fallback,d);
+ return validPlan(p)?p:fallback;
 }
+function planFor(d){return applySquatExperiment(basePlanFor(d),d)}
 function savePlanStore(key,store){try{localStorage.setItem(key,JSON.stringify(store));return true}catch{alert('Unable to save calendar changes.');return false}}
 window.RepTrackPlanForDate=stamp=>planFor(fromISO(stamp));
 window.RepTrackWorkoutPreset=key=>{
@@ -655,13 +661,19 @@ function buildExerciseEditor(){
  });
 }
 function openPlanEditor(){
- editorOpen=true;editorDraft=planFor(selected);
+ editorOpen=true;editorDraft=clonePlan(basePlanFor(selected));
  editorOriginalType=planType(editorDraft);
  $('editWorkoutType').value=editorOriginalType;
  $('editWorkoutName').value=editorDraft.title;
  $('editWorkoutFocus').value=editorDraft.focus;
  $('editRepeatWeekly').checked=false;
  $('editWeekday').textContent=selected.toLocaleDateString(undefined,{weekday:'long'});
+ const moveDate=$('editMoveDate');
+ if(moveDate){
+  moveDate.min=iso(new Date(selected.getFullYear(),selected.getMonth(),1));
+  moveDate.max=iso(new Date(selected.getFullYear(),selected.getMonth()+1,0));
+  moveDate.value='';
+ }
  $('editPlanMessage').textContent='';
  $('drawerPlanEditor').classList.remove('hidden');
  buildExerciseEditor();toggleCustomName();
@@ -690,6 +702,43 @@ $('editAddExercise').onclick=()=>{
  const last=$('editExerciseRows').lastElementChild;last?.querySelector('input')?.focus();
 };
 $('editCancelPlan').onclick=closePlanEditor;
+function movePlanThroughMonth(){
+ if(!editorOpen)return;
+ const input=$('editMoveDate'),message=$('editPlanMessage'),stamp=iso(selected);
+ const destination=fromISO(input.value);
+ if(!input.value||!input.validity.valid||iso(destination)===stamp){
+  message.textContent='Choose a different date in the same month.';
+  input.focus();return;
+ }
+ const reserved=new Set(completedSessions().map(session=>session.date));
+ for(const activity of whoopActivities())reserved.add(whoopActivityDate(activity));
+ for(const entry of entries){if(sets(entry).some(set=>!set.checklistSlot))reserved.add(entry.date)}
+ const draftDate=readPlanStore('reptrack-live-session-v1').date;
+ if(draftDate)reserved.add(draftDate);
+ if(reserved.has(stamp)){
+  message.textContent='This date already has a recorded workout. Choose another workout to move.';
+  return;
+ }
+ const first=stamp<input.value?selected:destination,monthEnd=input.max,today=iso(new Date());
+ const days=[];
+ // Remove reserved days from the rotation so their plans cannot shift to another date.
+ for(let date=first;iso(date)<=monthEnd;date=plus(date,1)){
+  const key=iso(date);
+  if(key===input.value||!reserved.has(key))days.push(key);
+ }
+ const sourceIndex=days.indexOf(stamp),offset=days.indexOf(input.value)-sourceIndex;
+ const next={...datePlans};
+ days.forEach((key,index)=>{
+  if(key<today&&key!==stamp&&key!==input.value)return;
+  const shifted=index-offset;
+  next[key]=shifted>=sourceIndex&&shifted<days.length?clonePlan(basePlanFor(fromISO(days[shifted]))):presetFor('REST');
+ });
+ if(!savePlanStore(PLAN_KEY,next))return;
+ datePlans=next;
+ selected=destination;
+ closePlanEditor();renderAll();window.dispatchEvent(new Event('reptrack-plan-changed'));
+}
+$('editMovePlan')?.addEventListener('click',movePlanThroughMonth);
 $('editSavePlan').onclick=()=>{
  if(!editorOpen)return;
  editorDraft.title=($('editWorkoutType').value==='CUSTOM' ? $('editWorkoutName').value : $('editWorkoutType').value).trim();
